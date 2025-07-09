@@ -36,6 +36,8 @@ catalogs:
 
 overrides:
   '@noble/ciphers': 1.3.0
+  '@starknet-io/starknet-types-07': npm:@starknet-io/types-js@~0.7.10
+  '@starknet-io/starknet-types-08': npm:@starknet-io/types-js@~0.8.4
 
 importers:
 
@@ -164,6 +166,12 @@ importers:
       '@snapshot-labs/pineapple':
         specifier: ^1.1.0
         version: 1.1.0
+      '@starknet-io/starknet-types-07':
+        specifier: npm:@starknet-io/types-js@~0.7.10
+        version: '@starknet-io/types-js@0.7.10'
+      '@starknet-io/starknet-types-08':
+        specifier: npm:@starknet-io/types-js@~0.8.4
+        version: '@starknet-io/types-js@0.8.4'
       '@starknet-react/chains':
         specifier: 4.0.1-beta.3
         version: 4.0.1-beta.3
@@ -439,6 +447,12 @@ importers:
         version: 5.8.3
 
   packages/starknet-types-07:
+    dependencies:
+      '@starknet-io/types-js':
+        specifier: ^0.8.4
+        version: 0.8.4
+
+  packages/starknet-types-08:
     dependencies:
       '@starknet-io/types-js':
         specifier: ^0.8.4
