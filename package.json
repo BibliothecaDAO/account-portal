@@ -26,9 +26,7 @@
   "prettier": "@realms-world/prettier-config",
   "pnpm": {
     "overrides": {
-      "@noble/ciphers": "1.3.0",
-      "@starknet-io/starknet-types-07": "npm:@starknet-io/types-js@~0.7.10",
-      "@starknet-io/starknet-types-08": "npm:@starknet-io/types-js@~0.8.4"
+      "@noble/ciphers": "1.3.0"
     }
   }
 }
