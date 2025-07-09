@@ -25,9 +25,6 @@
   },
   "prettier": "@realms-world/prettier-config",
   "pnpm": {
-    "patchedDependencies": {
-      "starknet@7.6.2": "patches/starknet@7.6.2.patch"
-    },
     "overrides": {
       "@noble/ciphers": "1.3.0"
     }
