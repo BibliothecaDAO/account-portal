@@ -166,7 +166,7 @@ importers:
         version: 1.1.0
       '@starknet-io/starknet-types-07':
         specifier: workspace:*
-        version: link:../../packages/starknet-types-07
+        version: link:../../packages/starknet-types-07/starknet-types-07
       '@starknet-io/starknet-types-08':
         specifier: workspace:*
         version: link:../../packages/starknet-types-08
@@ -451,6 +451,12 @@ importers:
         version: 5.8.3
 
   packages/starknet-types-07:
+    dependencies:
+      '@starknet-io/types-js':
+        specifier: 0.7.10
+        version: 0.7.10
+
+  packages/starknet-types-07/starknet-types-07:
     dependencies:
       '@starknet-io/types-js':
         specifier: 0.7.10
