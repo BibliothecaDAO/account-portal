@@ -38,9 +38,6 @@ overrides:
   '@noble/ciphers': 1.3.0
 
 patchedDependencies:
-  starknet:
-    hash: vd632wnbp725q2llal5rluggo4
-    path: patches/starknet.patch
   starknet@7.6.2:
     hash: j4gq46jqslkp3v7feeyifdwdki
     path: patches/starknet@7.6.2.patch
@@ -11782,9 +11779,9 @@ snapshots:
       big-decimal-number: bignumber.js@9.3.0
       lodash-es: 4.17.21
       micro-starknet: 0.2.3
-      starknet: 6.11.0(patch_hash=vd632wnbp725q2llal5rluggo4)(encoding@0.1.13)
-      starknet4-deprecated: starknet@4.4.0(patch_hash=vd632wnbp725q2llal5rluggo4)(encoding@0.1.13)
-      starknet5: starknet@5.25.0(patch_hash=vd632wnbp725q2llal5rluggo4)(encoding@0.1.13)
+      starknet: 6.11.0(encoding@0.1.13)
+      starknet4-deprecated: starknet@4.4.0(encoding@0.1.13)
+      starknet5: starknet@5.25.0(encoding@0.1.13)
       ua-parser-js: 1.0.40
       url-join: 4.0.1
       zod: 3.25.75
@@ -15718,7 +15715,7 @@ snapshots:
   '@realms-world/siws@0.0.2(encoding@0.1.13)(ethers@6.15.0(bufferutil@4.0.9)(utf-8-validate@5.0.10))':
     dependencies:
       ethers: 6.15.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)
-      starknet: 6.24.1(patch_hash=vd632wnbp725q2llal5rluggo4)(encoding@0.1.13)
+      starknet: 6.24.1(encoding@0.1.13)
       uri-js: 4.4.1
       valid-url: 1.0.9
       zod: 3.25.75
@@ -24996,7 +24993,7 @@ snapshots:
 
   standard-as-callback@2.1.0: {}
 
-  starknet@4.4.0(patch_hash=vd632wnbp725q2llal5rluggo4)(encoding@0.1.13):
+  starknet@4.4.0(encoding@0.1.13):
     dependencies:
       '@ethersproject/bytes': 5.8.0
       bn.js: 5.2.2
@@ -25012,7 +25009,7 @@ snapshots:
     transitivePeerDependencies:
       - encoding
 
-  starknet@5.25.0(patch_hash=vd632wnbp725q2llal5rluggo4)(encoding@0.1.13):
+  starknet@5.25.0(encoding@0.1.13):
     dependencies:
       '@noble/curves': 1.3.0
       '@scure/base': 1.1.9
@@ -25024,7 +25021,7 @@ snapshots:
     transitivePeerDependencies:
       - encoding
 
-  starknet@6.11.0(patch_hash=vd632wnbp725q2llal5rluggo4)(encoding@0.1.13):
+  starknet@6.11.0(encoding@0.1.13):
     dependencies:
       '@noble/curves': 1.4.2
       '@noble/hashes': 1.8.0
@@ -25042,7 +25039,7 @@ snapshots:
     transitivePeerDependencies:
       - encoding
 
-  starknet@6.24.1(patch_hash=vd632wnbp725q2llal5rluggo4)(encoding@0.1.13):
+  starknet@6.24.1(encoding@0.1.13):
     dependencies:
       '@noble/curves': 1.7.0
       '@noble/hashes': 1.6.0
