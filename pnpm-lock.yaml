@@ -39,7 +39,7 @@ overrides:
 
 patchedDependencies:
   starknet@7.6.2:
-    hash: j4gq46jqslkp3v7feeyifdwdki
+    hash: mmqet2leezkfhc3bqvz2hcmohy
     path: patches/starknet@7.6.2.patch
 
 importers:
@@ -69,10 +69,10 @@ importers:
     dependencies:
       '@cartridge/connector':
         specifier: ^0.8.0
-        version: 0.8.0(@metamask/sdk@0.33.0(bufferutil@4.0.9)(encoding@0.1.13)(utf-8-validate@5.0.10))(@solana/web3.js@1.98.2(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.8.3)(utf-8-validate@5.0.10))(@starknet-react/core@4.0.1-beta.4(bufferutil@4.0.9)(get-starknet-core@4.0.0)(react@19.1.0)(starknet@7.6.2(patch_hash=j4gq46jqslkp3v7feeyifdwdki))(typescript@5.8.3)(utf-8-validate@5.0.10))(@types/react@19.1.8)(bufferutil@4.0.9)(db0@0.3.2(@electric-sql/pglite@0.2.17)(drizzle-orm@0.44.2(@electric-sql/pglite@0.2.17)(@neondatabase/serverless@1.0.1)(@opentelemetry/api@1.9.0)(@types/pg@8.15.4)(kysely@0.28.2)(pg@8.16.3)))(encoding@0.1.13)(ioredis@5.6.1)(open@8.4.2)(react@19.1.0)(starknet@7.6.2(patch_hash=j4gq46jqslkp3v7feeyifdwdki))(starknetkit@2.12.1(hzfxqzzbhk5e7gjf445b55q6ky))(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.25.75)
+        version: 0.8.0(@metamask/sdk@0.33.0(bufferutil@4.0.9)(encoding@0.1.13)(utf-8-validate@5.0.10))(@solana/web3.js@1.98.2(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.8.3)(utf-8-validate@5.0.10))(@starknet-react/core@4.0.1-beta.4(bufferutil@4.0.9)(get-starknet-core@4.0.0)(react@19.1.0)(starknet@7.6.2(patch_hash=mmqet2leezkfhc3bqvz2hcmohy))(typescript@5.8.3)(utf-8-validate@5.0.10))(@types/react@19.1.8)(bufferutil@4.0.9)(db0@0.3.2(@electric-sql/pglite@0.2.17)(drizzle-orm@0.44.2(@electric-sql/pglite@0.2.17)(@neondatabase/serverless@1.0.1)(@opentelemetry/api@1.9.0)(@types/pg@8.15.4)(kysely@0.28.2)(pg@8.16.3)))(encoding@0.1.13)(ioredis@5.6.1)(open@8.4.2)(react@19.1.0)(starknet@7.6.2(patch_hash=mmqet2leezkfhc3bqvz2hcmohy))(starknetkit@2.12.1(gx3yxywjfp3em4kqwbkp7juaha))(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.25.75)
       '@cartridge/controller':
         specifier: ^0.8.0
-        version: 0.8.0(@metamask/sdk@0.33.0(bufferutil@4.0.9)(encoding@0.1.13)(utf-8-validate@5.0.10))(@solana/web3.js@1.98.2(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.8.3)(utf-8-validate@5.0.10))(@types/react@19.1.8)(bufferutil@4.0.9)(db0@0.3.2(@electric-sql/pglite@0.2.17)(drizzle-orm@0.44.2(@electric-sql/pglite@0.2.17)(@neondatabase/serverless@1.0.1)(@opentelemetry/api@1.9.0)(@types/pg@8.15.4)(kysely@0.28.2)(pg@8.16.3)))(encoding@0.1.13)(ioredis@5.6.1)(open@8.4.2)(react@19.1.0)(starknet@7.6.2(patch_hash=j4gq46jqslkp3v7feeyifdwdki))(starknetkit@2.12.1(hzfxqzzbhk5e7gjf445b55q6ky))(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.25.75)
+        version: 0.8.0(@metamask/sdk@0.33.0(bufferutil@4.0.9)(encoding@0.1.13)(utf-8-validate@5.0.10))(@solana/web3.js@1.98.2(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.8.3)(utf-8-validate@5.0.10))(@types/react@19.1.8)(bufferutil@4.0.9)(db0@0.3.2(@electric-sql/pglite@0.2.17)(drizzle-orm@0.44.2(@electric-sql/pglite@0.2.17)(@neondatabase/serverless@1.0.1)(@opentelemetry/api@1.9.0)(@types/pg@8.15.4)(kysely@0.28.2)(pg@8.16.3)))(encoding@0.1.13)(ioredis@5.6.1)(open@8.4.2)(react@19.1.0)(starknet@7.6.2(patch_hash=mmqet2leezkfhc3bqvz2hcmohy))(starknetkit@2.12.1(gx3yxywjfp3em4kqwbkp7juaha))(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.25.75)
       '@duneanalytics/client-sdk':
         specifier: ^0.2.5
         version: 0.2.5
@@ -177,7 +177,7 @@ importers:
         version: 4.0.1-beta.3
       '@starknet-react/core':
         specifier: 4.0.1-beta.4
-        version: 4.0.1-beta.4(bufferutil@4.0.9)(get-starknet-core@4.0.0)(react@19.1.0)(starknet@7.6.2(patch_hash=j4gq46jqslkp3v7feeyifdwdki))(typescript@5.8.3)(utf-8-validate@5.0.10)
+        version: 4.0.1-beta.4(bufferutil@4.0.9)(get-starknet-core@4.0.0)(react@19.1.0)(starknet@7.6.2(patch_hash=mmqet2leezkfhc3bqvz2hcmohy))(typescript@5.8.3)(utf-8-validate@5.0.10)
       '@tailwindcss/postcss':
         specifier: ^4.1.11
         version: 4.1.11
@@ -273,13 +273,13 @@ importers:
         version: 4.0.1
       starknet:
         specifier: 'catalog:'
-        version: 7.6.2(patch_hash=j4gq46jqslkp3v7feeyifdwdki)
-      starknet-types-07:
+        version: 7.6.2(patch_hash=mmqet2leezkfhc3bqvz2hcmohy)
+      starknet-types-08:
         specifier: workspace:*
         version: link:../../packages/starknet-types-07
       starknetkit:
         specifier: 2.12.1
-        version: 2.12.1(hzfxqzzbhk5e7gjf445b55q6ky)
+        version: 2.12.1(gx3yxywjfp3em4kqwbkp7juaha)
       tailwind-merge:
         specifier: ^3.2.0
         version: 3.3.1
@@ -370,7 +370,7 @@ importers:
         version: 8.16.3
       starknet:
         specifier: 'catalog:'
-        version: 7.6.2(patch_hash=j4gq46jqslkp3v7feeyifdwdki)
+        version: 7.6.2(patch_hash=mmqet2leezkfhc3bqvz2hcmohy)
       viem:
         specifier: 'catalog:'
         version: 2.31.7(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.25.75)
@@ -452,8 +452,8 @@ importers:
   packages/starknet-types-07:
     dependencies:
       '@starknet-io/types-js':
-        specifier: ^0.7.10
-        version: 0.7.10
+        specifier: ^0.8.4
+        version: 0.8.4
 
   tooling/eslint:
     dependencies:
@@ -11789,7 +11789,7 @@ snapshots:
       - encoding
       - typescript
 
-  '@argent/x-ui@1.87.0(nmlro4a2u3dccib5g6rkf5zt6q)':
+  '@argent/x-ui@1.87.0(qrdi2pibemdrggbcdvqcx63t2y)':
     dependencies:
       '@argent/x-shared': 1.53.2(@scure/base@1.2.6)(@scure/bip39@1.6.0)(async-retry@1.3.3)(encoding@0.1.13)(lodash-es@4.17.21)(typescript@5.8.3)(ua-parser-js@1.0.40)(url-join@4.0.1)(zod@3.25.75)
       '@chakra-ui/react': 2.10.9(@emotion/react@11.14.0(@types/react@19.1.8)(react@19.1.0))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.1.8)(react@19.1.0))(@types/react@19.1.8)(react@19.1.0))(@types/react@19.1.8)(framer-motion@11.18.2(@emotion/is-prop-valid@1.3.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -11817,7 +11817,7 @@ snapshots:
       react-router-dom: 7.6.3(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       react-spring-bottom-sheet: 3.5.0-alpha.0(@react-three/fiber@9.2.0(@types/react@19.1.8)(immer@10.1.1)(react-dom@19.1.0(react@19.1.0))(react-native@0.74.0(@babel/core@7.28.0)(@babel/preset-env@7.28.0(@babel/core@7.28.0))(@types/react@19.1.8)(bufferutil@4.0.9)(encoding@0.1.13)(react@19.1.0)(utf-8-validate@5.0.10))(react@19.1.0)(three@0.178.0))(@types/react@19.1.8)(konva@9.3.21)(react-dom@19.1.0(react@19.1.0))(react-konva@18.2.12(@types/react@19.1.8)(konva@9.3.21)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react-native@0.74.0(@babel/core@7.28.0)(@babel/preset-env@7.28.0(@babel/core@7.28.0))(@types/react@19.1.8)(bufferutil@4.0.9)(encoding@0.1.13)(react@19.1.0)(utf-8-validate@5.0.10))(react-zdog@1.2.2)(react@19.1.0)(three@0.178.0)(zdog@1.1.3)
       react-virtuoso: 4.13.0(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-      starknet: 7.6.2(patch_hash=j4gq46jqslkp3v7feeyifdwdki)
+      starknet: 7.6.2(patch_hash=mmqet2leezkfhc3bqvz2hcmohy)
       swr: 1.3.0(react@19.1.0)
       zod: 3.25.75
 
@@ -12701,10 +12701,10 @@ snapshots:
 
   '@better-fetch/fetch@1.1.18': {}
 
-  '@cartridge/connector@0.8.0(@metamask/sdk@0.33.0(bufferutil@4.0.9)(encoding@0.1.13)(utf-8-validate@5.0.10))(@solana/web3.js@1.98.2(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.8.3)(utf-8-validate@5.0.10))(@starknet-react/core@4.0.1-beta.4(bufferutil@4.0.9)(get-starknet-core@4.0.0)(react@19.1.0)(starknet@7.6.2(patch_hash=j4gq46jqslkp3v7feeyifdwdki))(typescript@5.8.3)(utf-8-validate@5.0.10))(@types/react@19.1.8)(bufferutil@4.0.9)(db0@0.3.2(@electric-sql/pglite@0.2.17)(drizzle-orm@0.44.2(@electric-sql/pglite@0.2.17)(@neondatabase/serverless@1.0.1)(@opentelemetry/api@1.9.0)(@types/pg@8.15.4)(kysely@0.28.2)(pg@8.16.3)))(encoding@0.1.13)(ioredis@5.6.1)(open@8.4.2)(react@19.1.0)(starknet@7.6.2(patch_hash=j4gq46jqslkp3v7feeyifdwdki))(starknetkit@2.12.1(hzfxqzzbhk5e7gjf445b55q6ky))(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.25.75)':
+  '@cartridge/connector@0.8.0(@metamask/sdk@0.33.0(bufferutil@4.0.9)(encoding@0.1.13)(utf-8-validate@5.0.10))(@solana/web3.js@1.98.2(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.8.3)(utf-8-validate@5.0.10))(@starknet-react/core@4.0.1-beta.4(bufferutil@4.0.9)(get-starknet-core@4.0.0)(react@19.1.0)(starknet@7.6.2(patch_hash=mmqet2leezkfhc3bqvz2hcmohy))(typescript@5.8.3)(utf-8-validate@5.0.10))(@types/react@19.1.8)(bufferutil@4.0.9)(db0@0.3.2(@electric-sql/pglite@0.2.17)(drizzle-orm@0.44.2(@electric-sql/pglite@0.2.17)(@neondatabase/serverless@1.0.1)(@opentelemetry/api@1.9.0)(@types/pg@8.15.4)(kysely@0.28.2)(pg@8.16.3)))(encoding@0.1.13)(ioredis@5.6.1)(open@8.4.2)(react@19.1.0)(starknet@7.6.2(patch_hash=mmqet2leezkfhc3bqvz2hcmohy))(starknetkit@2.12.1(gx3yxywjfp3em4kqwbkp7juaha))(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.25.75)':
     dependencies:
-      '@cartridge/controller': 0.8.0(@metamask/sdk@0.33.0(bufferutil@4.0.9)(encoding@0.1.13)(utf-8-validate@5.0.10))(@solana/web3.js@1.98.2(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.8.3)(utf-8-validate@5.0.10))(@types/react@19.1.8)(bufferutil@4.0.9)(db0@0.3.2(@electric-sql/pglite@0.2.17)(drizzle-orm@0.44.2(@electric-sql/pglite@0.2.17)(@neondatabase/serverless@1.0.1)(@opentelemetry/api@1.9.0)(@types/pg@8.15.4)(kysely@0.28.2)(pg@8.16.3)))(encoding@0.1.13)(ioredis@5.6.1)(open@8.4.2)(react@19.1.0)(starknet@7.6.2(patch_hash=j4gq46jqslkp3v7feeyifdwdki))(starknetkit@2.12.1(hzfxqzzbhk5e7gjf445b55q6ky))(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.25.75)
-      '@starknet-react/core': 4.0.1-beta.4(bufferutil@4.0.9)(get-starknet-core@4.0.0)(react@19.1.0)(starknet@7.6.2(patch_hash=j4gq46jqslkp3v7feeyifdwdki))(typescript@5.8.3)(utf-8-validate@5.0.10)
+      '@cartridge/controller': 0.8.0(@metamask/sdk@0.33.0(bufferutil@4.0.9)(encoding@0.1.13)(utf-8-validate@5.0.10))(@solana/web3.js@1.98.2(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.8.3)(utf-8-validate@5.0.10))(@types/react@19.1.8)(bufferutil@4.0.9)(db0@0.3.2(@electric-sql/pglite@0.2.17)(drizzle-orm@0.44.2(@electric-sql/pglite@0.2.17)(@neondatabase/serverless@1.0.1)(@opentelemetry/api@1.9.0)(@types/pg@8.15.4)(kysely@0.28.2)(pg@8.16.3)))(encoding@0.1.13)(ioredis@5.6.1)(open@8.4.2)(react@19.1.0)(starknet@7.6.2(patch_hash=mmqet2leezkfhc3bqvz2hcmohy))(starknetkit@2.12.1(gx3yxywjfp3em4kqwbkp7juaha))(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.25.75)
+      '@starknet-react/core': 4.0.1-beta.4(bufferutil@4.0.9)(get-starknet-core@4.0.0)(react@19.1.0)(starknet@7.6.2(patch_hash=mmqet2leezkfhc3bqvz2hcmohy))(typescript@5.8.3)(utf-8-validate@5.0.10)
     transitivePeerDependencies:
       - '@azure/app-configuration'
       - '@azure/cosmos'
@@ -12739,7 +12739,7 @@ snapshots:
 
   '@cartridge/controller-wasm@0.1.7': {}
 
-  '@cartridge/controller@0.8.0(@metamask/sdk@0.33.0(bufferutil@4.0.9)(encoding@0.1.13)(utf-8-validate@5.0.10))(@solana/web3.js@1.98.2(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.8.3)(utf-8-validate@5.0.10))(@types/react@19.1.8)(bufferutil@4.0.9)(db0@0.3.2(@electric-sql/pglite@0.2.17)(drizzle-orm@0.44.2(@electric-sql/pglite@0.2.17)(@neondatabase/serverless@1.0.1)(@opentelemetry/api@1.9.0)(@types/pg@8.15.4)(kysely@0.28.2)(pg@8.16.3)))(encoding@0.1.13)(ioredis@5.6.1)(open@8.4.2)(react@19.1.0)(starknet@7.6.2(patch_hash=j4gq46jqslkp3v7feeyifdwdki))(starknetkit@2.12.1(hzfxqzzbhk5e7gjf445b55q6ky))(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.25.75)':
+  '@cartridge/controller@0.8.0(@metamask/sdk@0.33.0(bufferutil@4.0.9)(encoding@0.1.13)(utf-8-validate@5.0.10))(@solana/web3.js@1.98.2(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.8.3)(utf-8-validate@5.0.10))(@types/react@19.1.8)(bufferutil@4.0.9)(db0@0.3.2(@electric-sql/pglite@0.2.17)(drizzle-orm@0.44.2(@electric-sql/pglite@0.2.17)(@neondatabase/serverless@1.0.1)(@opentelemetry/api@1.9.0)(@types/pg@8.15.4)(kysely@0.28.2)(pg@8.16.3)))(encoding@0.1.13)(ioredis@5.6.1)(open@8.4.2)(react@19.1.0)(starknet@7.6.2(patch_hash=mmqet2leezkfhc3bqvz2hcmohy))(starknetkit@2.12.1(gx3yxywjfp3em4kqwbkp7juaha))(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.25.75)':
     dependencies:
       '@cartridge/controller-wasm': 0.1.7
       '@cartridge/penpal': 6.2.4
@@ -12753,8 +12753,8 @@ snapshots:
       ethers: 6.15.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)
       mipd: 0.0.7(typescript@5.8.3)
       open: 8.4.2
-      starknet: 7.6.2(patch_hash=j4gq46jqslkp3v7feeyifdwdki)
-      starknetkit: 2.12.1(hzfxqzzbhk5e7gjf445b55q6ky)
+      starknet: 7.6.2(patch_hash=mmqet2leezkfhc3bqvz2hcmohy)
+      starknetkit: 2.12.1(gx3yxywjfp3em4kqwbkp7juaha)
     transitivePeerDependencies:
       - '@azure/app-configuration'
       - '@azure/cosmos'
@@ -16673,7 +16673,7 @@ snapshots:
 
   '@starknet-react/chains@4.0.1-beta.3': {}
 
-  '@starknet-react/core@4.0.1-beta.4(bufferutil@4.0.9)(get-starknet-core@4.0.0)(react@19.1.0)(starknet@7.6.2(patch_hash=j4gq46jqslkp3v7feeyifdwdki))(typescript@5.8.3)(utf-8-validate@5.0.10)':
+  '@starknet-react/core@4.0.1-beta.4(bufferutil@4.0.9)(get-starknet-core@4.0.0)(react@19.1.0)(starknet@7.6.2(patch_hash=mmqet2leezkfhc3bqvz2hcmohy))(typescript@5.8.3)(utf-8-validate@5.0.10)':
     dependencies:
       '@starknet-io/types-js': 0.7.10
       '@starknet-react/chains': 4.0.1-beta.3
@@ -16682,7 +16682,7 @@ snapshots:
       eventemitter3: 5.0.1
       get-starknet-core: 4.0.0
       react: 19.1.0
-      starknet: 7.6.2(patch_hash=j4gq46jqslkp3v7feeyifdwdki)
+      starknet: 7.6.2(patch_hash=mmqet2leezkfhc3bqvz2hcmohy)
       viem: 2.31.7(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.25.75)
       zod: 3.25.75
     transitivePeerDependencies:
@@ -25055,7 +25055,7 @@ snapshots:
     transitivePeerDependencies:
       - encoding
 
-  starknet@7.6.2(patch_hash=j4gq46jqslkp3v7feeyifdwdki):
+  starknet@7.6.2(patch_hash=mmqet2leezkfhc3bqvz2hcmohy):
     dependencies:
       '@noble/curves': 1.7.0
       '@noble/hashes': 1.6.0
@@ -25068,9 +25068,9 @@ snapshots:
       pako: 2.1.0
       ts-mixer: 6.0.4
 
-  starknetkit@2.12.1(hzfxqzzbhk5e7gjf445b55q6ky):
+  starknetkit@2.12.1(gx3yxywjfp3em4kqwbkp7juaha):
     dependencies:
-      '@argent/x-ui': 1.87.0(nmlro4a2u3dccib5g6rkf5zt6q)
+      '@argent/x-ui': 1.87.0(qrdi2pibemdrggbcdvqcx63t2y)
       '@starknet-io/get-starknet': 4.0.7
       '@starknet-io/get-starknet-core': 4.0.7
       '@starknet-io/types-js': 0.7.10
@@ -25084,7 +25084,7 @@ snapshots:
       lodash-es: 4.17.21
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
-      starknet: 7.6.2(patch_hash=j4gq46jqslkp3v7feeyifdwdki)
+      starknet: 7.6.2(patch_hash=mmqet2leezkfhc3bqvz2hcmohy)
       svelte-forms: 2.3.1
       trpc-browser: 1.4.4(@trpc/client@10.45.2(@trpc/server@10.45.2))(@trpc/server@10.45.2)
     transitivePeerDependencies:
