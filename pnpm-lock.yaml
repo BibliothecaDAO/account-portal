@@ -294,6 +294,9 @@ importers:
       remark-gfm:
         specifier: ^4.0.1
         version: 4.0.1
+      rollup-plugin-visualizer:
+        specifier: ^6.0.3
+        version: 6.0.3(rolldown@1.0.0-beta.3(@babel/runtime@7.27.6)(typescript@5.8.3))(rollup@4.44.2)
       starknet:
         specifier: 7.6.2
         version: 7.6.2
@@ -318,6 +321,9 @@ importers:
       vite:
         specifier: ^6.3.5
         version: 6.3.5(@types/node@22.16.2)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.3)(yaml@2.8.0)
+      vite-plugin-import-graph:
+        specifier: ^0.0.1
+        version: 0.0.1(vite@6.3.5(@types/node@22.16.2)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.3)(yaml@2.8.0))
       vite-plugin-svgr:
         specifier: ^4.3.0
         version: 4.3.0(rollup@4.44.2)(typescript@5.8.3)(vite@6.3.5(@types/node@22.16.2)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.3)(yaml@2.8.0))
@@ -10363,6 +10369,11 @@ packages:
     resolution: {integrity: sha512-YAXkfvGtuTzwWbDSACdJSg4A4DZiAqckWe90Zapc/sEX3XvHcw1NdurM/6od8J207tSDqNbSsgdCacBgvJKFuA==}
     engines: {node: ^18.0.0 || >=20.0.0}
     hasBin: true
+
+  vite-plugin-import-graph@0.0.1:
+    resolution: {integrity: sha512-Qz9camJkJsTySDjgTFpLJ0pHtKvYJuVKXv2IeDg8fkXYchH+LhUHVubeIiKuKN1CYiUFW2Q6ZmpzGZsFcqB4Sg==}
+    peerDependencies:
+      vite: ^5.0.0
 
   vite-plugin-svgr@4.3.0:
     resolution: {integrity: sha512-Jy9qLB2/PyWklpYy0xk0UU3TlU0t2UMpJXZvf+hWII1lAmRHrOUKi11Uw8N3rxoNk7atZNYO3pR3vI1f7oi+6w==}
@@ -23979,6 +23990,10 @@ snapshots:
       - sugarss
       - supports-color
       - terser
+
+  vite-plugin-import-graph@0.0.1(vite@6.3.5(@types/node@22.16.2)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.3)(yaml@2.8.0)):
+    dependencies:
+      vite: 6.3.5(@types/node@22.16.2)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.3)(yaml@2.8.0)
 
   vite-plugin-svgr@4.3.0(rollup@4.44.2)(typescript@5.8.3)(vite@6.3.5(@types/node@22.16.2)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.3)(yaml@2.8.0)):
     dependencies:
