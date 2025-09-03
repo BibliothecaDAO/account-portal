@@ -1,0 +1,9 @@
+{
+  "name": "@starknet-io/starknet-types-09",
+  "version": "0.9.1",
+  "main": "index.mjs",
+  "type": "module",
+  "dependencies": {
+    "@starknet-io/types-js": "0.9.1"
+  }
+}

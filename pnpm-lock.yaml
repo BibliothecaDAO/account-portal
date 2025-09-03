@@ -459,6 +459,12 @@ importers:
         specifier: 0.8.4
         version: 0.8.4
 
+  packages/starknet-types-09:
+    dependencies:
+      '@starknet-io/types-js':
+        specifier: 0.9.1
+        version: 0.9.1
+
   tooling/eslint:
     dependencies:
       eslint-plugin-import:
