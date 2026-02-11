@@ -52,6 +52,7 @@ Use this file as the operating guide for keeping this repo healthy, maintainable
 - Verify postbuild behavior when touching app packaging/deploy logic.
 - Keep shared dependency versions aligned with `pnpm-workspace.yaml` catalog and root overrides.
 - Keep pnpm lockfile settings aligned with repo config (for example `.npmrc` has `auto-install-peers=false` to match lockfile and avoid Vercel frozen-install failures).
+- Prefer portable shell tools in CI/CD scripts (`cp`, `find`) and avoid non-guaranteed binaries like `rsync` unless the environment explicitly provides them.
 
 ## Change Workflow
 - Read related files before edits.
