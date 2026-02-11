@@ -6,7 +6,7 @@
   "engines": {
     "node": ">=20.16.0"
   },
-  "packageManager": "pnpm@9.15.2",
+  "packageManager": "pnpm@9.15.9",
   "scripts": {
     "dev": "pnpm --filter @realms-world/account-portal dev",
     "apibara:start": "pnpm --filter @realms-world/apibara start",
@@ -16,12 +16,12 @@
     "lint": "pnpm --recursive run lint"
   },
   "devDependencies": {
-    "@eslint/js": "^9.19.0",
+    "@eslint/js": "^9.39.2",
     "@realms-world/eslint-config": "workspace:*",
-    "eslint": "^9.19.0",
-    "eslint-plugin-react-hooks": "^5.0.0",
-    "eslint-plugin-react-refresh": "^0.4.16",
-    "typescript-eslint": "^8.23.0"
+    "eslint": "^9.39.2",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.5.0",
+    "typescript-eslint": "^8.55.0"
   },
   "prettier": "@realms-world/prettier-config",
   "pnpm": {
