@@ -46,6 +46,7 @@ Use this file as the operating guide for keeping this repo healthy, maintainable
 - Prevent runtime warnings by clamping/sanitizing UI component inputs (for example progress/chart bounds).
 - Prefer lazy loading for heavy routes/components when it improves initial bundle performance.
 - Ensure client-only tooling and devtools are gated to development environments.
+- For wallet SDKs (`@reown/*`, `@walletconnect/*`), avoid SSR externalization patterns that can reintroduce ESM/CJS runtime mismatches on Vercel.
 
 ## Dependency and Build Discipline
 - When bumping package versions, build the app immediately after.
