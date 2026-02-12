@@ -1,15 +1,18 @@
-# pnpm-monrepo/pnpm-workspace.yaml
-packages:
-  - "./apps/**"
-  - "./packages/**"
-  - "./tooling/**"
-catalog:
-  eslint: ^9.9.0
-  prettier: ^3.3.3
-  zod: ^3.24.1
-  dotenv-cli: ^7.4.2
-  starknet: ^8.1.2
-  viem: ^2.31.3
-  drizzle-kit: ^0.31.4
-  drizzle-orm: ^0.44.2
-  typescript: ^5.8.2
+{
+  "packages": [
+    "./apps/**",
+    "./packages/**",
+    "./tooling/**"
+  ],
+  "catalog": {
+    "eslint": "^9.39.2",
+    "prettier": "^3.8.1",
+    "zod": "^3.25.76",
+    "dotenv-cli": "^7.4.4",
+    "starknet": "^8.9.2",
+    "viem": "^2.45.3",
+    "drizzle-kit": "^0.31.9",
+    "drizzle-orm": "^0.45.1",
+    "typescript": "^5.9.3"
+  }
+}
