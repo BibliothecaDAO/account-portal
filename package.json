@@ -25,10 +25,6 @@
   },
   "prettier": "@realms-world/prettier-config",
   "pnpm": {
-    "overrides": {
-      "@noble/ciphers": "1.3.0",
-      "starknet": "^9.2.1"
-    },
     "ignoredBuiltDependencies": [
       "bufferutil",
       "cbor-extract",
@@ -39,5 +35,27 @@
     "onlyBuiltDependencies": [
       "@reown/appkit"
     ]
+  },
+  "overrides": {
+    "@noble/ciphers": "1.3.0",
+    "starknet": "^9.2.1"
+  },
+  "workspaces": {
+    "packages": [
+      "./apps/**",
+      "./packages/**",
+      "./tooling/**"
+    ],
+    "catalog": {
+      "eslint": "^9.39.2",
+      "prettier": "^3.8.1",
+      "zod": "^3.25.76",
+      "dotenv-cli": "^7.4.4",
+      "starknet": "^9.2.1",
+      "viem": "^2.45.3",
+      "drizzle-kit": "^0.31.9",
+      "drizzle-orm": "^0.45.1",
+      "typescript": "^5.9.3"
+    }
   }
 }
