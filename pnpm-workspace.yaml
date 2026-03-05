@@ -5,12 +5,12 @@
     "./tooling/**"
   ],
   "catalog": {
-    "eslint": "^9.39.2",
+    "eslint": "^10.0.2",
     "prettier": "^3.8.1",
-    "zod": "^3.25.76",
-    "dotenv-cli": "^7.4.4",
+    "zod": "^4.3.6",
+    "dotenv-cli": "^11.0.0",
     "starknet": "^9.2.1",
-    "viem": "^2.45.3",
+    "viem": "^2.47.0",
     "drizzle-kit": "^0.31.9",
     "drizzle-orm": "^0.45.1",
     "typescript": "^5.9.3"
