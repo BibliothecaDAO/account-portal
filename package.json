@@ -16,11 +16,14 @@
     "lint": "pnpm --recursive run lint"
   },
   "devDependencies": {
+    "@ianvs/prettier-plugin-sort-imports": "^4.5.1",
     "@eslint/js": "^9.39.2",
     "@realms-world/eslint-config": "workspace:*",
     "eslint": "^9.39.2",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.5.0",
+    "prettier": "^3.8.1",
+    "prettier-plugin-tailwindcss": "^0.7.2",
     "typescript-eslint": "^8.55.0"
   },
   "prettier": "@realms-world/prettier-config",
