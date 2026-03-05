@@ -47,6 +47,9 @@ importers:
       '@realms-world/eslint-config':
         specifier: workspace:*
         version: link:tooling/eslint
+      '@realms-world/prettier-config':
+        specifier: workspace:*
+        version: link:tooling/prettier
       eslint:
         specifier: ^9.39.2
         version: 9.39.3(jiti@2.6.1)

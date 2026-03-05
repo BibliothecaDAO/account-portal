@@ -19,6 +19,7 @@
     "@ianvs/prettier-plugin-sort-imports": "^4.5.1",
     "@eslint/js": "^9.39.2",
     "@realms-world/eslint-config": "workspace:*",
+    "@realms-world/prettier-config": "workspace:*",
     "eslint": "^9.39.2",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.5.0",
