@@ -62,7 +62,9 @@ export function NavMain({
                         <SidebarMenuSubButton asChild>
                           <Link
                             to={subItem.url}
-                            activeProps={{ className: `text-sidebar-ring` }}
+                            activeProps={{
+                              className: "text-primary font-semibold",
+                            }}
                           >
                             <span>{subItem.title}</span>
                           </Link>
@@ -78,7 +80,7 @@ export function NavMain({
               <SidebarMenuButton asChild tooltip={item.title}>
                 <Link
                   to={item.url}
-                  activeProps={{ className: `font-bold` }}
+                  activeProps={{ className: "text-primary font-semibold" }}
                 >
                   {item.icon && <item.icon />}
                   <span>{item.title}</span>

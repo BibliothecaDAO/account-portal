@@ -1,8 +1,4 @@
 import { useState } from "react";
-import { useStarknetWallet } from "@/hooks/use-starknet-wallet";
-import { getConnectorIcon } from "@/utils/connectWallet";
-import { cn } from "@/utils/utils";
-import { ArrowDownIcon, ChevronDownIcon, WalletMinimal } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,6 +12,10 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { useStarknetWallet } from "@/hooks/use-starknet-wallet";
+import { getConnectorIcon } from "@/utils/connectWallet";
+import { cn } from "@/utils/utils";
+import { ArrowDownIcon, ChevronDownIcon, WalletMinimal } from "lucide-react";
 
 import { Button } from "../ui/button";
 import { Separator } from "../ui/separator";
@@ -38,10 +38,11 @@ export const StarknetWalletButton = ({
   const primaryConnector = lastConnector ?? connectors.at(0);
   const hasConnectorPicker = connectors.length > 1;
   const isReferenceVariant = variant === "reference";
-  const resolvedPickerMode = pickerMode ?? (variant === "reference" ? "sheet" : "dropdown");
+  const resolvedPickerMode =
+    pickerMode ?? (variant === "reference" ? "sheet" : "dropdown");
   const pickerTriggerClassName = isReferenceVariant
-    ? "inline-flex h-9 w-9 items-center justify-center rounded-lg bg-background/40 text-foreground transition hover:bg-accent"
-    : "inline-flex h-7 w-7 items-center justify-center rounded-md text-primary-foreground/80 transition hover:bg-primary-foreground/10";
+    ? "realm-button realm-button--ghost inline-flex h-10 w-10 items-center justify-center rounded-full p-0 text-foreground"
+    : "realm-button realm-button--ghost inline-flex h-8 w-8 items-center justify-center rounded-full p-0 text-primary-foreground/80";
 
   const connectPrimary = () => {
     if (primaryConnector) {
@@ -66,10 +67,7 @@ export const StarknetWalletButton = ({
           <ChevronDownIcon className="h-4 w-4" />
         </button>
       </SheetTrigger>
-      <SheetContent
-        side="right"
-        className="w-full max-w-md border-l p-0"
-      >
+      <SheetContent side="right" className="w-full max-w-md border-l p-0">
         <SheetHeader className="border-b px-5 py-4">
           <SheetTitle className="text-xl">Connect a wallet</SheetTitle>
         </SheetHeader>
@@ -82,18 +80,19 @@ export const StarknetWalletButton = ({
                 key={connector.name}
                 type="button"
                 onClick={() => connectFromPicker(connector)}
-                className="flex w-full items-center justify-between rounded-xl border bg-card px-3 py-3 text-left transition hover:bg-accent"
+                className="realm-sidebar-item flex w-full items-center justify-between rounded-[0.95rem] border px-3 py-3 text-left transition"
               >
                 <span className="flex items-center gap-3">
-                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-muted">
-                    <img className="h-5 w-5" src={getConnectorIcon(connector)} />
+                  <span className="border-border/60 bg-muted/20 inline-flex h-9 w-9 items-center justify-center rounded-lg border">
+                    <img
+                      className="h-5 w-5"
+                      src={getConnectorIcon(connector)}
+                    />
                   </span>
                   <span className="text-sm font-medium">{connector.name}</span>
                 </span>
                 {isRecent ? (
-                  <span className="rounded-full bg-primary/20 px-2.5 py-1 text-xs font-medium text-primary">
-                    Recently used
-                  </span>
+                  <span className="realm-sigil">Recently used</span>
                 ) : null}
               </button>
             );
@@ -108,20 +107,20 @@ export const StarknetWalletButton = ({
       <div className={cn("relative w-full", className)}>
         <Button
           onClick={connectPrimary}
-          className="h-14 w-full justify-start rounded-2xl border px-3 pr-16 shadow-sm"
+          className="h-14 w-full justify-start rounded-[1rem] px-3 pr-16 text-left"
         >
-          <span className="mr-3 inline-flex h-6 w-6 items-center justify-center rounded-md bg-muted">
+          <span className="border-border/60 bg-muted/20 mr-3 inline-flex h-8 w-8 items-center justify-center rounded-lg border">
             {lastConnector ? (
               <img className="h-4 w-4" src={getConnectorIcon(lastConnector)} />
             ) : (
-              <WalletMinimal className="h-4 w-4 text-primary" />
+              <WalletMinimal className="text-primary h-4 w-4" />
             )}
           </span>
           <span className="flex flex-col items-start leading-tight">
             <span className="text-base font-semibold">
               {label ?? "Connect wallet"}
             </span>
-            <span className="text-xs text-muted-foreground">
+            <span className="text-muted-foreground text-xs">
               {lastConnector
                 ? `Previously used ${lastConnector.name}`
                 : "Choose a Starknet wallet"}
@@ -131,7 +130,7 @@ export const StarknetWalletButton = ({
 
         {hasConnectorPicker ? (
           <div
-            className="absolute right-2 top-1/2 -translate-y-1/2"
+            className="absolute top-1/2 right-2 -translate-y-1/2"
             onClick={(e) => e.stopPropagation()}
           >
             {pickerSheet}
@@ -142,10 +141,7 @@ export const StarknetWalletButton = ({
   }
 
   return (
-    <Button
-      onClick={connectPrimary}
-      className={`rounded px-2.5 ${className}`}
-    >
+    <Button onClick={connectPrimary} className={`px-2.5 ${className}`}>
       <div className="flex items-center">
         {lastConnector ? (
           <img className="w-7 pr-2" src={getConnectorIcon(lastConnector)} />
@@ -153,7 +149,7 @@ export const StarknetWalletButton = ({
         <p className="mx-auto">{label ?? "Connect wallet"}</p>
         {hasConnectorPicker ? (
           <>
-            <Separator orientation="vertical" className="ml-3 mr-1.5 h-6" />
+            <Separator orientation="vertical" className="mr-1.5 ml-3 h-6" />
 
             {resolvedPickerMode === "sheet" ? (
               <div onClick={(e) => e.stopPropagation()}>{pickerSheet}</div>

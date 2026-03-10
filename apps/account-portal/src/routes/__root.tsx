@@ -1,10 +1,15 @@
 /// <reference types="vite/client" />
+import type { QueryClient } from "@tanstack/react-query";
 import { lazy, Suspense } from "react";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { Header } from "@/components/layout/header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { Toaster } from "@/components/ui/toaster";
+import { AppKitProvider } from "@/providers/ethereum";
+import { StarknetProvider } from "@/providers/starknet";
 import { ThemeProvider } from "@/providers/theme";
 import appCss from "@/styles.css?url";
+import { seo } from "@/utils/seo";
 import {
   createRootRouteWithContext,
   HeadContent,
@@ -12,12 +17,6 @@ import {
   ScriptOnce,
   Scripts,
 } from "@tanstack/react-router";
-
-import type { QueryClient } from "@tanstack/react-query";
-import { Toaster } from "@/components/ui/toaster";
-import { StarknetProvider } from "@/providers/starknet";
-import { seo } from "@/utils/seo";
-import { AppKitProvider } from "@/providers/ethereum";
 
 const THEME_STORAGE_KEY = "vite-ui-theme";
 const TanStackRouterDevtools = import.meta.env.DEV
@@ -102,7 +101,7 @@ function RootComponent() {
       <head>
         <HeadContent />
       </head>
-      <body className="overflow-hidden">
+      <body className="overflow-hidden antialiased">
         <ScriptOnce>
           {`(() => {
             const theme = localStorage.getItem('${THEME_STORAGE_KEY}');
@@ -113,21 +112,21 @@ function RootComponent() {
           })();`}
         </ScriptOnce>
         <div
-          className={`flex h-screen flex-col [--header-height:calc(--spacing(14))]`}
+          className={`realm-app-shell flex h-screen flex-col [--header-height:calc(--spacing(16))]`}
         >
           <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
             <StarknetProvider>
               <AppKitProvider queryClient={queryClient}>
-                  <SidebarProvider className="flex h-full flex-col">
-                    <Header />
-                    <div className="flex min-h-0 flex-1">
-                      <AppSidebar />
-                      <SidebarInset className="min-h-auto overflow-auto">
-                        <Outlet />
-                      </SidebarInset>
-                    </div>
-                    <Toaster />
-                  </SidebarProvider>
+                <SidebarProvider className="realm-app-shell flex h-full flex-col">
+                  <Header />
+                  <div className="flex min-h-0 flex-1">
+                    <AppSidebar />
+                    <SidebarInset className="min-h-auto overflow-auto">
+                      <Outlet />
+                    </SidebarInset>
+                  </div>
+                  <Toaster />
+                </SidebarProvider>
               </AppKitProvider>
             </StarknetProvider>
           </ThemeProvider>

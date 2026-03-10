@@ -10,9 +10,10 @@ import { StarknetWalletButton } from "./starknet-wallet-button";
 
 export function LoginCard() {
   return (
-    <Card className="mx-auto mt-12 w-full max-w-lg">
+    <Card className="mx-auto mt-12 w-full max-w-xl">
       <CardHeader>
-        <CardTitle className="text-center text-2xl">
+        <div className="realm-kicker mx-auto mb-2">Realms World</div>
+        <CardTitle className="text-center text-3xl">
           Welcome to Realms Portal
         </CardTitle>
         <CardDescription className="text-center">
@@ -63,10 +64,14 @@ function FeatureItem({
   icon: string;
 }) {
   return (
-    <div className="flex items-start gap-3">
-      <div className="text-2xl">{icon}</div>
+    <div className="border-border/50 bg-background/10 flex items-start gap-3 rounded-[0.9rem] border px-3 py-3">
+      <div className="border-border/50 bg-background/30 flex h-10 w-10 items-center justify-center rounded-full border text-2xl">
+        {icon}
+      </div>
       <div>
-        <h3 className="font-medium">{title}</h3>
+        <h3 className="[font-family:var(--font-ui)] text-sm font-semibold tracking-[0.12em] uppercase">
+          {title}
+        </h3>
         <p className="text-muted-foreground text-sm">{description}</p>
       </div>
     </div>
