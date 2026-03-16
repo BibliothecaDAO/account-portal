@@ -40,11 +40,11 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@types/node": "^22.19.11",
+    "@types/node": "^25.5.0",
     "@types/ws": "^8.18.1",
     "dotenv-cli": "catalog:",
     "drizzle-kit": "catalog:",
-    "pg": "^8.18.0",
+    "pg": "^8.20.0",
     "prettier": "catalog:",
     "postgres-range": "^1.1.4",
     "typescript": "catalog:"
