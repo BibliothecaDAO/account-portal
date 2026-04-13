@@ -36,15 +36,15 @@
     "@neondatabase/serverless": "1.0.2",
     "drizzle-orm": "catalog:",
     "drizzle-zod": "^0.8.3",
-    "ws": "^8.19.0",
+    "ws": "^8.20.0",
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@types/node": "^22.19.11",
+    "@types/node": "^25.6.0",
     "@types/ws": "^8.18.1",
     "dotenv-cli": "catalog:",
     "drizzle-kit": "catalog:",
-    "pg": "^8.18.0",
+    "pg": "^8.20.0",
     "prettier": "catalog:",
     "postgres-range": "^1.1.4",
     "typescript": "catalog:"

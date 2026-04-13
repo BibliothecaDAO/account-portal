@@ -4,6 +4,6 @@
   "main": "index.mjs",
   "type": "module",
   "dependencies": {
-    "@starknet-io/types-js": "0.10.0"
+    "@starknet-io/types-js": "0.10.2"
   }
 }
