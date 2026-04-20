@@ -15,7 +15,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "dotenv": "^16.6.1"
+    "dotenv": "^17.4.2"
   },
   "devDependencies": {
     "prettier": "catalog:"
