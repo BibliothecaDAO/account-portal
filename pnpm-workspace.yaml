@@ -5,14 +5,14 @@
     "./tooling/**"
   ],
   "catalog": {
-    "eslint": "^9.39.2",
-    "prettier": "^3.8.1",
-    "zod": "^3.25.76",
-    "dotenv-cli": "^7.4.4",
-    "starknet": "^9.2.1",
-    "viem": "^2.45.3",
-    "drizzle-kit": "^0.31.9",
-    "drizzle-orm": "^0.45.1",
-    "typescript": "^5.9.3"
+    "eslint": "^10.2.1",
+    "prettier": "^3.8.3",
+    "zod": "^4.3.6",
+    "dotenv-cli": "^11.0.0",
+    "starknet": "^9.4.2",
+    "viem": "^2.48.4",
+    "drizzle-kit": "^0.31.10",
+    "drizzle-orm": "^0.45.2",
+    "typescript": "^6.0.3"
   }
 }
