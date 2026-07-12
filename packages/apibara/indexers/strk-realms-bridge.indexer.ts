@@ -1,4 +1,3 @@
-//import type { ApibaraRuntimeConfig } from "apibara/types";
 import type {
   ExtractTablesWithRelations,
   TablesRelationalConfig,
@@ -18,16 +17,22 @@ import {
 } from "@realms-world/db/schema";
 
 import { env } from "../env";
-import { buildBridgeRequestId, toDatabaseTokenIds } from "./bridge-request-id";
+import { resolveStarknetIndexerRuntime } from "../starknet-runtime";
+import {
+  BRIDGE_STORAGE_ID_COLUMNS,
+  buildBridgeEventId,
+  buildBridgeRequestId,
+  toDatabaseTokenIds,
+} from "./bridge-request-id";
 import { toEthereumAddress, toStarknetAddress } from "./starknet-value";
 
-export default function (/*runtimeConfig: ApibaraRuntimeConfig*/) {
+export default function () {
   return createIndexer({ database: db });
 }
 const chainId =
   env.VITE_PUBLIC_CHAIN === "sepolia" ? ChainId.SEPOLIA : ChainId.MAINNET;
-const l2ChainId =
-  env.VITE_PUBLIC_CHAIN === "sepolia" ? ChainId.SN_SEPOLIA : ChainId.SN_MAIN;
+const starknetRuntime = resolveStarknetIndexerRuntime(env.VITE_PUBLIC_CHAIN);
+const l2ChainId = starknetRuntime.chainId;
 const withdrawRequestCompletedSelector = getSelector(
   "WithdrawRequestCompleted",
 );
@@ -115,12 +120,8 @@ export function createIndexer<
     ExtractTablesWithRelations<TFullSchema>,
 >({ database }: { database: PgDatabase<TQueryResult, TFullSchema, TSchema> }) {
   return defineIndexer(StarknetStream)({
-    streamUrl:
-      env.VITE_PUBLIC_CHAIN === "sepolia"
-        ? "https://starknet-sepolia.preview.apibara.org"
-        : "https://starknet.preview.apibara.org",
-
-    finality: "pending",
+    streamUrl: starknetRuntime.streamUrl,
+    finality: starknetRuntime.finality,
     startingCursor: {
       orderKey: env.VITE_PUBLIC_CHAIN === "sepolia" ? 76_103n : 664_161n,
     },
@@ -139,7 +140,7 @@ export function createIndexer<
     plugins: [
       drizzleStorage({
         db: database,
-        idColumn: "_id",
+        idColumn: BRIDGE_STORAGE_ID_COLUMNS,
         persistState: true,
         indexerName: "starknet-realms-bridge",
       }),
@@ -190,6 +191,7 @@ export function createIndexer<
           await db
             .insert(realmsBridgeEvents)
             .values({
+              _event_id: buildBridgeEventId(requestId, "withdraw_completed_l2"),
               timestamp: block.header.timestamp,
               hash: decoded.transactionHash,
               type: "withdraw_completed_l2",
@@ -226,6 +228,7 @@ export function createIndexer<
           await db
             .insert(realmsBridgeEvents)
             .values({
+              _event_id: buildBridgeEventId(requestId, "deposit_initiated_l2"),
               timestamp: block.header.timestamp,
               hash: decoded.transactionHash,
               type: "deposit_initiated_l2",

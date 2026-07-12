@@ -19,6 +19,7 @@ import { useStarkDisplayName } from "@/hooks/use-stark-name";
 import { getProposalQueryOptions } from "@/lib/snapshot/getProposals";
 import { getUserVotesQueryOptions } from "@/lib/snapshot/getUserVotes";
 import { isMatchingProposalVote } from "@/lib/snapshot/proposal-id";
+import { normalizeProposalMetadata } from "@/lib/snapshot/proposal-metadata";
 import {
   formatAddress,
   shortenAddress,
@@ -27,7 +28,6 @@ import {
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { formatDistanceToNow } from "date-fns";
-import { env } from "env";
 import { CheckCircle2, MinusCircle, XCircle } from "lucide-react";
 import { num } from "starknet";
 
@@ -78,18 +78,14 @@ function RouteComponent() {
     return <div>Proposal not found</div>;
   }
 
-  const title = proposal.metadata?.title as string;
-  let body = proposal.metadata?.body as string;
+  const metadata = normalizeProposalMetadata(proposal.metadata);
+  const title = metadata.title ?? `Proposal #${proposal.id}`;
+  const body = metadata.body;
   const authorId = proposal.author.id;
   const createdTime = proposal.created
     ? new Date(proposal.created * 1000)
     : null;
 
-  if (body && typeof body === "string") {
-    body = body.replace(/ipfs:\/\/\S+/g, (match) =>
-      match.replace("ipfs://", env.VITE_PUBLIC_IPFS_GATEWAY ?? ""),
-    );
-  }
   const isActive = proposal.max_end * 1000 > Date.now();
 
   // Determine proposal status if vote has ended

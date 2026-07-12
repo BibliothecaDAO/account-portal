@@ -32,6 +32,7 @@
     "migrate": "pnpm with-env node scripts/migrate.mjs",
     "push": "pnpm with-env drizzle-kit push",
     "studio": "pnpm with-env drizzle-kit studio",
+    "test": "node --test scripts/migrate-core.test.mjs",
     "with-env": "dotenv -e ../../.env --"
   },
   "dependencies": {

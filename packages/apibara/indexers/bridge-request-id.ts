@@ -3,6 +3,18 @@ import { toEthereumAddress, toStarknetAddress } from "./starknet-value";
 const U128_MASK = (1n << 128n) - 1n;
 const POSTGRES_INTEGER_MAX = 2_147_483_647n;
 
+export type BridgeEventType =
+  | "deposit_initiated_l1"
+  | "deposit_initiated_l2"
+  | "withdraw_available_l1"
+  | "withdraw_completed_l1"
+  | "withdraw_completed_l2";
+
+export const BRIDGE_STORAGE_ID_COLUMNS = {
+  "*": "_id",
+  realms_bridge_events: "_event_id",
+} as const;
+
 function splitU256(value: bigint): readonly [bigint, bigint] {
   return [value & U128_MASK, value >> 128n];
 }
@@ -27,6 +39,16 @@ export function buildBridgeRequestId({
   ];
 
   return parts.join(":");
+}
+
+export function buildBridgeEventId(
+  requestId: string,
+  eventType: BridgeEventType,
+): string {
+  if (!requestId) {
+    throw new Error("Bridge request id is required");
+  }
+  return `${requestId}:${eventType}`;
 }
 
 export function buildBridgeRequestIdFromMessagingPayload(

@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "pnpm with-env vite dev",
-    "build": "pnpm with-env vite build && node scripts/bundle-budget.js",
+    "build": "NODE_OPTIONS=--max-old-space-size=6144 pnpm with-env vite build && node scripts/bundle-budget.js",
     "codegen": "pnpm codegen:snapshot && pnpm codegen:eternum",
     "codegen:eternum": "pnpm with-env env CODEGEN_TARGET=eternum graphql-codegen --config codegen.ts",
     "codegen:snapshot": "env CODEGEN_TARGET=snapshot graphql-codegen --config codegen.ts",
@@ -75,7 +75,7 @@
     "tailwind-merge": "^3.5.0",
     "viem": "catalog:",
     "wagmi": "^3.5.0",
-    "zod": "4.4.3"
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@graphql-codegen/cli": "^5.0.7",

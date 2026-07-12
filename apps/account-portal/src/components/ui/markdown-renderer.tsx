@@ -1,5 +1,6 @@
+import { transformMarkdownUrl } from "@/lib/markdown/markdown-url";
 import { env } from "env";
-import ReactMarkdown, { defaultUrlTransform } from "react-markdown";
+import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
@@ -20,15 +21,9 @@ export function MarkdownRenderer({
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeRaw, rehypeSanitize]}
-        urlTransform={(url) => {
-          const transformed = url.startsWith("ipfs://")
-            ? url.replace(
-                "ipfs://",
-                env.VITE_PUBLIC_IPFS_GATEWAY ?? "https://ipfs.io/ipfs/",
-              )
-            : url;
-          return defaultUrlTransform(transformed);
-        }}
+        urlTransform={(url) =>
+          transformMarkdownUrl(url, env.VITE_PUBLIC_IPFS_GATEWAY)
+        }
         components={{
           h1: ({ node: _node, ...props }) => (
             <h1 className="realm-prose-h1" {...props} />

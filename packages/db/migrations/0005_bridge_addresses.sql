@@ -38,14 +38,20 @@ BEGIN
 END;
 $$;
 
-UPDATE realms_bridge_requests
+UPDATE realms_bridge_requests AS request
 SET
   from_address = to_address,
   to_address = from_address
 WHERE
   from_chain IN ('0x534e5f4d41494e', '0x534e5f5345504f4c4941')
-  AND length(regexp_replace(lower(from_address), '^0x0*', '')) <= 40
-  AND length(regexp_replace(lower(to_address), '^0x0*', '')) > 40;
+  AND EXISTS (
+    SELECT 1
+    FROM realms_bridge_events AS event
+    WHERE
+      event._id = request._id
+      AND event.hash = request.tx_hash
+      AND event.type IN ('withdraw_available_l1', 'withdraw_completed_l1')
+  );
 
 UPDATE realms_bridge_requests
 SET

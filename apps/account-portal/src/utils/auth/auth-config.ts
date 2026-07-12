@@ -4,6 +4,8 @@ interface AuthRuntimeEnvironment {
   secret?: string;
 }
 
+const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
+
 export interface AuthRuntimeConfig {
   baseURL: string;
   secret: string | undefined;
@@ -21,7 +23,17 @@ export function resolveAuthRuntimeConfig({
     throw new Error("VITE_BASE_URL is required in production");
   }
 
-  const baseURL = new URL(baseUrl ?? "http://localhost:3000").origin;
+  const parsedBaseUrl = new URL(baseUrl ?? "http://localhost:3000");
+
+  if (
+    isProduction &&
+    parsedBaseUrl.protocol !== "https:" &&
+    !LOOPBACK_HOSTS.has(parsedBaseUrl.hostname)
+  ) {
+    throw new Error("VITE_BASE_URL must use HTTPS in production");
+  }
+
+  const baseURL = parsedBaseUrl.origin;
 
   if (isProduction && (!secret || secret.length < 32)) {
     throw new Error(

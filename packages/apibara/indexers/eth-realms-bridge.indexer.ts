@@ -1,4 +1,3 @@
-//import type { ApibaraRuntimeConfig } from "apibara/types";
 import type { ApibaraRuntimeConfig } from "apibara/types";
 import { EvmStream } from "@apibara/evm";
 import { defineIndexer } from "@apibara/indexer";
@@ -18,9 +17,12 @@ import {
   realmsBridgeRequests,
 } from "@realms-world/db/schema";
 
+import type { BridgeEventType } from "./bridge-request-id";
 import { env } from "../env";
 import {
+  BRIDGE_STORAGE_ID_COLUMNS,
   bridgeAccountsFromMessagingPayload,
+  buildBridgeEventId,
   buildBridgeRequestIdFromMessagingPayload,
   toDatabaseTokenIds,
 } from "./bridge-request-id";
@@ -36,6 +38,12 @@ const chainId =
   env.VITE_PUBLIC_CHAIN === "sepolia" ? ChainId.SEPOLIA : ChainId.MAINNET;
 const l2ChainId =
   env.VITE_PUBLIC_CHAIN === "sepolia" ? ChainId.SN_SEPOLIA : ChainId.SN_MAIN;
+const eventTypeMap = {
+  LogMessageToL2: "deposit_initiated_l1",
+  ConsumedMessageToL2: "withdraw_completed_l2",
+  LogMessageToL1: "withdraw_available_l1",
+  ConsumedMessageToL1: "withdraw_completed_l1",
+} as const satisfies Record<string, BridgeEventType>;
 
 export default function (_runtimeConfig: ApibaraRuntimeConfig) {
   return defineIndexer(EvmStream)({
@@ -103,7 +111,7 @@ export default function (_runtimeConfig: ApibaraRuntimeConfig) {
       drizzleStorage({
         db: db,
         persistState: true,
-        idColumn: "_id",
+        idColumn: BRIDGE_STORAGE_ID_COLUMNS,
         indexerName: "eth-realms-bridge",
       }),
     ],
@@ -170,17 +178,11 @@ export default function (_runtimeConfig: ApibaraRuntimeConfig) {
           })
           .onConflictDoNothing();
 
-        const eventTypeMap = {
-          LogMessageToL2: "deposit_initiated_l1",
-          ConsumedMessageToL2: "withdraw_completed_l2",
-          LogMessageToL1: "withdraw_available_l1",
-          ConsumedMessageToL1: "withdraw_completed_l1",
-        } as const;
-
         const eventType = eventTypeMap[decoded.eventName];
         await db
           .insert(realmsBridgeEvents)
           .values({
+            _event_id: buildBridgeEventId(requestId, eventType),
             timestamp: header.timestamp,
             hash: log.transactionHash,
             type: eventType,

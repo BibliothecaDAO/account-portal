@@ -15,6 +15,7 @@ import {
   consumeSiwsNonce,
   issueSiwsNonce,
   isTrustedSiwsOrigin,
+  toPublicSiwsError,
 } from "./siws-security";
 
 const nonceStore: SiwsNonceStore = {
@@ -229,12 +230,7 @@ export const siws = (options: SIWSPluginOptions) =>
             return ctx.json({ token: session.token });
           } catch (error: unknown) {
             if (error instanceof APIError) throw error;
-            const message =
-              error instanceof Error ? error.message : "Unknown error";
-            throw new APIError("UNAUTHORIZED", {
-              message: "Something went wrong. Please try again later.",
-              error: message,
-            });
+            throw new APIError("UNAUTHORIZED", toPublicSiwsError(error));
           }
         },
       ),

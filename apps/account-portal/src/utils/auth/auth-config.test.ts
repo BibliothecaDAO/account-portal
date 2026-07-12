@@ -19,6 +19,14 @@ describe("resolveAuthRuntimeConfig", () => {
         secret: "too-short",
       }),
     ).toThrow("BETTER_AUTH_SECRET");
+
+    expect(() =>
+      resolveAuthRuntimeConfig({
+        nodeEnv: "production",
+        baseUrl: "http://portal.realms.world",
+        secret: "a".repeat(32),
+      }),
+    ).toThrow("HTTPS");
   });
 
   it("returns a canonical trusted origin", () => {
@@ -47,5 +55,15 @@ describe("resolveAuthRuntimeConfig", () => {
       secret: undefined,
       trustedOrigins: ["http://localhost:3000"],
     });
+  });
+
+  it("allows loopback HTTP for production artifact smoke tests", () => {
+    expect(
+      resolveAuthRuntimeConfig({
+        nodeEnv: "production",
+        baseUrl: "http://127.0.0.1:3000",
+        secret: "a".repeat(32),
+      }).baseURL,
+    ).toBe("http://127.0.0.1:3000");
   });
 });

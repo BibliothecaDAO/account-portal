@@ -6,6 +6,7 @@ import {
   createSiwsNonce,
   issueSiwsNonce,
   isTrustedSiwsOrigin,
+  toPublicSiwsError,
 } from "./siws-security";
 
 describe("createSiwsNonce", () => {
@@ -112,5 +113,18 @@ describe("consumeSiwsNonce", () => {
         now: new Date("2026-07-12T02:00:01.000Z"),
       }),
     ).rejects.toThrow("Invalid or expired SIWS nonce");
+  });
+});
+
+describe("toPublicSiwsError", () => {
+  it("does not expose internal authentication errors", () => {
+    const result = toPublicSiwsError(
+      new Error("password authentication failed for database production"),
+    );
+
+    expect(result).toEqual({
+      message: "Something went wrong. Please try again later.",
+    });
+    expect(JSON.stringify(result)).not.toContain("database production");
   });
 });

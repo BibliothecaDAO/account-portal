@@ -51,24 +51,21 @@ export function useVoteProposal(proposal: ProposalFieldsFragment) {
       if (proposalId === null) return null;
 
       let pinned: { cid: string; provider: string } | null = null;
-      if (reason) pinned = await pinToIPFS({ reason });
-
-      try {
-        return await sendAsync([
-          contract.populate("authenticate_vote", [
-            proposal.space.id,
-            address as string,
-            proposalId,
-            getChoiceEnum(selectedChoice),
-            [{ index: 0, params: [] }], // ERC20Votes strategy
-            pinned ? shortString.splitLongString(`ipfs://${pinned.cid}`) : [],
-          ]),
-        ]);
-        // You'll need to adjust these parameters based on your contract's requirements
-      } catch (error) {
-        console.error("Error voting on proposal:", error);
-        return null;
+      if (reason) {
+        pinned = await pinToIPFS({ reason });
+        if (!pinned) return null;
       }
+
+      return sendAsync([
+        contract.populate("authenticate_vote", [
+          proposal.space.id,
+          address as string,
+          proposalId,
+          getChoiceEnum(selectedChoice),
+          [{ index: 0, params: [] }], // ERC20Votes strategy
+          pinned ? shortString.splitLongString(`ipfs://${pinned.cid}`) : [],
+        ]),
+      ]);
     },
     [
       contract,

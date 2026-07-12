@@ -21,6 +21,10 @@ import { useCurrentDelegate } from "@/hooks/governance/use-current-delegate";
 import { useL2RealmsClaims } from "@/hooks/use-l2-realms-claims";
 import useVeLordsClaims from "@/hooks/use-velords-claims";
 import { getAccountTokensQueryOptions } from "@/lib/eternum/getPortfolioCollections";
+import {
+  formatErc20Balance,
+  getErc20BalanceReadConfig,
+} from "@/lib/ethereum/erc20-balance";
 import { getDelegateByIDQueryOptions } from "@/lib/getDelegates";
 import { getL1UsersRealmsQueryOptions } from "@/lib/getL1Realms";
 import {
@@ -57,16 +61,6 @@ const HOMEPAGE_REALMS_PREVIEW_COUNT = 5;
 
 const INTERACTIVE_ROW_CLASS =
   "realm-interactive-row group hover:bg-accent/70 rounded-lg p-4 transition-colors hover:border-[color:var(--realm-accent-brass)]";
-
-const ERC20_BALANCE_ABI = [
-  {
-    type: "function",
-    name: "balanceOf",
-    stateMutability: "view",
-    inputs: [{ name: "account", type: "address" }],
-    outputs: [{ name: "balance", type: "uint256" }],
-  },
-] as const;
 
 function StatValue({ children }: { children: React.ReactNode }) {
   return <div className="realm-stat text-3xl font-bold">{children}</div>;
@@ -109,13 +103,12 @@ export function Homepage({ address }: { address: `0x${string}` }) {
     token: LORDS[SUPPORTED_L2_CHAIN_ID]?.address as Address,
     watch: true,
   });
-  const { data: l1Balance } = useL1ReadContract({
-    address: LORDS[SUPPORTED_L1_CHAIN_ID]?.address as `0x${string}`,
-    abi: ERC20_BALANCE_ABI,
-    functionName: "balanceOf",
-    args: l1Address ? [l1Address] : undefined,
-    query: { enabled: !!l1Address },
-  });
+  const { data: l1Balance } = useL1ReadContract(
+    getErc20BalanceReadConfig(
+      l1Address,
+      LORDS[SUPPORTED_L1_CHAIN_ID]?.address as `0x${string}` | undefined,
+    ),
+  );
 
   const { lordsClaimable, claimCall } = useVeLordsClaims();
 
@@ -206,7 +199,7 @@ export function Homepage({ address }: { address: `0x${string}` }) {
               <div className="flex items-center justify-between">
                 <div>
                   <StatValue>
-                    {formatNumber(Number(formatEther(l1Balance ?? 0n)))}
+                    {formatNumber(formatErc20Balance(l1Balance))}
                   </StatValue>
                   <div className="text-muted-foreground flex items-center gap-2 text-sm">
                     <EthereumIcon className="h-4 w-4" />

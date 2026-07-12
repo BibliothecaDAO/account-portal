@@ -125,3 +125,7 @@ export async function consumeSiwsNonce({
     throw new Error("Invalid or expired SIWS nonce");
   }
 }
+
+export function toPublicSiwsError(_error: unknown): { message: string } {
+  return { message: "Something went wrong. Please try again later." };
+}

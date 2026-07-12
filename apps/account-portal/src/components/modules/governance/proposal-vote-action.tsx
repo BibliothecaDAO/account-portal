@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useVoteProposal } from "@/hooks/governance/use-vote-proposal";
 import { useStarknetWallet } from "@/hooks/use-starknet-wallet";
+import { normalizeProposalMetadata } from "@/lib/snapshot/proposal-metadata";
 import { Choice } from "@/types/snapshot";
 import { useAccount } from "@starknet-start/react";
 import { Check, Minus, X } from "lucide-react";
@@ -26,9 +27,10 @@ export const ProposalVoteAction = ({
   const { vote, selectedChoice, setSelectedChoice } = useVoteProposal(proposal);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [voteReason, setVoteReason] = useState("");
+  const [voteError, setVoteError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const proposalTitle =
-    (proposal as { metadata?: { title?: string } }).metadata?.title ??
-    "this proposal";
+    normalizeProposalMetadata(proposal.metadata).title ?? "this proposal";
   const { address } = useAccount();
   const { openStarknetKitModal } = useStarknetWallet();
 
@@ -38,6 +40,7 @@ export const ProposalVoteAction = ({
     }
 
     setSelectedChoice(choice);
+    setVoteError(null);
     setVoteReason(
       choice === Choice.For
         ? "I support this proposal"
@@ -49,14 +52,18 @@ export const ProposalVoteAction = ({
   };
 
   const handleVoteSubmit = async () => {
-    if (selectedChoice !== null) {
-      await vote(voteReason)
-        .then(() => {
-          setDialogOpen(false);
-        })
-        .catch((error) => {
-          console.error("Error submitting vote:", error);
-        });
+    if (selectedChoice === null || isSubmitting) return;
+
+    setIsSubmitting(true);
+    setVoteError(null);
+    try {
+      const result = await vote(voteReason);
+      if (!result) throw new Error("Vote was not submitted");
+      setDialogOpen(false);
+    } catch {
+      setVoteError("Your vote was not submitted. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -92,7 +99,12 @@ export const ProposalVoteAction = ({
         </Button>
       </div>
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Dialog
+        open={dialogOpen}
+        onOpenChange={(open) => {
+          if (!isSubmitting) setDialogOpen(open);
+        }}
+      >
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Confirm Your Vote</DialogTitle>
@@ -103,6 +115,7 @@ export const ProposalVoteAction = ({
 
           <div className="grid gap-4 py-4">
             <RadioGroup
+              disabled={isSubmitting}
               value={selectedChoice?.toString()}
               onValueChange={(value) =>
                 setSelectedChoice(Number(value) as Choice)
@@ -155,19 +168,31 @@ export const ProposalVoteAction = ({
             <div className="grid gap-2">
               <Label htmlFor="vote-reason">Reason for your vote</Label>
               <Input
+                disabled={isSubmitting}
                 id="vote-reason"
                 value={voteReason}
                 onChange={(e) => setVoteReason(e.target.value)}
                 placeholder="Enter your reason for voting this way"
               />
             </div>
+            {voteError && (
+              <p role="alert" className="text-destructive text-sm">
+                {voteError}
+              </p>
+            )}
           </div>
 
           <DialogFooter>
-            <Button onClick={() => setDialogOpen(false)} variant="outline">
+            <Button
+              onClick={() => setDialogOpen(false)}
+              variant="outline"
+              disabled={isSubmitting}
+            >
               Cancel
             </Button>
-            <Button onClick={handleVoteSubmit}>Submit Vote</Button>
+            <Button onClick={handleVoteSubmit} disabled={isSubmitting}>
+              {isSubmitting ? "Submitting…" : "Submit Vote"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

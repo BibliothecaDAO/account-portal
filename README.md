@@ -22,7 +22,7 @@ Features include:
 
 ## Local development
 
-Prerequisites are Node.js 20.16 or newer and pnpm 10.30.3.
+Prerequisites are Node.js 22.12 or newer and pnpm 10.30.3.
 
 ```sh
 cp .env.example .env

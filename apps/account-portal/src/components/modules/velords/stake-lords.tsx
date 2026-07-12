@@ -1,6 +1,5 @@
 import type { ChartConfig } from "@/components/ui/chart";
 import type { Address } from "@starknet-start/react";
-import type { BlockNumber } from "starknet";
 import { useMemo } from "react";
 import { VeLords } from "@/abi/L2/VeLords";
 import LordsIcon from "@/components/icons/lords.svg?react";
@@ -18,6 +17,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
+import { STAKING_READ_BLOCK_IDENTIFIER } from "@/lib/staking/read-block";
 import {
   abbreviateNumber,
   formatNumber,
@@ -31,7 +31,6 @@ import {
   useSendTransaction,
 } from "@starknet-start/react";
 import { Label, PolarRadiusAxis, RadialBar, RadialBarChart } from "recharts";
-import { BlockTag } from "starknet";
 import { formatEther } from "viem";
 
 import { LORDS, StakingAddresses } from "@realms-world/constants";
@@ -68,7 +67,7 @@ export const StakeLords = () => {
     //enabled: !!l2Address,
     watch: true,
     args: address ? [address] : undefined,
-    blockIdentifier: BlockTag.PRE_CONFIRMED as BlockNumber,
+    blockIdentifier: STAKING_READ_BLOCK_IDENTIFIER,
   });
   const { contract: veLordsContract } = useContract({
     abi: VeLords,

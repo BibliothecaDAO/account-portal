@@ -1,6 +1,7 @@
 import type { ProposalFieldsFragment } from "@/gql/snapshot/graphql";
 import { Progress } from "@/components/ui/progress";
 import { useStarkDisplayName } from "@/hooks/use-stark-name";
+import { normalizeProposalMetadata } from "@/lib/snapshot/proposal-metadata";
 import { shortenAddress } from "@/utils/utils";
 import { Link } from "@tanstack/react-router";
 import { formatDistanceToNow } from "date-fns";
@@ -16,6 +17,7 @@ export const ProposalListItem = ({
   voteChoice?: number;
 }) => {
   const name = useStarkDisplayName(proposal.author.id as `0x${string}`);
+  const proposalTitle = normalizeProposalMetadata(proposal.metadata).title;
 
   function getProposalId(proposal: ProposalFieldsFragment) {
     const proposalId = proposal.proposal_id.toString();
@@ -46,7 +48,7 @@ export const ProposalListItem = ({
         <div className="flex flex-col gap-2">
           <div className="flex flex-col gap-1">
             <h4 className="realm-card-title line-clamp-2">
-              {proposal.metadata?.title ?? `Proposal #${proposal.id}`}
+              {proposalTitle ?? `Proposal #${proposal.id}`}
             </h4>
             <div className="text-muted-foreground text-sm">
               {getProposalId(proposal)} by{" "}

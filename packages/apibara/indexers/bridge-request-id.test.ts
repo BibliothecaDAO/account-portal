@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  BRIDGE_STORAGE_ID_COLUMNS,
   bridgeAccountsFromMessagingPayload,
+  buildBridgeEventId,
   buildBridgeRequestId,
   buildBridgeRequestIdFromMessagingPayload,
   toDatabaseTokenIds,
@@ -21,6 +23,19 @@ describe("bridge request identifiers", () => {
         tokenIds: [tokenId],
       }),
     );
+  });
+
+  it("uses a distinct rollback identity for each request lifecycle event", () => {
+    expect(buildBridgeEventId("request-1", "deposit_initiated_l1")).toBe(
+      "request-1:deposit_initiated_l1",
+    );
+    expect(buildBridgeEventId("request-1", "withdraw_completed_l2")).toBe(
+      "request-1:withdraw_completed_l2",
+    );
+    expect(BRIDGE_STORAGE_ID_COLUMNS).toEqual({
+      "*": "_id",
+      realms_bridge_events: "_event_id",
+    });
   });
 });
 
