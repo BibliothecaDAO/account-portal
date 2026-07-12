@@ -25,8 +25,7 @@ ALTER TABLE realms_lords_claims
   ADD COLUMN IF NOT EXISTS _id text;
 
 UPDATE realms_lords_claims
-SET _id = hash || ':legacy:' || amount::text
-WHERE _id IS NULL;
+SET _id = hash || ':legacy:' || amount::text;
 
 SELECT pg_temp.drop_primary_key('realms_lords_claims'::regclass);
 ALTER TABLE realms_lords_claims

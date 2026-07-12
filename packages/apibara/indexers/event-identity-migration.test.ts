@@ -43,7 +43,8 @@ describe("event identity migration", () => {
         PRIMARY KEY (amount, transaction_hash)
       );
       INSERT INTO realms_lords_claims VALUES
-        ('0xclaim', '0xclaim', 10, '0x1', '2026-01-01');
+        ('0xclaim', '0xclaim', 10, '0x1', '2026-01-01'),
+        ('0xclaim', '0xclaim', 20, '0x1', '2026-01-02');
       INSERT INTO velords_rewards_received VALUES
         ('0x1', 10, '0xreward', '2026-01-01');
       INSERT INTO velords_lords_locked VALUES
@@ -62,6 +63,14 @@ describe("event identity migration", () => {
       "SELECT _id FROM velords_rewards_received",
     );
     expect(migrated.rows).toEqual([{ _id: "0xreward:legacy:10" }]);
+
+    const claims = await client.query<{ _id: string }>(
+      "SELECT _id FROM realms_lords_claims ORDER BY _id",
+    );
+    expect(claims.rows).toEqual([
+      { _id: "0xclaim:legacy:10" },
+      { _id: "0xclaim:legacy:20" },
+    ]);
 
     await client.exec(`
       INSERT INTO velords_rewards_received
