@@ -12,7 +12,8 @@
     "build": "pnpm --filter @realms-world/account-portal build && pnpm --filter @realms-world/apibara build",
     "test": "pnpm --recursive --if-present run test",
     "typecheck": "pnpm --recursive --if-present run typecheck",
-    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm smoke",
+    "format:check": "pnpm -r --filter '!@realms-world/apibara' --if-present run format",
+    "check": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm test && pnpm build && pnpm smoke",
     "smoke": "pnpm --filter @realms-world/account-portal smoke:production",
     "apibara:start": "pnpm --filter @realms-world/apibara start",
     "apibara:build": "pnpm --filter @realms-world/apibara build",
@@ -91,7 +92,7 @@
     "catalog": {
       "eslint": "^9.39.2",
       "prettier": "^3.8.1",
-      "zod": "^3.25.76",
+      "zod": "4.4.3",
       "dotenv-cli": "^7.4.4",
       "starknet": "^9.2.1",
       "viem": "^2.45.3",

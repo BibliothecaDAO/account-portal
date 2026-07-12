@@ -57,12 +57,21 @@ describe("resolveAuthRuntimeConfig", () => {
     });
   });
 
-  it("allows loopback HTTP for production artifact smoke tests", () => {
+  it("allows loopback HTTP only with the explicit smoke-test option", () => {
+    expect(() =>
+      resolveAuthRuntimeConfig({
+        nodeEnv: "production",
+        baseUrl: "http://127.0.0.1:3000",
+        secret: "a".repeat(32),
+      }),
+    ).toThrow("HTTPS");
+
     expect(
       resolveAuthRuntimeConfig({
         nodeEnv: "production",
         baseUrl: "http://127.0.0.1:3000",
         secret: "a".repeat(32),
+        allowInsecureLoopback: true,
       }).baseURL,
     ).toBe("http://127.0.0.1:3000");
   });

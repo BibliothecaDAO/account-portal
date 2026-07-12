@@ -48,7 +48,7 @@ jobs:
         run: pnpm lint
 
       - name: Format check
-        run: pnpm -r --filter '!@realms-world/apibara' --if-present run format
+        run: pnpm format:check
 
       - name: Typecheck
         run: pnpm typecheck

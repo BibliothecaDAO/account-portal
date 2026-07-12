@@ -17,5 +17,17 @@ WHERE id IN (
   WHERE row_number > 1
 );
 
-ALTER TABLE verification
-  ADD CONSTRAINT verification_identifier_unique UNIQUE (identifier);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conrelid = 'verification'::regclass
+      AND contype = 'u'
+      AND conname = 'verification_identifier_unique'
+  ) THEN
+    ALTER TABLE verification
+      ADD CONSTRAINT verification_identifier_unique UNIQUE (identifier);
+  END IF;
+END;
+$$;

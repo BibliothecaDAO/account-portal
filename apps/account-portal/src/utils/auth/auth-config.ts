@@ -2,6 +2,7 @@ interface AuthRuntimeEnvironment {
   nodeEnv?: string;
   baseUrl?: string;
   secret?: string;
+  allowInsecureLoopback?: boolean;
 }
 
 const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
@@ -16,6 +17,7 @@ export function resolveAuthRuntimeConfig({
   nodeEnv,
   baseUrl,
   secret,
+  allowInsecureLoopback = false,
 }: AuthRuntimeEnvironment): AuthRuntimeConfig {
   const isProduction = nodeEnv === "production";
 
@@ -28,7 +30,7 @@ export function resolveAuthRuntimeConfig({
   if (
     isProduction &&
     parsedBaseUrl.protocol !== "https:" &&
-    !LOOPBACK_HOSTS.has(parsedBaseUrl.hostname)
+    !(allowInsecureLoopback && LOOPBACK_HOSTS.has(parsedBaseUrl.hostname))
   ) {
     throw new Error("VITE_BASE_URL must use HTTPS in production");
   }

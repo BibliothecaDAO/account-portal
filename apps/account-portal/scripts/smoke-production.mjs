@@ -8,6 +8,7 @@ const server = spawn(process.execPath, [".output/server/index.mjs"], {
   cwd: appDirectory,
   env: {
     ...process.env,
+    ACCOUNT_PORTAL_PRODUCTION_SMOKE_TEST: "true",
     BETTER_AUTH_SECRET: "smoke-test-secret-with-at-least-32-characters",
     HOST: "127.0.0.1",
     PORT: String(port),

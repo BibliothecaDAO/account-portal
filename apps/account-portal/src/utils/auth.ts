@@ -11,6 +11,8 @@ const authRuntime = resolveAuthRuntimeConfig({
   nodeEnv: process.env.NODE_ENV,
   baseUrl: env.VITE_BASE_URL,
   secret: process.env.BETTER_AUTH_SECRET,
+  allowInsecureLoopback:
+    process.env.ACCOUNT_PORTAL_PRODUCTION_SMOKE_TEST === "true",
 });
 
 export const auth = betterAuth({

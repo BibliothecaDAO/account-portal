@@ -49,8 +49,6 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-// Helper function to abbreviate numbers
-
 export const StakeLords = () => {
   const { address } = useAccount();
   const { data } = useBalance({
@@ -64,7 +62,6 @@ export const StakeLords = () => {
     address: veLordsAddress as Address,
     abi: VeLords,
     functionName: "get_lock_for",
-    //enabled: !!l2Address,
     watch: true,
     args: address ? [address] : undefined,
     blockIdentifier: STAKING_READ_BLOCK_IDENTIFIER,

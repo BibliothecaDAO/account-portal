@@ -1,4 +1,4 @@
-CREATE TABLE rate_limit (
+CREATE TABLE IF NOT EXISTS rate_limit (
   id text PRIMARY KEY,
   key text NOT NULL UNIQUE,
   count integer NOT NULL,
