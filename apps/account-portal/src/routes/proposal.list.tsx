@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { Suspense } from "react";
 import SnapshotLogo from "@/components/icons/snapshot.svg?react";
 import { ProposalList } from "@/components/modules/governance/proposal-list";
@@ -28,7 +29,6 @@ export const Route = createFileRoute("/proposal/list")({
         spaceIds: [SnapshotSpaceAddresses[SUPPORTED_L2_CHAIN_ID] as string],
         limit: 20,
         skip: 0,
-        current: 1,
         searchQuery: "",
       }),
     );
@@ -52,10 +52,12 @@ function RouteComponent() {
 
   return (
     <SidebarProvider
-      style={{
-        "--sidebar-width": "30rem",
-        "--sidebar-width-mobile": "20rem",
-      }}
+      style={
+        {
+          "--sidebar-width": "30rem",
+          "--sidebar-width-mobile": "20rem",
+        } as CSSProperties
+      }
     >
       <SidebarInset>
         <div className="container space-y-3 px-4 py-6 sm:px-6 sm:py-8">

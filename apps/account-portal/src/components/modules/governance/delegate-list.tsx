@@ -13,7 +13,6 @@ function DelegateList({
   const delegatesQuery = useSuspenseQuery(
     getDelegatesQueryOptions({
       limit: 200,
-      cursor: 0,
       search: searchQuery.toLowerCase(),
       orderBy: sortMethod,
     }),

@@ -1,3 +1,4 @@
+import type { DelegateProfileInput } from "@/lib/governance/delegate-input";
 import { LoginCard } from "@/components/layout/login-card";
 import { DelegateProfileForm } from "@/components/modules/governance/delegate-profile-form";
 import { Login } from "@/components/modules/governance/sign-in-with-starknet";
@@ -13,46 +14,54 @@ import {
   SidebarProvider,
 } from "@/components/ui/sidebar";
 import { useStarkDisplayName } from "@/hooks/use-stark-name";
+import { useToast } from "@/hooks/use-toast";
 import {
   createDelegateProfile,
   getDelegateByIDQueryOptions,
 } from "@/lib/getDelegates";
-import { auth } from "@/utils/auth";
 import { authClient } from "@/utils/auth-client";
 import { formatNumber, shortenAddress } from "@/utils/utils";
 import { useAccount } from "@starknet-start/react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { createServerFn } from "@tanstack/react-start";
-import { getRequest } from "@tanstack/react-start/server";
 import { Users, Vote } from "lucide-react";
-
-const getUser = createServerFn({ method: "GET" }).handler(async () => {
-  const { headers } = getRequest();
-  const session = await auth.api.getSession({ headers });
-
-  return session?.session.id ?? null;
-});
 
 export const Route = createFileRoute("/delegate/profile")({
   component: RouteComponent,
-  beforeLoad: async ({ context }) => {
-    const session = await context.queryClient.fetchQuery({
-      queryKey: ["user"],
-      queryFn: ({ signal }) => getUser({ signal }),
-    }); // we're using react-query for caching, see router.tsx
-    return { session };
-  },
 });
 
 function RouteComponent() {
   const { address } = useAccount();
-  const { data: delegate, isLoading } = useQuery(
-    getDelegateByIDQueryOptions({ address: address }),
-  );
-  const name = useStarkDisplayName(address as `0x${string}`);
-
   const { data: session } = authClient.useSession();
+  const profileAddress = session?.user.id;
+  const { data: delegate, isLoading } = useQuery(
+    getDelegateByIDQueryOptions({ address: profileAddress }),
+  );
+  const name = useStarkDisplayName(profileAddress as `0x${string}`);
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const saveProfile = useMutation({
+    mutationFn: async (
+      data: DelegateProfileInput & { interests: string[] },
+    ) => {
+      const result = await createDelegateProfile({ data });
+      if (!result.success) throw new Error("session-expired");
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["getDelegateByID"] });
+      toast({ description: "Delegate profile saved." });
+    },
+    onError: (error) => {
+      toast({
+        variant: "destructive",
+        description:
+          error instanceof Error && error.message === "session-expired"
+            ? "Your session expired. Sign in again before saving."
+            : "Unable to save your delegate profile. Please try again.",
+      });
+    },
+  });
 
   if (!address) {
     return <LoginCard />;
@@ -77,6 +86,7 @@ function RouteComponent() {
             <Card>
               <CardContent className="p-6">
                 <DelegateProfileForm
+                  isSubmitting={saveProfile.isPending}
                   delegate={
                     delegate?.delegateProfile
                       ? {
@@ -92,9 +102,7 @@ function RouteComponent() {
                         }
                       : undefined
                   }
-                  onSubmit={async (data) => {
-                    await createDelegateProfile({ data });
-                  }}
+                  onSubmit={(data) => saveProfile.mutateAsync(data)}
                 />
               </CardContent>
             </Card>
@@ -153,56 +161,9 @@ function RouteComponent() {
                     </div>
                   </div>
                 </div>
-
-                {/*<div className="flex items-center gap-3">
-                  <BarChart3 className="text-primary h-5 w-5" />
-                  <div className="flex-1">
-                    <div className="mb-1 flex justify-between">
-                      <span className="text-sm font-medium">
-                        Voting Participation
-                      </span>
-                      <span className="text-muted-foreground text-sm">
-                        {delegate.participationRate || "75"}%
-                      </span>
-                    </div>
-                    <Progress
-                      value={delegate.participationRate || 75}
-                      className="h-2"
-                    />
-                  </div>
-                </div>
-
-                <div className="text-muted-foreground mt-2 text-xs">
-                  <p className="flex justify-between">
-                    <span>Total Proposals Voted:</span>
-                    <span>{delegate.votedProposalsCount || "12"}</span>
-                  </p>
-                  <p className="flex justify-between">
-                    <span>Last Vote:</span>
-                    <span>
-                      {delegate.lastVoteTimestamp
-                        ? new Date(
-                            delegate.lastVoteTimestamp,
-                          ).toLocaleDateString()
-                        : "2 days ago"}
-                    </span>
-                  </p>
-                </div>*/}
               </div>
             </SidebarGroup>
           )}
-
-          {/*<SidebarGroup>
-            <SidebarGroupLabel>Actions</SidebarGroupLabel>
-            <div className="flex flex-col gap-2 p-4">
-              <button className="bg-primary text-primary-foreground hover:bg-primary/90 rounded px-4 py-2 text-sm">
-                Manage Delegations
-              </button>
-              <button className="bg-secondary text-secondary-foreground hover:bg-secondary/90 rounded px-4 py-2 text-sm">
-                View Voting History
-              </button>
-            </div>
-          </SidebarGroup>*/}
         </SidebarContent>
       </Sidebar>
     </SidebarProvider>

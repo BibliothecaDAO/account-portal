@@ -1,4 +1,4 @@
-import type { Proposal } from "@/gql/graphql";
+import type { ProposalFieldsFragment } from "@/gql/snapshot/graphql";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,13 +18,17 @@ import { Choice } from "@/types/snapshot";
 import { useAccount } from "@starknet-start/react";
 import { Check, Minus, X } from "lucide-react";
 
-export const ProposalVoteAction = ({ proposal }: { proposal: Proposal }) => {
+export const ProposalVoteAction = ({
+  proposal,
+}: {
+  proposal: ProposalFieldsFragment;
+}) => {
   const { vote, selectedChoice, setSelectedChoice } = useVoteProposal(proposal);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [voteReason, setVoteReason] = useState("");
   const proposalTitle =
-    ((proposal as { metadata?: { title?: string } }).metadata?.title ??
-      "this proposal");
+    (proposal as { metadata?: { title?: string } }).metadata?.title ??
+    "this proposal";
   const { address } = useAccount();
   const { openStarknetKitModal } = useStarknetWallet();
 
@@ -63,28 +67,28 @@ export const ProposalVoteAction = ({ proposal }: { proposal: Proposal }) => {
           onClick={() => openVoteDialog(Choice.For)}
           variant="outline"
           size="icon"
-          className="rounded-full border-success bg-success/10 hover:bg-success/20"
+          className="border-success bg-success/10 hover:bg-success/20 rounded-full"
           title="Vote FOR"
         >
-          <Check className="h-5 w-5 text-success" />
+          <Check className="text-success h-5 w-5" />
         </Button>
         <Button
           onClick={() => openVoteDialog(Choice.Abstain)}
           variant="outline"
           size="icon"
-          className="rounded-full border-muted-foreground bg-muted hover:bg-muted/80"
+          className="border-muted-foreground bg-muted hover:bg-muted/80 rounded-full"
           title="Vote ABSTAIN"
         >
-          <Minus className="h-5 w-5 text-muted-foreground" />
+          <Minus className="text-muted-foreground h-5 w-5" />
         </Button>
         <Button
           onClick={() => openVoteDialog(Choice.Against)}
           variant="outline"
           size="icon"
-          className="rounded-full border-destructive bg-destructive/10 hover:bg-destructive/20"
+          className="border-destructive bg-destructive/10 hover:bg-destructive/20 rounded-full"
           title="Vote AGAINST"
         >
-          <X className="h-5 w-5 text-destructive" />
+          <X className="text-destructive h-5 w-5" />
         </Button>
       </div>
 
@@ -113,7 +117,7 @@ export const ProposalVoteAction = ({ proposal }: { proposal: Proposal }) => {
                 />
                 <Label
                   htmlFor="vote-for"
-                  className="flex items-center text-success"
+                  className="text-success flex items-center"
                 >
                   <Check className="mr-1 h-4 w-4" /> For
                 </Label>
@@ -127,7 +131,7 @@ export const ProposalVoteAction = ({ proposal }: { proposal: Proposal }) => {
                 />
                 <Label
                   htmlFor="vote-abstain"
-                  className="flex items-center text-muted-foreground"
+                  className="text-muted-foreground flex items-center"
                 >
                   <Minus className="mr-1 h-4 w-4" /> Abstain
                 </Label>
@@ -141,7 +145,7 @@ export const ProposalVoteAction = ({ proposal }: { proposal: Proposal }) => {
                 />
                 <Label
                   htmlFor="vote-against"
-                  className="flex items-center text-destructive"
+                  className="text-destructive flex items-center"
                 >
                   <X className="mr-1 h-4 w-4" /> Against
                 </Label>

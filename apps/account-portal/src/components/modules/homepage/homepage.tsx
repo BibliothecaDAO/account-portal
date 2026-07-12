@@ -1,4 +1,4 @@
-import type { RawTokenBalanceWithMetadata } from "@/lib/eternum/getPortfolioCollections";
+import type { AccountToken } from "@/lib/eternum/getPortfolioCollections";
 import type { Address } from "@starknet-start/react";
 import { Suspense } from "react";
 import { VeLords } from "@/abi/L2/VeLords";
@@ -39,7 +39,10 @@ import { Link } from "@tanstack/react-router";
 import { Gavel, Plus } from "lucide-react";
 import { num } from "starknet";
 import { formatEther } from "viem";
-import { useAccount as useL1Account, useBalance as useL1Balance } from "wagmi";
+import {
+  useAccount as useL1Account,
+  useReadContract as useL1ReadContract,
+} from "wagmi";
 
 import {
   CollectionAddresses,
@@ -54,6 +57,16 @@ const HOMEPAGE_REALMS_PREVIEW_COUNT = 5;
 
 const INTERACTIVE_ROW_CLASS =
   "realm-interactive-row group hover:bg-accent/70 rounded-lg p-4 transition-colors hover:border-[color:var(--realm-accent-brass)]";
+
+const ERC20_BALANCE_ABI = [
+  {
+    type: "function",
+    name: "balanceOf",
+    stateMutability: "view",
+    inputs: [{ name: "account", type: "address" }],
+    outputs: [{ name: "balance", type: "uint256" }],
+  },
+] as const;
 
 function StatValue({ children }: { children: React.ReactNode }) {
   return <div className="realm-stat text-3xl font-bold">{children}</div>;
@@ -96,9 +109,12 @@ export function Homepage({ address }: { address: `0x${string}` }) {
     token: LORDS[SUPPORTED_L2_CHAIN_ID]?.address as Address,
     watch: true,
   });
-  const { data: l1Balance } = useL1Balance({
-    address: l1Address,
-    token: LORDS[SUPPORTED_L1_CHAIN_ID]?.address as Address,
+  const { data: l1Balance } = useL1ReadContract({
+    address: LORDS[SUPPORTED_L1_CHAIN_ID]?.address as `0x${string}`,
+    abi: ERC20_BALANCE_ABI,
+    functionName: "balanceOf",
+    args: l1Address ? [l1Address] : undefined,
+    query: { enabled: !!l1Address },
   });
 
   const { lordsClaimable, claimCall } = useVeLordsClaims();
@@ -190,7 +206,7 @@ export function Homepage({ address }: { address: `0x${string}` }) {
               <div className="flex items-center justify-between">
                 <div>
                   <StatValue>
-                    {formatNumber(Number(l1Balance?.formatted ?? 0))}
+                    {formatNumber(Number(formatEther(l1Balance ?? 0n)))}
                   </StatValue>
                   <div className="text-muted-foreground flex items-center gap-2 text-sm">
                     <EthereumIcon className="h-4 w-4" />
@@ -255,7 +271,10 @@ export function Homepage({ address }: { address: `0x${string}` }) {
                   </div>
                 </Link>
 
-                <Link to={`/velords`}>
+                <Link
+                  to="/velords"
+                  search={{ period: "3m", view: "overview", source: undefined }}
+                >
                   <div className={INTERACTIVE_ROW_CLASS}>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -330,29 +349,7 @@ export function Homepage({ address }: { address: `0x${string}` }) {
                 </CardContent>
               </Card>
             ) : (
-              <DelegateCard
-                delegate={{
-                  user: currentDelegate.user,
-                  delegateProfile: currentDelegate.delegateProfile
-                    ? {
-                        twitter:
-                          currentDelegate.delegateProfile.twitter ?? undefined,
-                        github:
-                          currentDelegate.delegateProfile.github ?? undefined,
-                        telegram:
-                          currentDelegate.delegateProfile.telegram ?? undefined,
-                        discord:
-                          currentDelegate.delegateProfile.discord ?? undefined,
-                        interests:
-                          currentDelegate.delegateProfile.interests ??
-                          undefined,
-                        statement: currentDelegate.delegateProfile.statement,
-                      }
-                    : undefined,
-                  delegatedVotes: currentDelegate.delegatedVotes,
-                  id: currentDelegate.id,
-                }}
-              />
+              <DelegateCard delegate={currentDelegate} />
             )}
           </div>
         </div>
@@ -392,7 +389,7 @@ export function Homepage({ address }: { address: `0x${string}` }) {
                 <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
                   {accountTokens
                     .slice(0, HOMEPAGE_REALMS_PREVIEW_COUNT)
-                    .map((realm: RawTokenBalanceWithMetadata) => (
+                    .map((realm: AccountToken) => (
                       <RealmCard
                         key={realm.token_id}
                         token={realm}
@@ -408,7 +405,10 @@ export function Homepage({ address }: { address: `0x${string}` }) {
                         <div className="text-center">
                           <Plus className="text-muted-foreground mx-auto h-8 w-8" />
                           <div className="text-muted-foreground mt-2 text-sm">
-                            +{accountTokens.length - HOMEPAGE_REALMS_PREVIEW_COUNT} more
+                            +
+                            {accountTokens.length -
+                              HOMEPAGE_REALMS_PREVIEW_COUNT}{" "}
+                            more
                           </div>
                         </div>
                       </Link>

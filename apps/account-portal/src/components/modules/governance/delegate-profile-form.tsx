@@ -1,3 +1,4 @@
+import type { DelegateProfileInput } from "@/lib/governance/delegate-input";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -10,28 +11,17 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import {
+  DELEGATE_INTERESTS,
+  DelegateProfileInputSchema,
+} from "@/lib/governance/delegate-input";
 import { authClient } from "@/utils/auth-client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import * as z from "zod";
 
 import { Login } from "./sign-in-with-starknet";
 
-// Define a Zod schema for editing the profile.
-// Note: We use a simple string for interests which will be split into an array in the submit handler.
-const editProfileSchema = z.object({
-  statement: z.string().min(1, "Statement is required"),
-  interests: z.string().array().optional(),
-  twitter: z.string().optional(),
-  github: z.string().optional(),
-  telegram: z.string().optional(),
-  discord: z.string().optional(),
-});
-
-type EditProfileValues = z.infer<typeof editProfileSchema>;
-
 interface EditProfileFormProps {
-  // You can pass initial form values when editing an existing profile.
   delegate?: {
     delegateProfile: {
       statement: string;
@@ -42,34 +32,18 @@ interface EditProfileFormProps {
       discord: string;
     };
   };
-  // The onSubmit callback returns the values with interests converted to a string array.
-  onSubmit: (data: EditProfileValues & { interests: string[] }) => void;
+  isSubmitting?: boolean;
+  onSubmit: (
+    data: DelegateProfileInput & { interests: string[] },
+  ) => Promise<void> | void;
 }
-const interests = [
-  { value: "gaming", label: "Gaming" },
-  { value: "game-design", label: "Game Design" },
-  { value: "game-development", label: "Game Development" },
-  { value: "dao", label: "DAO" },
-  { value: "defi", label: "DeFi" },
-  { value: "autonomous-worlds", label: "Autonomous Worlds" },
-  { value: "cybersecurity", label: "Cybersecurity" },
-  { value: "esports", label: "Esports" },
-  { value: "encryption", label: "Encryption" },
-  { value: "ai-in-gaming", label: "AI in Gaming" },
-  { value: "nfts", label: "NFTs" },
-  { value: "economics", label: "Economics" },
-  { value: "cryptography", label: "Cryptography" },
-  { value: "scaling", label: "Scaling" },
-  { value: "starknet", label: "Starknet" },
-  { value: "governance", label: "Governance" },
-  { value: "finance", label: "Finance" },
-];
 export function DelegateProfileForm({
   delegate,
+  isSubmitting = false,
   onSubmit,
 }: EditProfileFormProps) {
-  const form = useForm<EditProfileValues>({
-    resolver: zodResolver(editProfileSchema),
+  const form = useForm<DelegateProfileInput>({
+    resolver: zodResolver(DelegateProfileInputSchema),
     defaultValues: {
       statement: delegate?.delegateProfile.statement ?? "",
       interests: delegate?.delegateProfile.interests ?? [],
@@ -80,10 +54,11 @@ export function DelegateProfileForm({
     },
   });
 
-  function handleFormSubmit(data: EditProfileValues) {
-    onSubmit({ ...data, interests: data.interests ?? [] });
+  function handleFormSubmit(data: DelegateProfileInput) {
+    return onSubmit({ ...data, interests: data.interests ?? [] });
   }
   const { data: session } = authClient.useSession();
+  const isDisabled = !session || isSubmitting;
 
   return (
     <Form {...form}>
@@ -92,7 +67,7 @@ export function DelegateProfileForm({
         className="space-y-8"
       >
         <FormField
-          disabled={!session}
+          disabled={isDisabled}
           control={form.control}
           name="statement"
           render={({ field }) => (
@@ -107,7 +82,7 @@ export function DelegateProfileForm({
         />
 
         <FormField
-          disabled={!session}
+          disabled={isDisabled}
           control={form.control}
           name="interests"
           render={({ field }) => (
@@ -122,7 +97,7 @@ export function DelegateProfileForm({
                   size="sm"
                   className="grid grid-cols-2 justify-start sm:grid-cols-4 lg:grid-cols-6"
                 >
-                  {interests.map(({ value, label }) => (
+                  {DELEGATE_INTERESTS.map(({ value, label }) => (
                     <ToggleGroupItem
                       className="leading-none"
                       key={value}
@@ -140,7 +115,7 @@ export function DelegateProfileForm({
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FormField
-            disabled={!session}
+            disabled={isDisabled}
             control={form.control}
             name="twitter"
             render={({ field }) => (
@@ -155,7 +130,7 @@ export function DelegateProfileForm({
           />
 
           <FormField
-            disabled={!session}
+            disabled={isDisabled}
             control={form.control}
             name="github"
             render={({ field }) => (
@@ -170,7 +145,7 @@ export function DelegateProfileForm({
           />
 
           <FormField
-            disabled={!session}
+            disabled={isDisabled}
             control={form.control}
             name="telegram"
             render={({ field }) => (
@@ -185,7 +160,7 @@ export function DelegateProfileForm({
           />
 
           <FormField
-            disabled={!session}
+            disabled={isDisabled}
             control={form.control}
             name="discord"
             render={({ field }) => (
@@ -202,8 +177,8 @@ export function DelegateProfileForm({
         {!session ? (
           <Login />
         ) : (
-          <Button type="submit" className="w-full">
-            Save Profile
+          <Button type="submit" className="w-full" disabled={isSubmitting}>
+            {isSubmitting ? "Saving Profile…" : "Save Profile"}
           </Button>
         )}
       </form>

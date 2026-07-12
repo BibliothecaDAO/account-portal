@@ -1,3 +1,5 @@
+import { getServerEnvironment } from "@/config/environment";
+import { requestJson } from "@/lib/http/request-json";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
@@ -21,12 +23,18 @@ export interface EthplorerToken {
 const GetLordsInfoInput = z.object({}).optional();
 
 export const getLordsInfo = createServerFn({ method: "GET" })
-  .inputValidator((input: unknown) => GetLordsInfoInput.parse(input))
+  .validator((input: unknown) => GetLordsInfoInput.parse(input))
   .handler(async (_ctx) => {
-    const response = await fetch(
-      `https://api.ethplorer.io/getTokenInfo/0x686f2404e77ab0d9070a46cdfb0b7fecdd2318b0?apiKey=${import.meta.env.VITE_ETHPLORER_APIKEY}&chainId=1`,
+    const { ETHPLORER_API_KEY } = getServerEnvironment();
+    if (!ETHPLORER_API_KEY) {
+      throw new Error("ETHPLORER_API_KEY is required to fetch LORDS pricing");
+    }
+    const url = new URL(
+      "https://api.ethplorer.io/getTokenInfo/0x686f2404e77ab0d9070a46cdfb0b7fecdd2318b0",
     );
-    const data = (await response.json()) as EthplorerToken;
-
-    return data;
+    url.searchParams.set("apiKey", ETHPLORER_API_KEY);
+    url.searchParams.set("chainId", "1");
+    return requestJson<EthplorerToken>(url, {
+      requestName: "Ethplorer LORDS request",
+    });
   });

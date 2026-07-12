@@ -54,14 +54,10 @@ export const realmsBridgeEventsRelations = relations(
   }),
 );
 
-export const realmsLordsClaims = pgTable(
-  "realms_lords_claims",
-  {
-    _id: text("_id"),
-    hash: text("hash").notNull(),
-    amount: numeric("amount", { scale: 0 }).notNull(),
-    recipient: text("recipient").notNull(),
-    timestamp: timestamp({ mode: "string" }).notNull(),
-  },
-  (t) => [primaryKey({ columns: [t.amount, t.hash] })],
-);
+export const realmsLordsClaims = pgTable("realms_lords_claims", {
+  _id: text("_id").notNull().primaryKey(),
+  hash: text("hash").notNull(),
+  amount: numeric("amount", { scale: 0 }).notNull(),
+  recipient: text("recipient").notNull(),
+  timestamp: timestamp({ mode: "string" }).notNull(),
+});

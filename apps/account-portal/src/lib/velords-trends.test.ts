@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import { describe, expect, it } from "vitest";
 
 import {
@@ -110,11 +109,7 @@ describe("buildCumulativeRewardsData", () => {
     const points = buildCumulativeRewardsData(weekRows);
 
     expect(points.map((point) => point.cumulativeRewards)).toEqual([
-      1,
-      3,
-      6,
-      10,
-      15,
+      1, 3, 6, 10, 15,
     ]);
   });
 });

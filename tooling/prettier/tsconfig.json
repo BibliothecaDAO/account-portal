@@ -1,5 +1,13 @@
 {
-  "extends": "@realms-world/tsconfig/base.json",
-  "include": ["."],
-  "exclude": ["node_modules"]
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "noEmit": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "ES2022"
+  },
+  "include": ["index.js"]
 }

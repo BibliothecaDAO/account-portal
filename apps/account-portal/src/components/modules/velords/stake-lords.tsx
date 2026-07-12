@@ -4,6 +4,7 @@ import type { BlockNumber } from "starknet";
 import { useMemo } from "react";
 import { VeLords } from "@/abi/L2/VeLords";
 import LordsIcon from "@/components/icons/lords.svg?react";
+import { StarknetWalletButton } from "@/components/layout/starknet-wallet-button";
 import {
   Card,
   CardContent,
@@ -37,7 +38,6 @@ import { LORDS, StakingAddresses } from "@realms-world/constants";
 
 import { StakeDialog } from "./stake-dialog";
 import { UnlockDialog } from "./unlock-dialog";
-import { StarknetWalletButton } from "@/components/layout/starknet-wallet-button";
 
 const chartConfig = {
   locked: {
@@ -68,7 +68,7 @@ export const StakeLords = () => {
     //enabled: !!l2Address,
     watch: true,
     args: address ? [address] : undefined,
-    blockIdentifier: BlockTag.PENDING as BlockNumber,
+    blockIdentifier: BlockTag.PRE_CONFIRMED as BlockNumber,
   });
   const { contract: veLordsContract } = useContract({
     abi: VeLords,
@@ -97,8 +97,7 @@ export const StakeLords = () => {
   );
   const totalLords = useMemo(() => {
     return (
-      Number(formatEther(BigInt(ownerLordsLock?.amount ?? 0n))) +
-      availableLords
+      Number(formatEther(BigInt(ownerLordsLock?.amount ?? 0n))) + availableLords
     );
   }, [availableLords, ownerLordsLock?.amount]);
 
@@ -110,111 +109,121 @@ export const StakeLords = () => {
           Your balances of locked and unlocked $LORDS
         </CardDescription>
       </CardHeader>
-      {address ? <><div className="flex flex-col items-center sm:flex-row">
-        <Card className="mt-4 sm:ml-8 sm:mt-0">
-          <CardContent className="realm-stat flex items-center px-4 pb-0 pt-2 text-lg font-semibold md:text-2xl">
-            <LordsIcon className="mr-2 h-6 w-6" />
-            {formatNumber(availableLords)}
-          </CardContent>
-          <CardFooter className="text-muted-foreground px-4 pb-3 text-sm">
-            Lords Available
-          </CardFooter>
-        </Card>
-        <ChartContainer
-          config={chartConfig}
-          className="relative h-[180px] w-full"
-        >
-          <RadialBarChart
-            accessibilityLayer
-            data={chartData}
-            endAngle={180}
-            innerRadius={80}
-            outerRadius={130}
-            cx={"50%"}
-            cy={"70%"}
-          >
-            <ChartTooltip
-              cursor={false}
-              content={
-                <ChartTooltipContent hideLabel className="ml-2 min-w-[180px]" />
-              }
-            />
+      {address ? (
+        <>
+          <div className="flex flex-col items-center sm:flex-row">
+            <Card className="mt-4 sm:mt-0 sm:ml-8">
+              <CardContent className="realm-stat flex items-center px-4 pt-2 pb-0 text-lg font-semibold md:text-2xl">
+                <LordsIcon className="mr-2 h-6 w-6" />
+                {formatNumber(availableLords)}
+              </CardContent>
+              <CardFooter className="text-muted-foreground px-4 pb-3 text-sm">
+                Lords Available
+              </CardFooter>
+            </Card>
+            <ChartContainer
+              config={chartConfig}
+              className="relative h-[180px] w-full"
+            >
+              <RadialBarChart
+                accessibilityLayer
+                data={chartData}
+                endAngle={180}
+                innerRadius={80}
+                outerRadius={130}
+                cx={"50%"}
+                cy={"70%"}
+              >
+                <ChartTooltip
+                  cursor={false}
+                  content={
+                    <ChartTooltipContent
+                      hideLabel
+                      className="ml-2 min-w-[180px]"
+                    />
+                  }
+                />
 
-            <PolarRadiusAxis tick={false} tickLine={false} axisLine={false}>
-              <Label
-                content={({ viewBox }) => {
-                  if (viewBox && "cx" in viewBox && "cy" in viewBox) {
-                    return (
-                          <text x={viewBox.cx} y={viewBox.cy} textAnchor="middle">
+                <PolarRadiusAxis tick={false} tickLine={false} axisLine={false}>
+                  <Label
+                    content={({ viewBox }) => {
+                      if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                        return (
+                          <text
+                            x={viewBox.cx}
+                            y={viewBox.cy}
+                            textAnchor="middle"
+                          >
                             <tspan
                               x={viewBox.cx}
                               y={viewBox.cy + 15}
                               className="fill-foreground text-lg font-bold"
                             >
-                          {ownerLordsLock?.amount
-                            ? abbreviateNumber(
-                                formatEther(BigInt(ownerLordsLock.amount)),
-                              )
-                            : "0"}{" "}
-                          /{abbreviateNumber(totalLords)}
-                        </tspan>
+                              {ownerLordsLock?.amount
+                                ? abbreviateNumber(
+                                    formatEther(BigInt(ownerLordsLock.amount)),
+                                  )
+                                : "0"}{" "}
+                              /{abbreviateNumber(totalLords)}
+                            </tspan>
                             <tspan
                               x={viewBox.cx}
                               y={viewBox.cy + 32}
                               className="fill-muted-foreground"
                             >
-                          Staked / Total $LORDS
-                        </tspan>
-                      </text>
-                    );
-                  }
-                }}
-              />
-            </PolarRadiusAxis>
+                              Staked / Total $LORDS
+                            </tspan>
+                          </text>
+                        );
+                      }
+                    }}
+                  />
+                </PolarRadiusAxis>
 
-            <RadialBar
-              dataKey="unlocked"
-              stackId="a"
-              fill="var(--color-chart-5)"
-              cornerRadius={5}
-            />
-            <RadialBar
-              order={0}
-              dataKey="locked"
-              stackId="a"
-              fill="var(--color-chart-1)"
-              cornerRadius={5}
-            />
-          </RadialBarChart>
-        </ChartContainer>
-      </div>
-      <CardFooter className="flex-col gap-2 text-sm">
-        <div className="mb-4 flex gap-2">
-            <StakeDialog
-              ownerLordsLock={ownerLordsLock}
-              lordsBalance={availableLords}
-              manageLordsLock={manageLordsLock}
-            />
-            <UnlockDialog
-              ownerLordsLock={ownerLordsLock}
-              lordsBalance={availableLords}
-              withdraw={withdraw}
-            />
-        </div>
-        <div className="flex items-center gap-2 font-medium leading-none">
-          veLords are entitled to a share of Lords fees from ecosystem games and
-          marketplaces. One lock per wallet address.
-        </div>
-        <div className="text-muted-foreground leading-none">
-          Note: max 75% penalty for early withdrawal (if withdrawn immediately
-          after locking for 4 years)
-        </div>
-      </CardFooter>
-      </>
-      :<CardContent className="mt-4">
-      <StarknetWalletButton label="Connect Wallet to Stake" />
-      </CardContent >
-      }
+                <RadialBar
+                  dataKey="unlocked"
+                  stackId="a"
+                  fill="var(--color-chart-5)"
+                  cornerRadius={5}
+                />
+                <RadialBar
+                  order={0}
+                  dataKey="locked"
+                  stackId="a"
+                  fill="var(--color-chart-1)"
+                  cornerRadius={5}
+                />
+              </RadialBarChart>
+            </ChartContainer>
+          </div>
+          <CardFooter className="flex-col gap-2 text-sm">
+            <div className="mb-4 flex gap-2">
+              <StakeDialog
+                ownerLordsLock={ownerLordsLock}
+                lordsBalance={availableLords}
+                manageLordsLock={manageLordsLock}
+              />
+              <UnlockDialog
+                ownerLordsLock={ownerLordsLock}
+                lordsBalance={availableLords}
+                withdraw={withdraw}
+              />
+            </div>
+            <div className="flex items-center gap-2 leading-none font-medium">
+              veLords are entitled to a share of Lords fees from ecosystem games
+              and marketplaces. One lock per wallet address.
+            </div>
+            <div className="text-muted-foreground leading-none">
+              Note: max 75% penalty for early withdrawal (if withdrawn
+              immediately after locking for 4 years)
+            </div>
+          </CardFooter>
+        </>
+      ) : (
+        <CardContent className="mt-4">
+          <StarknetWalletButton label="Connect Wallet to Stake" />
+        </CardContent>
+      )}
     </Card>
   );
 };

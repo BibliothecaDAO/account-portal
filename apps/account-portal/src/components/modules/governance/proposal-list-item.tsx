@@ -1,4 +1,4 @@
-import type { Proposal } from "@/gql/graphql";
+import type { ProposalFieldsFragment } from "@/gql/snapshot/graphql";
 import { Progress } from "@/components/ui/progress";
 import { useStarkDisplayName } from "@/hooks/use-stark-name";
 import { shortenAddress } from "@/utils/utils";
@@ -12,12 +12,12 @@ export const ProposalListItem = ({
   proposal,
   voteChoice,
 }: {
-  proposal: Proposal;
-  voteChoice: number;
+  proposal: ProposalFieldsFragment;
+  voteChoice?: number;
 }) => {
   const name = useStarkDisplayName(proposal.author.id as `0x${string}`);
 
-  function getProposalId(proposal: Proposal) {
+  function getProposalId(proposal: ProposalFieldsFragment) {
     const proposalId = proposal.proposal_id.toString();
 
     if (proposalId.startsWith("0x")) {
@@ -34,8 +34,7 @@ export const ProposalListItem = ({
   const isActive = proposal.max_end * 1000 > Date.now();
   const scoresTotal = Number(proposal.scores_total);
   const scoresFor = Number(proposal.scores_1);
-  const progressValue =
-    scoresTotal > 0 ? (scoresFor / scoresTotal) * 100 : 0;
+  const progressValue = scoresTotal > 0 ? (scoresFor / scoresTotal) * 100 : 0;
 
   return (
     <div className="flex flex-col gap-3 border-b py-4 last:border-b-0 sm:flex-row sm:items-center sm:gap-4">
@@ -74,7 +73,7 @@ export const ProposalListItem = ({
         <div className="flex flex-shrink-0 flex-col items-end gap-2">
           <Progress
             value={progressValue}
-            className="w-full bg-destructive/60 sm:w-32"
+            className="bg-destructive/60 w-full sm:w-32"
             indicatorColor="bg-success"
           />
 

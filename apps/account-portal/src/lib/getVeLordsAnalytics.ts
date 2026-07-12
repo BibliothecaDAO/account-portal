@@ -1,4 +1,6 @@
+import type { VelordsPeriod } from "@/lib/velords-analytics";
 import type { SQL } from "@realms-world/db";
+import { StarknetAddressSchema } from "@/lib/validation/chain-address";
 import {
   aggregateLockActivityByWeek,
   aggregateRewardsBySource,
@@ -6,22 +8,22 @@ import {
   getPeriodRange,
   sumRewardsInLastNDays,
 } from "@/lib/velords-analytics";
-import type { VelordsPeriod } from "@/lib/velords-analytics";
+import { queryOptions } from "@tanstack/react-query";
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+
 import { and, eq, gte, lte } from "@realms-world/db";
 import { db } from "@realms-world/db/client";
 import {
   velords_lords_locked,
   velords_rewards_received,
 } from "@realms-world/db/schema";
-import { queryOptions } from "@tanstack/react-query";
-import { createServerFn } from "@tanstack/react-start";
-import { z } from "zod";
 
 const VelordsPeriodSchema = z.enum(["3m", "6m", "1y"]);
 
 const GetVelordsAnalyticsInput = z.object({
   period: VelordsPeriodSchema.optional(),
-  source: z.string().optional(),
+  source: StarknetAddressSchema.optional(),
 });
 
 function resolvePeriod(
@@ -31,7 +33,7 @@ function resolvePeriod(
 }
 
 export const getVelordsOverview = createServerFn({ method: "GET" })
-  .inputValidator((input: unknown) => GetVelordsAnalyticsInput.parse(input))
+  .validator((input: unknown) => GetVelordsAnalyticsInput.parse(input))
   .handler(async (ctx) => {
     const period = resolvePeriod(ctx.data.period);
     const { start, end } = getPeriodRange(period, new Date());
@@ -61,7 +63,7 @@ export const getVelordsOverview = createServerFn({ method: "GET" })
   });
 
 export const getVelordsRewardsSeries = createServerFn({ method: "GET" })
-  .inputValidator((input: unknown) => GetVelordsAnalyticsInput.parse(input))
+  .validator((input: unknown) => GetVelordsAnalyticsInput.parse(input))
   .handler(async (ctx) => {
     const period = resolvePeriod(ctx.data.period);
     const { start, end } = getPeriodRange(period, new Date());
@@ -73,9 +75,7 @@ export const getVelordsRewardsSeries = createServerFn({ method: "GET" })
 
     const normalizedSource = ctx.data.source?.toLowerCase();
     if (normalizedSource) {
-      whereFilters.push(
-        eq(velords_rewards_received.sender, normalizedSource),
-      );
+      whereFilters.push(eq(velords_rewards_received.sender, normalizedSource));
     }
 
     const rewardsRows = await db.query.velords_rewards_received.findMany({
@@ -99,7 +99,7 @@ export const getVelordsRewardsSeries = createServerFn({ method: "GET" })
   });
 
 export const getVelordsLockActivity = createServerFn({ method: "GET" })
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         period: VelordsPeriodSchema.optional(),
@@ -149,9 +149,9 @@ export const getVelordsRewardsSeriesQueryOptions = (
     queryFn: () => getVelordsRewardsSeries({ data: input ?? {} }),
   });
 
-export const getVelordsLockActivityQueryOptions = (
-  input?: { period?: VelordsPeriod },
-) =>
+export const getVelordsLockActivityQueryOptions = (input?: {
+  period?: VelordsPeriod;
+}) =>
   queryOptions({
     queryKey: ["velordsLockActivity", input],
     queryFn: () => getVelordsLockActivity({ data: input ?? {} }),

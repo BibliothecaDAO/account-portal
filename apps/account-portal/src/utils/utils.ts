@@ -6,10 +6,10 @@ import { twMerge } from "tailwind-merge";
 
 import { ChainId } from "@realms-world/constants";
 
-export const SUPPORTED_L1_CHAIN_ID =
+export const SUPPORTED_L1_CHAIN_ID: ChainId.MAINNET | ChainId.SEPOLIA =
   env.VITE_PUBLIC_CHAIN == "sepolia" ? ChainId.SEPOLIA : ChainId.MAINNET;
 
-export const SUPPORTED_L2_CHAIN_ID =
+export const SUPPORTED_L2_CHAIN_ID: ChainId.SN_MAIN | ChainId.SN_SEPOLIA =
   SUPPORTED_L1_CHAIN_ID === ChainId.SEPOLIA
     ? ChainId.SN_SEPOLIA
     : ChainId.SN_MAIN;

@@ -12,7 +12,6 @@ export const Route = createFileRoute("/delegate/list")({
     await context.queryClient.ensureQueryData(
       getDelegatesQueryOptions({
         limit: 200,
-        cursor: 0,
         search: "",
         orderBy: "random",
       }),

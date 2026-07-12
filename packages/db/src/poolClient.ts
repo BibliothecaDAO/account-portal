@@ -13,6 +13,11 @@ import {
   realmsBridgeRequestsRelations,
   realmsLordsClaims,
 } from "./schema/bridge";
+import {
+  velords_burner_transfers,
+  velords_lords_locked,
+  velords_rewards_received,
+} from "./schema/velords";
 
 neonConfig.webSocketConstructor = ws;
 
@@ -34,6 +39,9 @@ const schema = {
   realmsBridgeEvents,
   realmsLordsClaims,
   bridgeEventTypeEnum,
+  velords_rewards_received,
+  velords_lords_locked,
+  velords_burner_transfers,
   // Include relations
   realmsBridgeRequestsRelations,
   realmsBridgeEventsRelations,

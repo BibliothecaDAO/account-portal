@@ -14,6 +14,7 @@ import {
   getVelordsRewardsSeriesQueryOptions,
 } from "@/lib/getVeLordsAnalytics";
 import { getVelordsBurnsQueryOptions } from "@/lib/getVeLordsBurns";
+import { normalizeOptionalStarknetAddress } from "@/lib/validation/chain-address";
 import { calculateTrailingApyPercent } from "@/lib/velords-analytics";
 import { seo } from "@/utils/seo";
 import { formatNumber } from "@/utils/utils";
@@ -83,10 +84,7 @@ export const Route = createFileRoute("/velords/")({
   validateSearch: (search: Record<string, unknown>) => ({
     period: parsePeriod(search.period),
     view: parseView(search.view),
-    source:
-      typeof search.source === "string" && search.source.trim().length > 0
-        ? search.source
-        : undefined,
+    source: normalizeOptionalStarknetAddress(search.source),
   }),
   head: () => ({
     meta: [

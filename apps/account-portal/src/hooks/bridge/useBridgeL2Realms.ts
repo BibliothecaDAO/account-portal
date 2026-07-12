@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from "react";
 import { ERC721 } from "@/abi/L2/ERC721";
+import { useERC721Approval } from "@/hooks/token/L2/useERC721Approval";
 import { SUPPORTED_L2_CHAIN_ID } from "@/utils/utils";
-
 import {
   useAccount,
   useReadContract,
@@ -13,7 +13,6 @@ import {
   REALMS_BRIDGE_ADDRESS,
 } from "@realms-world/constants";
 
-import { useERC721Approval } from "@/hooks/token/L2/useERC721Approval";
 import { useWriteInitiateWithdrawRealms } from "./useWriteInitiateWithdrawRealms";
 
 export function useBridgeL2Realms({
@@ -56,20 +55,10 @@ export function useBridgeL2Realms({
     calls: depositCalls,
   });
 
-  //const transactions = useStore(useTransactionManager, (state) => state);
-
   const initiateWithdraw = useCallback(async () => {
     const tx = await sendAsync();
-    /*transactions?.addTx({
-      hash: tx.transaction_hash,
-      type: TransactionType.BRIDGE_REALMS_L2_TO_L1_INITIATE,
-      chainId: SUPPORTED_L2_CHAIN_ID,
-      status: "pending",
-      timestamp: new Date(Date.now()),
-    });*/
-
     return tx;
-  }, [sendAsync /*, transactions*/]);
+  }, [sendAsync]);
 
   return {
     isApprovedForAll,

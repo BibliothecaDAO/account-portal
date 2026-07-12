@@ -1,4 +1,9 @@
-//import { formatAddress } from "@/utils/utils";
+import type { DelegateQuery } from "@/lib/governance/delegate-input";
+import {
+  DelegateProfileInputSchema,
+  DelegateQuerySchema,
+} from "@/lib/governance/delegate-input";
+import { StarknetAddressSchema } from "@/lib/validation/chain-address";
 import { auth } from "@/utils/auth";
 import { formatAddress } from "@/utils/utils";
 import { queryOptions } from "@tanstack/react-query";
@@ -6,31 +11,18 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
 
-import {
-  and,
-  desc,
-  eq,
-  like,
-  sql,
-} from "@realms-world/db";
-import {db} from "@realms-world/db/client"
-import { CreateDelegateProfileSchema, delegateProfiles, delegates } from "@realms-world/db/schema";
+import { and, desc, eq, like, sql } from "@realms-world/db";
+import { db } from "@realms-world/db/client";
+import { delegateProfiles, delegates } from "@realms-world/db/schema";
+
 /* -------------------------------------------------------------------------- */
 /*                          getDelegates (all) Endpoint                       */
 /* -------------------------------------------------------------------------- */
 
-const GetDelegatesInput = z.object({
-  limit: z.number().min(1).max(300).optional(),
-  cursor: z.number().optional(),
-  orderBy: z.string().optional(),
-  search: z.string().optional(),
-});
-
 export const getDelegates = createServerFn({ method: "GET" })
-  .inputValidator((input: unknown) => GetDelegatesInput.parse(input))
+  .validator((input: unknown) => DelegateQuerySchema.parse(input))
   .handler(async (ctx) => {
     const { limit, orderBy, search } = ctx.data;
-    const actualLimit = limit ?? 100;
     const whereFilter = [];
 
     if (search) {
@@ -38,7 +30,7 @@ export const getDelegates = createServerFn({ method: "GET" })
     }
 
     const items = await db.query.delegates.findMany({
-      limit: actualLimit + 1,
+      limit,
       where: and(...whereFilter, sql`upper_inf(block_range)`),
       orderBy:
         orderBy === "desc" ? desc(delegates.delegatedVotes) : sql`RANDOM()`,
@@ -50,26 +42,12 @@ export const getDelegates = createServerFn({ method: "GET" })
       },
     });
 
-    let nextCursor = undefined;
-    if (items.length > actualLimit) {
-      const nextItem = items.pop();
-      nextCursor = parseInt(nextItem?.delegatedVotes ?? "0");
-    }
-
-    return { items: items, nextCursor };
+    return { items };
   });
 
-export const getDelegatesQueryOptions = (
-  input: z.infer<typeof GetDelegatesInput>,
-) =>
+export const getDelegatesQueryOptions = (input: DelegateQuery) =>
   queryOptions({
-    queryKey: [
-      "getDelegates",
-      input.limit,
-      input.cursor,
-      input.orderBy,
-      input.search,
-    ],
+    queryKey: ["getDelegates", input.limit, input.orderBy, input.search],
     queryFn: () => getDelegates({ data: input }),
   });
 
@@ -78,16 +56,16 @@ export const getDelegatesQueryOptions = (
 /* -------------------------------------------------------------------------- */
 
 const GetDelegateByIDInput = z.object({
-  address: z.string().optional(),
+  address: StarknetAddressSchema.optional(),
 });
 
 export const getDelegateByID = createServerFn({ method: "GET" })
-  .inputValidator((input: unknown) => GetDelegateByIDInput.parse(input))
+  .validator((input: unknown) => GetDelegateByIDInput.parse(input))
   .handler(async (ctx) => {
     if (ctx.data.address) {
       const res = await db.query.delegates.findFirst({
         where: and(
-          eq(delegates.user, ctx.data.address),
+          eq(delegates.user, formatAddress(ctx.data.address)),
           sql`upper_inf(block_range)`,
         ),
         with: { delegateProfile: true },
@@ -114,7 +92,7 @@ export const getDelegateByIDQueryOptions = (
 /* -------------------------------------------------------------------------- */
 
 export const createDelegateProfile = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) => CreateDelegateProfileSchema.parse(input))
+  .validator((input: unknown) => DelegateProfileInputSchema.parse(input))
   .handler(async (ctx) => {
     const { headers } = getRequest();
     const session = await auth.api.getSession({
@@ -128,7 +106,7 @@ export const createDelegateProfile = createServerFn({ method: "POST" })
     if (!session) {
       return { success: false as const };
     }
-    const delegateId = formatAddress(session.user.name);
+    const delegateId = formatAddress(session.user.id);
     await db
       .insert(delegateProfiles)
       .values({ ...ctx.data, delegateId })
@@ -137,12 +115,4 @@ export const createDelegateProfile = createServerFn({ method: "POST" })
         set: { ...ctx.data },
       });
     return { success: true as const };
-  });
-
-export const createDelegateProfileMutationOptions = (
-  input: z.infer<typeof CreateDelegateProfileSchema>,
-) =>
-  queryOptions({
-    queryKey: ["createDelegateProfile", input],
-    queryFn: () => createDelegateProfile({ data: input }),
   });

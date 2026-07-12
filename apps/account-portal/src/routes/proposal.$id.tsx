@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { ProposalResults } from "@/components/modules/governance/proposal-results";
 import { ProposalUserVoteBadge } from "@/components/modules/governance/proposal-user-vote-badge";
 import { ProposalVoteAction } from "@/components/modules/governance/proposal-vote-action";
@@ -31,18 +32,6 @@ import { CheckCircle2, MinusCircle, XCircle } from "lucide-react";
 import { num } from "starknet";
 
 import { SnapshotSpaceAddresses } from "@realms-world/constants";
-
-// Define the expected types for the proposal data we need
-/*interface ProposalData {
-  metadata?: {
-    title?: string;
-    body?: string;
-  };
-  author?: {
-    id: string;
-  };
-  created?: number;
-}*/
 
 export const Route = createFileRoute("/proposal/$id")({
   component: RouteComponent,
@@ -79,6 +68,7 @@ function RouteComponent() {
   const userVoteRef = userVotesQuery?.votes?.find((vote) =>
     isMatchingProposalVote(vote?.proposal, id),
   );
+  const userVoteChoice = userVoteRef?.choice;
 
   const proposal = proposalQuery.proposal;
   const authorAddress = (proposal?.author.id ?? "0x0") as `0x${string}`;
@@ -133,10 +123,12 @@ function RouteComponent() {
 
   return (
     <SidebarProvider
-      style={{
-        "--sidebar-width": "20rem",
-        "--sidebar-width-mobile": "20rem",
-      }}
+      style={
+        {
+          "--sidebar-width": "20rem",
+          "--sidebar-width-mobile": "20rem",
+        } as CSSProperties
+      }
     >
       <SidebarInset>
         <div className="container mx-auto max-w-4xl py-8">
@@ -205,10 +197,12 @@ function RouteComponent() {
                 <ProposalVoteAction proposal={proposal} />
               </>
             )}
-            {userVoteRef && (
+            {(userVoteChoice === 1 ||
+              userVoteChoice === 2 ||
+              userVoteChoice === 3) && (
               <>
                 <SidebarGroupLabel>You Voted:</SidebarGroupLabel>
-                <ProposalUserVoteBadge choice={userVoteRef.choice} />
+                <ProposalUserVoteBadge choice={userVoteChoice} />
               </>
             )}
           </SidebarGroup>

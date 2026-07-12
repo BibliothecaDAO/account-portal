@@ -1,6 +1,6 @@
 import { getProposalsQueryOptions } from "@/lib/snapshot/getProposals";
-import { isMatchingProposalVote } from "@/lib/snapshot/proposal-id";
 import { getUserVotesQueryOptions } from "@/lib/snapshot/getUserVotes";
+import { isMatchingProposalVote } from "@/lib/snapshot/proposal-id";
 import { SUPPORTED_L2_CHAIN_ID } from "@/utils/utils";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 
@@ -20,7 +20,6 @@ export function ProposalList({
       spaceIds: [SnapshotSpaceAddresses[SUPPORTED_L2_CHAIN_ID] as string],
       limit,
       skip: 0,
-      current: 1,
       searchQuery: "",
     }),
   );

@@ -15,6 +15,9 @@ import { db } from "@realms-world/db/poolClient";
 import { realmsLordsClaims } from "@realms-world/db/schema";
 
 import { env } from "../env";
+import { toDecimalAmount } from "./amount-utils";
+import { buildIndexerEventId } from "./event-identity";
+import { toStarknetAddress } from "./starknet-value";
 
 export default function (/*runtimeConfig: ApibaraRuntimeConfig*/) {
   return createIndexer({ database: db });
@@ -25,8 +28,8 @@ const l2ChainId =
 export function createIndexer<
   TQueryResult extends PgQueryResultHKT,
   TFullSchema extends Record<string, unknown> = Record<string, never>,
-  TSchema extends
-    TablesRelationalConfig = ExtractTablesWithRelations<TFullSchema>,
+  TSchema extends TablesRelationalConfig =
+    ExtractTablesWithRelations<TFullSchema>,
 >({ database }: { database: PgDatabase<TQueryResult, TFullSchema, TSchema> }) {
   return defineIndexer(StarknetStream)({
     streamUrl:
@@ -77,11 +80,11 @@ export function createIndexer<
         await db
           .insert(realmsLordsClaims)
           .values({
-            _id: transactionHash,
+            _id: buildIndexerEventId(transactionHash, event.eventIndex),
             hash: transactionHash,
-            recipient: args.recipient,
-            amount: args.amount,
-            timestamp: block.header.timestamp,
+            recipient: toStarknetAddress(args.recipient),
+            amount: toDecimalAmount(args.amount),
+            timestamp: block.header.timestamp.toISOString(),
           })
           .onConflictDoNothing();
       }

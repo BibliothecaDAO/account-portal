@@ -14,22 +14,15 @@ export function getRouter() {
       routeTree,
       context: {
         queryClient,
-        session: {
-          address: "0x123",
-          chain: "mainnet",
-          provider: "starknet",
-        },
       },
       defaultPreload: "intent",
       defaultErrorComponent: DefaultCatchBoundary,
       defaultNotFoundComponent: () => <NotFound />,
-      //scrollRestoration: true,
     }),
     queryClient,
   );
 }
 
-// Backward-compatible alias for older local imports.
 export const createRouter = getRouter;
 
 declare module "@tanstack/react-router" {

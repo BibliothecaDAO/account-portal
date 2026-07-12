@@ -7,10 +7,14 @@ import type {
   Call,
   Invocations,
   SimulateTransactionDetails,
-  SimulateTransactionResponse,
+  SimulateTransactionOverheadResponse,
 } from "starknet";
 import { useMemo } from "react";
-import { useAccount, useInvalidateOnBlock, useProvider } from "@starknet-start/react";
+import {
+  useAccount,
+  useInvalidateOnBlock,
+  useProvider,
+} from "@starknet-start/react";
 import { useQuery } from "@tanstack/react-query";
 import { TransactionType, WalletAccountV5 } from "starknet";
 
@@ -32,9 +36,9 @@ type UseQueryProps<
 /** Options for `useSimulateTransactions`. */
 export type UseSimulateTransactionsProps = SimulateTransactionsArgs &
   UseQueryProps<
-    SimulateTransactionResponse,
+    SimulateTransactionOverheadResponse,
     Error,
-    SimulateTransactionResponse,
+    SimulateTransactionOverheadResponse,
     ReturnType<typeof queryKey>
   > & {
     /** Refresh data at every block. */
@@ -43,7 +47,7 @@ export type UseSimulateTransactionsProps = SimulateTransactionsArgs &
 
 /** Value returned from `useSimulateTransactions`. */
 export type UseSimulateTransactionsResult = UseQueryResult<
-  SimulateTransactionResponse,
+  SimulateTransactionOverheadResponse,
   Error
 >;
 
@@ -121,7 +125,7 @@ function queryFn({
     if (!calls || calls.length === 0) throw new Error("calls are required");
     const invocations: Invocations = [
       {
-      type: TransactionType.INVOKE as const,
+        type: TransactionType.INVOKE,
         payload: calls,
       },
     ];

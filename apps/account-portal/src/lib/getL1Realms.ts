@@ -1,5 +1,18 @@
+import type {
+  AlchemyNftsResponse,
+  L1TokenResponse,
+} from "@/lib/alchemy/alchemy-nfts";
+import { getServerEnvironment } from "@/config/environment";
+import {
+  collectAlchemyNfts,
+  createAlchemyNftsUrl,
+  mapAlchemyNfts,
+} from "@/lib/alchemy/alchemy-nfts";
+import { requestJson } from "@/lib/http/request-json";
+import { EthereumAddressSchema } from "@/lib/validation/chain-address";
 import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
+import { env } from "env";
 import { z } from "zod";
 
 import {
@@ -9,124 +22,75 @@ import {
 } from "@realms-world/constants";
 
 const SUPPORTED_L1_CHAIN_ID =
-  process.env.VITE_PUBLIC_CHAIN === "sepolia"
-    ? ChainId.SEPOLIA
-    : ChainId.MAINNET;
-
-const ALCHEMY_API_URL = `https://eth-${
-  process.env.VITE_PUBLIC_CHAIN === "sepolia" ? "sepolia" : "mainnet"
-}.g.alchemy.com/nft/v3/${process.env.VITE_ALCHEMY_API_KEY}`;
+  env.VITE_PUBLIC_CHAIN === "sepolia" ? ChainId.SEPOLIA : ChainId.MAINNET;
 
 const L1_REALMS_STALE_TIME_MS = 60_000;
+
+function getRealmsContractAddress(): string {
+  const address =
+    CollectionAddresses[Collections.REALMS][SUPPORTED_L1_CHAIN_ID];
+  if (!address) {
+    throw new Error("Realms contract is not configured for the active chain");
+  }
+  return address;
+}
 
 /* -------------------------------------------------------------------------- */
 /*                          getL1Realms Endpoint                              */
 /* -------------------------------------------------------------------------- */
 
 const GetL1RealmsInput = z.object({
-  address: z.string().optional(),
+  address: EthereumAddressSchema.optional(),
 });
 
-// Alchemy NFT response types
-interface AlchemyNFT {
-  tokenId: string;
-  name?: string;
-  title?: string;
-  balance?: string;
-  image?: {
-    originalUrl?: string;
-  };
-  media?: {
-    gateway?: string;
-  }[];
-  contract: {
-    address: string;
-    name?: string;
-    symbol?: string;
-  };
-  raw?: {
-    metadata?: {
-      attributes?: Record<string, unknown>[];
-    };
-  };
-}
-
-interface AlchemyNFTsResponse {
-  ownedNfts: AlchemyNFT[];
-  totalCount: number;
+async function fetchAlchemyNfts({
+  owner,
+  contractAddress,
+  withMetadata,
+  pageSize,
+  pageKey,
+}: {
+  owner: string;
+  contractAddress: string;
+  withMetadata: boolean;
+  pageSize: number;
   pageKey?: string;
-}
-
-interface TokenResponse {
-  tokens: {
-    token: {
-      tokenId: string;
-      name?: string | null;
-      image?: string | null;
-      collection: {
-        id: string;
-        name?: string;
-        symbol?: string;
-      };
-      attributes: unknown[];
-    };
-    ownership: {
-      tokenCount: string;
-      acquiredAt: null;
-    };
-  }[];
-  continuation: string | null;
+}): Promise<AlchemyNftsResponse> {
+  const { ALCHEMY_API_KEY } = getServerEnvironment();
+  const url = createAlchemyNftsUrl({
+    network: env.VITE_PUBLIC_CHAIN,
+    apiKey: ALCHEMY_API_KEY,
+    owner,
+    contractAddress,
+    withMetadata,
+    pageSize,
+    pageKey,
+  });
+  return requestJson<AlchemyNftsResponse>(url, {
+    requestName: "Alchemy NFT request",
+  });
 }
 
 export const getL1Realms = createServerFn({ method: "GET" })
-  .inputValidator((input: unknown) => GetL1RealmsInput.parse(input))
+  .validator((input: unknown) => GetL1RealmsInput.parse(input))
   .handler(async (ctx) => {
     if (!ctx.data.address) {
-      return { tokens: [], continuation: null } as TokenResponse;
+      return { tokens: [], continuation: null } as L1TokenResponse;
     }
 
-    const contractAddress =
-      CollectionAddresses[Collections.REALMS][SUPPORTED_L1_CHAIN_ID];
+    const owner = ctx.data.address;
+    const contractAddress = getRealmsContractAddress();
 
-    const response = await fetch(
-      `${ALCHEMY_API_URL}/getNFTsForOwner?owner=${ctx.data.address.toLowerCase()}&contractAddresses[]=${contractAddress}&withMetadata=true&pageSize=100`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      },
+    const data = await collectAlchemyNfts((pageKey) =>
+      fetchAlchemyNfts({
+        owner,
+        contractAddress,
+        withMetadata: true,
+        pageSize: 100,
+        pageKey,
+      }),
     );
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch NFTs: ${response.statusText}`);
-    }
-
-    const data = (await response.json()) as AlchemyNFTsResponse;
-
-    // Transform Alchemy response to match expected format
-    const tokens = data.ownedNfts.map((nft) => ({
-      token: {
-        tokenId: nft.tokenId,
-        name: nft.name ?? nft.title ?? null,
-        image: nft.image?.originalUrl ?? nft.media?.[0]?.gateway ?? null,
-        collection: {
-          id: nft.contract.address,
-          name: nft.contract.name,
-          symbol: nft.contract.symbol,
-        },
-        attributes: nft.raw?.metadata?.attributes ?? [],
-      },
-      ownership: {
-        tokenCount: nft.balance ?? "1",
-        acquiredAt: null,
-      },
-    }));
-
-    return {
-      tokens,
-      continuation: data.pageKey ?? null,
-    } as TokenResponse;
+    return mapAlchemyNfts(data);
   });
 
 export const getL1RealmsQueryOptions = (
@@ -135,7 +99,9 @@ export const getL1RealmsQueryOptions = (
   return queryOptions({
     queryKey: ["getL1Realms", input?.address],
     queryFn: () =>
-      input?.address != undefined ? getL1Realms({ data: input }) : null,
+      input?.address != undefined
+        ? getL1Realms({ data: input })
+        : Promise.resolve({ tokens: [], continuation: null }),
     staleTime: L1_REALMS_STALE_TIME_MS,
     refetchInterval: false,
     enabled: !!input?.address,
@@ -155,30 +121,20 @@ interface CollectionResponse {
 }
 
 export const getL1UsersRealms = createServerFn({ method: "GET" })
-  .inputValidator((input: unknown) => GetL1RealmsInput.parse(input))
+  .validator((input: unknown) => GetL1RealmsInput.parse(input))
   .handler(async (ctx) => {
     if (!ctx.data.address) {
       return { collections: [] };
     }
 
-    const contractAddress =
-      CollectionAddresses[Collections.REALMS][SUPPORTED_L1_CHAIN_ID];
+    const contractAddress = getRealmsContractAddress();
 
-    const response = await fetch(
-      `${ALCHEMY_API_URL}/getNFTsForOwner?owner=${ctx.data.address.toLowerCase()}&contractAddresses[]=${contractAddress}&withMetadata=false&pageSize=1`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      },
-    );
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch NFTs: ${response.statusText}`);
-    }
-
-    const data = (await response.json()) as AlchemyNFTsResponse;
+    const data = await fetchAlchemyNfts({
+      owner: ctx.data.address,
+      contractAddress,
+      withMetadata: false,
+      pageSize: 1,
+    });
 
     // Transform to match expected format for collection summary
     const hasNFTs = data.totalCount > 0;
@@ -206,6 +162,8 @@ export const getL1UsersRealmsQueryOptions = (
   queryOptions({
     queryKey: ["getL1UsersRealms", input?.address],
     queryFn: () =>
-      input?.address != undefined ? getL1UsersRealms({ data: input }) : null,
+      input?.address != undefined
+        ? getL1UsersRealms({ data: input })
+        : Promise.resolve({ collections: [] }),
     enabled: !!input?.address,
   });

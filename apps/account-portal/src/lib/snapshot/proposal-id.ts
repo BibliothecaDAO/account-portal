@@ -7,6 +7,18 @@ function toSafeInteger(value: string): number | null {
   return Number.isSafeInteger(parsed) ? parsed : null;
 }
 
+const MAX_UINT256 = 2n ** 256n - 1n;
+
+export function parseProposalIdForContract(proposalId: string): bigint | null {
+  const normalized = proposalId.trim();
+  if (!/^(?:0x[\da-f]+|\d+)$/i.test(normalized)) {
+    return null;
+  }
+
+  const parsed = BigInt(normalized);
+  return parsed <= MAX_UINT256 ? parsed : null;
+}
+
 export function normalizeProposalId(
   proposalId: string | number | null | undefined,
 ): number | null {

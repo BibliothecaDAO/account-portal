@@ -16,6 +16,16 @@ concurrency:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CI: "true"
+      DATABASE_URL: postgresql://ci:ci@127.0.0.1:5432/ci
+      VITE_PUBLIC_CHAIN: mainnet
+      VITE_PUBLIC_SLOT: ci
+      VITE_BASE_URL: https://ci.realms.world
+      VITE_TORII_API_URL: https://torii.example.test
+      BETTER_AUTH_SECRET: ci-only-secret-with-at-least-32-characters
+      ALCHEMY_API_KEY: ci
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -34,19 +44,20 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Lint (exclude apibara)
-        run: pnpm -r --filter '!@realms-world/apibara' --if-present run lint
+      - name: Lint
+        run: pnpm lint
 
-      - name: Format check (exclude apibara)
+      - name: Format check
         run: pnpm -r --filter '!@realms-world/apibara' --if-present run format
 
-      - name: Typecheck constants
-        run: pnpm --filter @realms-world/constants typecheck
+      - name: Typecheck
+        run: pnpm typecheck
 
-      - name: Build db
-        run: pnpm --filter @realms-world/db build
+      - name: Test
+        run: pnpm test
 
-      - name: Build account-portal
-        run: pnpm --filter @realms-world/account-portal exec vite build
-        env:
-          CI: "true"
+      - name: Build
+        run: pnpm build
+
+      - name: Production artifact smoke test
+        run: pnpm smoke
