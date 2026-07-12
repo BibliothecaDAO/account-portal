@@ -60,6 +60,7 @@ Use this file as the operating guide for keeping this repo healthy, maintainable
 - When bumping package versions, build the app immediately after.
 - Verify postbuild behavior when touching app packaging/deploy logic.
 - Keep `packages/db/migrations/*.sql` checked in; production deploys must run `pnpm db:migrate` before application rollout.
+- Keep `0000_baseline.sql` and the empty-database migration-chain test in sync; resolve existing constraints through PostgreSQL metadata instead of assuming Drizzle-generated names.
 - The account portal build enforces gzip chunk and total-JavaScript budgets in `apps/account-portal/scripts/bundle-budget.js`.
 - Run `pnpm smoke` after production builds so SSR-only failures are caught against `.output/server/index.mjs`.
 - Regenerate Snapshot types with `pnpm --filter @realms-world/account-portal codegen:snapshot` when its schema or documents change.
