@@ -2,6 +2,8 @@ import { readFile } from "node:fs/promises";
 import { PGlite } from "@electric-sql/pglite";
 import { afterEach, describe, expect, it } from "vitest";
 
+import { PGLITE_TEST_TIMEOUT_MS } from "./pglite-test-timeout";
+
 describe("bridge address migration", () => {
   let client: PGlite | undefined;
 
@@ -9,9 +11,11 @@ describe("bridge address migration", () => {
     await client?.close();
   });
 
-  it("normalizes owners by chain and repairs legacy reversed L2 rows", async () => {
-    client = new PGlite();
-    await client.exec(`
+  it(
+    "normalizes owners by chain and repairs legacy reversed L2 rows",
+    async () => {
+      client = new PGlite();
+      await client.exec(`
       CREATE TABLE realms_bridge_requests (
         _id text PRIMARY KEY,
         from_chain text NOT NULL,
@@ -61,42 +65,47 @@ describe("bridge address migration", () => {
         ('l2-short', '0xl2-short', 'withdraw_available_l1', '2026-01-01'),
         ('l2-correct', '0xl2-correct', 'deposit_initiated_l2', '2026-01-01');
     `);
-    const migration = await readFile(
-      new URL("../../db/migrations/0005_bridge_addresses.sql", import.meta.url),
-      "utf8",
-    );
-    await client.exec(migration);
+      const migration = await readFile(
+        new URL(
+          "../../db/migrations/0005_bridge_addresses.sql",
+          import.meta.url,
+        ),
+        "utf8",
+      );
+      await client.exec(migration);
 
-    const result = await client.query<{
-      _id: string;
-      from_address: string;
-      to_address: string;
-    }>(`
+      const result = await client.query<{
+        _id: string;
+        from_address: string;
+        to_address: string;
+      }>(`
       SELECT _id, from_address, to_address
       FROM realms_bridge_requests
       ORDER BY _id
     `);
-    expect(result.rows).toEqual([
-      {
-        _id: "l1",
-        from_address: "0x0000000000000000000000000000000000000abc",
-        to_address: "0xdef",
-      },
-      {
-        _id: "l2-correct",
-        from_address: "0xdef",
-        to_address: "0x0000000000000000000000000000000000000abc",
-      },
-      {
-        _id: "l2-long",
-        from_address: "0x123456789abcdef0123456789abcdef0123456789abcdef",
-        to_address: "0x0000000000000000000000000000000000000abc",
-      },
-      {
-        _id: "l2-short",
-        from_address: "0xdef",
-        to_address: "0x0000000000000000000000000000000000000abc",
-      },
-    ]);
-  });
+      expect(result.rows).toEqual([
+        {
+          _id: "l1",
+          from_address: "0x0000000000000000000000000000000000000abc",
+          to_address: "0xdef",
+        },
+        {
+          _id: "l2-correct",
+          from_address: "0xdef",
+          to_address: "0x0000000000000000000000000000000000000abc",
+        },
+        {
+          _id: "l2-long",
+          from_address: "0x123456789abcdef0123456789abcdef0123456789abcdef",
+          to_address: "0x0000000000000000000000000000000000000abc",
+        },
+        {
+          _id: "l2-short",
+          from_address: "0xdef",
+          to_address: "0x0000000000000000000000000000000000000abc",
+        },
+      ]);
+    },
+    PGLITE_TEST_TIMEOUT_MS,
+  );
 });

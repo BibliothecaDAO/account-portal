@@ -2,6 +2,8 @@ import { readFile } from "node:fs/promises";
 import { PGlite } from "@electric-sql/pglite";
 import { afterEach, describe, expect, it } from "vitest";
 
+import { PGLITE_TEST_TIMEOUT_MS } from "./pglite-test-timeout";
+
 describe("event identity migration", () => {
   let client: PGlite | undefined;
 
@@ -9,9 +11,11 @@ describe("event identity migration", () => {
     await client?.close();
   });
 
-  it("preserves legacy rows and installs replay-safe primary keys", async () => {
-    client = new PGlite();
-    await client.exec(`
+  it(
+    "preserves legacy rows and installs replay-safe primary keys",
+    async () => {
+      client = new PGlite();
+      await client.exec(`
       CREATE TABLE realms_lords_claims (
         _id text,
         hash text NOT NULL,
@@ -53,35 +57,37 @@ describe("event identity migration", () => {
         ('0x1', 10, '0xburn', '2026-01-01');
     `);
 
-    const migration = await readFile(
-      new URL("../../db/migrations/0001_event_identity.sql", import.meta.url),
-      "utf8",
-    );
-    await client.exec(migration);
+      const migration = await readFile(
+        new URL("../../db/migrations/0001_event_identity.sql", import.meta.url),
+        "utf8",
+      );
+      await client.exec(migration);
 
-    const migrated = await client.query<{ _id: string }>(
-      "SELECT _id FROM velords_rewards_received",
-    );
-    expect(migrated.rows).toEqual([{ _id: "0xreward:legacy:10" }]);
+      const migrated = await client.query<{ _id: string }>(
+        "SELECT _id FROM velords_rewards_received",
+      );
+      expect(migrated.rows).toEqual([{ _id: "0xreward:legacy:10" }]);
 
-    const claims = await client.query<{ _id: string }>(
-      "SELECT _id FROM realms_lords_claims ORDER BY _id",
-    );
-    expect(claims.rows).toEqual([
-      { _id: "0xclaim:legacy:10" },
-      { _id: "0xclaim:legacy:20" },
-    ]);
+      const claims = await client.query<{ _id: string }>(
+        "SELECT _id FROM realms_lords_claims ORDER BY _id",
+      );
+      expect(claims.rows).toEqual([
+        { _id: "0xclaim:legacy:10" },
+        { _id: "0xclaim:legacy:20" },
+      ]);
 
-    await client.exec(`
+      await client.exec(`
       INSERT INTO velords_rewards_received
         (_id, sender, amount, transaction_hash, epoch)
       VALUES
         ('0xreward:4', '0x1', 10, '0xreward', '2026-01-01'),
         ('0xreward:5', '0x1', 10, '0xreward', '2026-01-01');
     `);
-    const count = await client.query<{ count: string }>(
-      "SELECT count(*)::text AS count FROM velords_rewards_received",
-    );
-    expect(count.rows[0]?.count).toBe("3");
-  });
+      const count = await client.query<{ count: string }>(
+        "SELECT count(*)::text AS count FROM velords_rewards_received",
+      );
+      expect(count.rows[0]?.count).toBe("3");
+    },
+    PGLITE_TEST_TIMEOUT_MS,
+  );
 });
