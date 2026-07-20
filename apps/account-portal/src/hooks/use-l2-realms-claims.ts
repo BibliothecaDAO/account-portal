@@ -32,7 +32,7 @@ export const useL2RealmsClaims = () => {
     enabled: !!l2Address,
     watch: true,
     args: l2Address ? [l2Address] : undefined,
-    blockIdentifier: BlockTag.PENDING as BlockNumber,
+    blockIdentifier: BlockTag.PRE_CONFIRMED as BlockNumber,
   });
 
   useEffect(() => {
@@ -81,7 +81,8 @@ export const useL2RealmsClaims = () => {
   const claimRewards = useCallback(async () => {
     const tx = await sendAsync();
     if (tx.transaction_hash) {
-      const claimAmount = typeof balance === "bigint" ? formatEther(balance) : "0";
+      const claimAmount =
+        typeof balance === "bigint" ? formatEther(balance) : "0";
       toast({
         title: "Realms' Lords Claim Submitted",
         description: `Claim of ${claimAmount} Lords in progress`,

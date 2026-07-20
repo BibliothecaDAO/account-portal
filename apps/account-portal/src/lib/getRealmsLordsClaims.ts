@@ -1,3 +1,4 @@
+import { StarknetAddressSchema } from "@/lib/validation/chain-address";
 import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -10,11 +11,11 @@ import { db } from "@realms-world/db/client";
 /* -------------------------------------------------------------------------- */
 
 const GetRealmsLordsClaimsInput = z.object({
-  address: z.string().optional(),
+  address: StarknetAddressSchema.optional(),
 });
 
 export const getRealmsLordsClaims = createServerFn({ method: "GET" })
-  .inputValidator((input: unknown) => GetRealmsLordsClaimsInput.parse(input))
+  .validator((input: unknown) => GetRealmsLordsClaimsInput.parse(input))
   .handler(async (ctx) => {
     const { address } = ctx.data;
 

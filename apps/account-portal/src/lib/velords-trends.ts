@@ -53,7 +53,7 @@ function toPercent(part: number, total: number): number {
 }
 
 export function buildRewardsMomentumData(
-  weekly: WeeklyRewardsPoint[],
+  weekly: readonly WeeklyRewardsPoint[],
 ): RewardsMomentumPoint[] {
   return weekly.map((row, index) => {
     const totalRewards = toRewardsUnits(row.totalWei);
@@ -72,7 +72,7 @@ export function buildRewardsMomentumData(
 }
 
 export function buildSourceShareData(
-  weekly: WeeklyRewardsPoint[],
+  weekly: readonly WeeklyRewardsPoint[],
   maxSources = 5,
 ): { points: SourceSharePoint[]; sourceKeys: string[] } {
   const totalsBySource = new Map<string, bigint>();
@@ -119,7 +119,7 @@ export function buildSourceShareData(
 }
 
 export function buildSourceConcentrationData(
-  weekly: WeeklyRewardsPoint[],
+  weekly: readonly WeeklyRewardsPoint[],
 ): SourceConcentrationPoint[] {
   return weekly.map((row) => {
     const amounts = Object.values(row.bySender)
@@ -141,7 +141,7 @@ export function buildSourceConcentrationData(
 }
 
 export function buildLockParticipationData(
-  weekly: WeeklyLockPoint[],
+  weekly: readonly WeeklyLockPoint[],
 ): LockParticipationPoint[] {
   return weekly.map((row) => ({
     ...row,
@@ -151,7 +151,7 @@ export function buildLockParticipationData(
 }
 
 export function buildCumulativeRewardsData(
-  weekly: WeeklyRewardsPoint[],
+  weekly: readonly WeeklyRewardsPoint[],
 ): CumulativeRewardsPoint[] {
   let cumulative = 0;
 
@@ -165,7 +165,7 @@ export function buildCumulativeRewardsData(
 }
 
 export function calculateProjectedPeriodTotal(
-  weekly: WeeklyRewardsPoint[],
+  weekly: readonly WeeklyRewardsPoint[],
 ): number {
   if (weekly.length === 0) return 0;
 

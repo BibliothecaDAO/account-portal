@@ -32,7 +32,6 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import { SidebarTrigger, useSidebar } from "../ui/sidebar";
-import { Breadcrumbs } from "./breadcrumbs";
 import { ModeToggle } from "./mode-toggle";
 import { StarknetWalletButton } from "./starknet-wallet-button";
 
@@ -77,7 +76,6 @@ export function Header() {
             <SidebarTrigger className="-ml-1" />
             <ModeToggle />
             <Separator orientation="vertical" className="mr-2 h-4" />
-            <Breadcrumbs />
           </div>
           {address ? (
             <DropdownMenu>

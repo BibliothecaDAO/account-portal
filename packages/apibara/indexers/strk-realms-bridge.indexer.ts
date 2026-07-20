@@ -1,4 +1,3 @@
-//import type { ApibaraRuntimeConfig } from "apibara/types";
 import type {
   ExtractTablesWithRelations,
   TablesRelationalConfig,
@@ -9,8 +8,6 @@ import { defineIndexer } from "@apibara/indexer";
 import { useLogger } from "@apibara/indexer/plugins";
 import { drizzleStorage, useDrizzleStorage } from "@apibara/plugin-drizzle";
 import { decodeEvent, getSelector, StarknetStream } from "@apibara/starknet";
-import { uint256 } from "starknet";
-import { numberToHex } from "viem";
 
 import { ChainId, REALMS_BRIDGE_ADDRESS } from "@realms-world/constants";
 import { db } from "@realms-world/db/poolClient";
@@ -20,15 +17,25 @@ import {
 } from "@realms-world/db/schema";
 
 import { env } from "../env";
+import { resolveStarknetIndexerRuntime } from "../starknet-runtime";
+import {
+  BRIDGE_STORAGE_ID_COLUMNS,
+  buildBridgeEventId,
+  buildBridgeRequestId,
+  toDatabaseTokenIds,
+} from "./bridge-request-id";
+import { toEthereumAddress, toStarknetAddress } from "./starknet-value";
 
-export default function (/*runtimeConfig: ApibaraRuntimeConfig*/) {
+export default function () {
   return createIndexer({ database: db });
 }
 const chainId =
   env.VITE_PUBLIC_CHAIN === "sepolia" ? ChainId.SEPOLIA : ChainId.MAINNET;
-const l2ChainId =
-  env.VITE_PUBLIC_CHAIN === "sepolia" ? ChainId.SN_SEPOLIA : ChainId.SN_MAIN;
-const withdrawRequestCompletedSelector = getSelector("WithdrawRequestCompleted");
+const starknetRuntime = resolveStarknetIndexerRuntime(env.VITE_PUBLIC_CHAIN);
+const l2ChainId = starknetRuntime.chainId;
+const withdrawRequestCompletedSelector = getSelector(
+  "WithdrawRequestCompleted",
+);
 const depositRequestInitiatedSelector = getSelector("DepositRequestInitiated");
 
 interface ParsedRequestContent {
@@ -97,42 +104,24 @@ function parseBridgeEvent(decoded: unknown): ParsedBridgeEvent {
         ownerL1.address,
         "args.req_content.owner_l1.address",
       ),
-      ownerL2: parseBigIntValue(reqContent.owner_l2, "args.req_content.owner_l2"),
+      ownerL2: parseBigIntValue(
+        reqContent.owner_l2,
+        "args.req_content.owner_l2",
+      ),
       ids,
     },
   };
 }
 
-function buildRequestId(reqContent: ParsedRequestContent): string {
-  const hash = uint256.bnToUint256(reqContent.hash);
-  const idParts = [
-    BigInt(hash.low),
-    BigInt(hash.high),
-    reqContent.ownerL1Address,
-    reqContent.ownerL2,
-    reqContent.ids.length,
-    ...reqContent.ids.flatMap((tokenId) => {
-      const token = uint256.bnToUint256(tokenId);
-      return [Number(token.low), Number(token.high)];
-    }),
-  ];
-
-  return idParts.join(":");
-}
-
 export function createIndexer<
   TQueryResult extends PgQueryResultHKT,
   TFullSchema extends Record<string, unknown> = Record<string, never>,
-  TSchema extends
-    TablesRelationalConfig = ExtractTablesWithRelations<TFullSchema>,
+  TSchema extends TablesRelationalConfig =
+    ExtractTablesWithRelations<TFullSchema>,
 >({ database }: { database: PgDatabase<TQueryResult, TFullSchema, TSchema> }) {
   return defineIndexer(StarknetStream)({
-    streamUrl:
-      env.VITE_PUBLIC_CHAIN === "sepolia"
-        ? "https://starknet-sepolia.preview.apibara.org"
-        : "https://starknet.preview.apibara.org",
-
-    finality: "pending",
+    streamUrl: starknetRuntime.streamUrl,
+    finality: starknetRuntime.finality,
     startingCursor: {
       orderKey: env.VITE_PUBLIC_CHAIN === "sepolia" ? 76_103n : 664_161n,
     },
@@ -151,7 +140,7 @@ export function createIndexer<
     plugins: [
       drizzleStorage({
         db: database,
-        idColumn: "_id",
+        idColumn: BRIDGE_STORAGE_ID_COLUMNS,
         persistState: true,
         indexerName: "starknet-realms-bridge",
       }),
@@ -177,14 +166,21 @@ export function createIndexer<
               event,
             }),
           );
-          const requestId = buildRequestId(decoded.reqContent);
+          const requestId = buildBridgeRequestId({
+            hash: decoded.reqContent.hash,
+            ownerL1Address: decoded.reqContent.ownerL1Address,
+            ownerL2Address: decoded.reqContent.ownerL2,
+            tokenIds: decoded.reqContent.ids,
+          });
           await db
             .insert(realmsBridgeRequests)
             .values({
-              from_chain: chainId,
-              from_address: numberToHex(decoded.reqContent.ownerL1Address),
-              to_address: numberToHex(decoded.reqContent.ownerL2),
-              token_ids: decoded.reqContent.ids.map((id) => Number(id)),
+              from_chain: chainId.toString(),
+              from_address: toEthereumAddress(
+                decoded.reqContent.ownerL1Address,
+              ),
+              to_address: toStarknetAddress(decoded.reqContent.ownerL2),
+              token_ids: toDatabaseTokenIds(decoded.reqContent.ids),
               timestamp: block.header.timestamp,
               tx_hash: decoded.transactionHash,
               _id: requestId,
@@ -195,6 +191,7 @@ export function createIndexer<
           await db
             .insert(realmsBridgeEvents)
             .values({
+              _event_id: buildBridgeEventId(requestId, "withdraw_completed_l2"),
               timestamp: block.header.timestamp,
               hash: decoded.transactionHash,
               type: "withdraw_completed_l2",
@@ -209,14 +206,19 @@ export function createIndexer<
               event,
             }),
           );
-          const requestId = buildRequestId(decoded.reqContent);
+          const requestId = buildBridgeRequestId({
+            hash: decoded.reqContent.hash,
+            ownerL1Address: decoded.reqContent.ownerL1Address,
+            ownerL2Address: decoded.reqContent.ownerL2,
+            tokenIds: decoded.reqContent.ids,
+          });
           await db
             .insert(realmsBridgeRequests)
             .values({
-              from_chain: l2ChainId,
-              from_address: numberToHex(decoded.reqContent.ownerL2),
-              to_address: numberToHex(decoded.reqContent.ownerL1Address),
-              token_ids: decoded.reqContent.ids.map((id) => Number(id)),
+              from_chain: l2ChainId.toString(),
+              from_address: toStarknetAddress(decoded.reqContent.ownerL2),
+              to_address: toEthereumAddress(decoded.reqContent.ownerL1Address),
+              token_ids: toDatabaseTokenIds(decoded.reqContent.ids),
               timestamp: block.header.timestamp,
               tx_hash: decoded.transactionHash,
               req_hash: decoded.reqContent.hash.toString(),
@@ -226,6 +228,7 @@ export function createIndexer<
           await db
             .insert(realmsBridgeEvents)
             .values({
+              _event_id: buildBridgeEventId(requestId, "deposit_initiated_l2"),
               timestamp: block.header.timestamp,
               hash: decoded.transactionHash,
               type: "deposit_initiated_l2",

@@ -28,13 +28,13 @@ export function DelegateCard({
   delegate: {
     user: string;
     delegateProfile?: {
-      twitter?: string;
-      github?: string;
-      telegram?: string;
-      discord?: string;
-      interests?: string[];
-      statement?: string;
-    };
+      twitter?: string | null;
+      github?: string | null;
+      telegram?: string | null;
+      discord?: string | null;
+      interests?: string[] | null;
+      statement?: string | null;
+    } | null;
     delegatedVotes: string;
     id: string;
   };
@@ -130,7 +130,6 @@ export function DelegateCard({
             text={delegate.delegateProfile?.statement ?? ""}
           />
         </div>
-
       </CardContent>
       <CardFooter>
         <Button

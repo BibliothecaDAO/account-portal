@@ -4,7 +4,6 @@ import StarknetIcon from "@/components/icons/starknet.svg?react";
 import { StarknetWalletButton } from "@/components/layout/starknet-wallet-button";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/utils/auth-client";
-import { formatAddress } from "@/utils/utils";
 import { useAccount, useSignTypedData } from "@starknet-start/react";
 import { env } from "env";
 import { LogOut } from "lucide-react";
@@ -35,6 +34,9 @@ async function createSiwsData(
   chainId?: bigint,
 ) {
   const nonce = await authClient.siws.nonce({ address });
+  if (!nonce.data?.nonce) {
+    throw new Error(nonce.error?.message ?? "Unable to create SIWS nonce");
+  }
   const domain = getAuthHost();
   const origin = window.location.origin;
   const siwsDomain: ISiwsDomain = {
@@ -48,7 +50,7 @@ async function createSiwsData(
     statement,
     uri: origin,
     version: "0.0.5",
-    nonce: nonce.data?.nonce ?? "",
+    nonce: nonce.data.nonce,
     issuedAt: new Date().toISOString(),
   };
 
@@ -60,20 +62,13 @@ export function Login() {
   const { address, chainId } = useAccount();
   const { data: session, refetch } = authClient.useSession();
   const [isDataPending, setIsDataPending] = useState(false);
+  const [signInError, setSignInError] = useState<string | null>(null);
 
   const createSignInData = async () => {
-    setIsDataPending(true);
     if (address) {
       const loginString = "Login to Realms.World with your Starknet Wallet";
-      const siwsData = await createSiwsData(
-        loginString,
-        formatAddress(address),
-        chainId,
-      );
-      setIsDataPending(false);
-      return siwsData;
+      return createSiwsData(loginString, address, chainId);
     }
-    setIsDataPending(false);
   };
 
   const { signTypedDataAsync, isPending } = useSignTypedData({});
@@ -84,26 +79,46 @@ export function Login() {
 
   if (!session) {
     return (
-      <Button
-        onClick={async (e) => {
-          e.preventDefault();
-          const signInData = await createSignInData();
-          if (!signInData) {
-            return;
-          }
-          const signature = await signTypedDataAsync(signInData);
-          await authClient.siws.verify({
-            message: JSON.stringify(signInData),
-            signature: signature,
-            address: address,
-          });
-          await refetch();
-        }}
-        disabled={isPending || isDataPending}
-      >
-        <StarknetIcon className="mr-2 h-6 w-6" />
-        Sign in to Edit Profile
-      </Button>
+      <div className="space-y-2">
+        <Button
+          onClick={async (e) => {
+            e.preventDefault();
+            setIsDataPending(true);
+            setSignInError(null);
+            try {
+              const signInData = await createSignInData();
+              if (!signInData) return;
+              const signature = await signTypedDataAsync(signInData);
+              const result = await authClient.siws.verify({
+                message: JSON.stringify(signInData),
+                signature,
+                address,
+              });
+              if (result.error || !result.data) {
+                throw new Error(
+                  result.error?.message ?? "Unable to verify SIWS signature",
+                );
+              }
+              await refetch();
+            } catch {
+              setSignInError("Unable to sign in. Please try again.");
+            } finally {
+              setIsDataPending(false);
+            }
+          }}
+          disabled={isPending || isDataPending}
+        >
+          <StarknetIcon className="mr-2 h-6 w-6" />
+          {isPending || isDataPending
+            ? "Signing in..."
+            : "Sign in to Edit Profile"}
+        </Button>
+        {signInError && (
+          <p role="alert" className="text-destructive text-sm">
+            {signInError}
+          </p>
+        )}
+      </div>
     );
   }
 

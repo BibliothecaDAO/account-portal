@@ -9,7 +9,6 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
 
 import { int8range } from "../int8range";
 
@@ -138,19 +137,3 @@ export const delegateProfilesRelations = relations(
     }),
   }),
 );
-
-export const CreateDelegateProfileSchema = createInsertSchema(
-  delegateProfiles,
-  {
-    statement: (schema) => schema, // no change, just for demonstration
-    interests: (schema) => schema.optional(),
-    twitter: (schema) => schema.optional(),
-    github: (schema) => schema.optional(),
-    telegram: (schema) => schema.optional(),
-    discord: (schema) => schema.optional(),
-  },
-).omit({
-  delegateId: true,
-  createdAt: true,
-  updatedAt: true,
-});

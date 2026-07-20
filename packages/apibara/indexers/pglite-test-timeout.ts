@@ -1,0 +1,1 @@
+export const PGLITE_TEST_TIMEOUT_MS = 15_000;

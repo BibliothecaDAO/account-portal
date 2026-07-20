@@ -1,7 +1,9 @@
-import type { Proposal } from "@/gql/graphql";
+import type { ProposalFieldsFragment } from "@/gql/snapshot/graphql";
 import type { Choice } from "@/types/snapshot";
 import { useCallback, useState } from "react";
 import { StarkTxAuthenticator } from "@/abi/L2/StarkTxAuthenticator";
+import { isVoteChoiceSelected } from "@/lib/governance/vote-choice";
+import { parseProposalIdForContract } from "@/lib/snapshot/proposal-id";
 import {
   useAccount,
   useContract,
@@ -29,7 +31,7 @@ export function getUserAddressEnum(
   });
 }
 
-export function useVoteProposal(proposal: Proposal) {
+export function useVoteProposal(proposal: ProposalFieldsFragment) {
   const { address } = useAccount();
   const [selectedChoice, setSelectedChoice] = useState<Choice | null>(null);
   const { pinToIPFS } = useIPFSPin();
@@ -44,26 +46,26 @@ export function useVoteProposal(proposal: Proposal) {
 
   const vote = useCallback(
     async (reason: string) => {
-      if (!contract || !selectedChoice) return null;
-      let pinned: { cid: string; provider: string } | null = null;
-      if (reason) pinned = await pinToIPFS({ reason });
+      if (!contract || !isVoteChoiceSelected(selectedChoice)) return null;
+      const proposalId = parseProposalIdForContract(proposal.proposal_id);
+      if (proposalId === null) return null;
 
-      try {
-        return await sendAsync([
-          contract.populate("authenticate_vote", [
-            proposal.space.id,
-            address as string,
-            proposal.proposal_id,
-            getChoiceEnum(selectedChoice),
-            [{ index: 0, params: [] }], // ERC20Votes strategy
-            pinned ? shortString.splitLongString(`ipfs://${pinned.cid}`) : [],
-          ]),
-        ]);
-        // You'll need to adjust these parameters based on your contract's requirements
-      } catch (error) {
-        console.error("Error voting on proposal:", error);
-        return null;
+      let pinned: { cid: string; provider: string } | null = null;
+      if (reason) {
+        pinned = await pinToIPFS({ reason });
+        if (!pinned) return null;
       }
+
+      return sendAsync([
+        contract.populate("authenticate_vote", [
+          proposal.space.id,
+          address as string,
+          proposalId,
+          getChoiceEnum(selectedChoice),
+          [{ index: 0, params: [] }], // ERC20Votes strategy
+          pinned ? shortString.splitLongString(`ipfs://${pinned.cid}`) : [],
+        ]),
+      ]);
     },
     [
       contract,

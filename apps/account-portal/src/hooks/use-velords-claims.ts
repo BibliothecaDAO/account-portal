@@ -2,6 +2,7 @@ import type { Address } from "@starknet-start/react";
 import type { Call } from "starknet";
 import { useMemo, useState } from "react";
 import { RewardPool } from "@/abi/L2/RewardPool";
+import { extractClaimableAmount } from "@/lib/velords-claim";
 import { SUPPORTED_L2_CHAIN_ID } from "@/utils/utils";
 import {
   useAccount,
@@ -51,19 +52,8 @@ export default function useVeLordsClaims() {
     calls: claimCall,
   });
 
-  // Retrieve the claimable amount (ensure this aligns with your contract's response shape).
   const lordsClaimable = useMemo(
-    () => {
-      try {
-        return BigInt(
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
-          ((simulateData as any)?.[0]?.transaction_trace?.execute_invocation
-            ?.result?.[2] ?? "0") as string,
-        );
-      } catch {
-        return 0n;
-      }
-    },
+    () => extractClaimableAmount(simulateData),
     [simulateData],
   );
 
@@ -76,7 +66,8 @@ export default function useVeLordsClaims() {
   return {
     recipient,
     setRecipient,
-    isRecipientValid: recipient.trim().length === 0 || parsedRecipient !== undefined,
+    isRecipientValid:
+      recipient.trim().length === 0 || parsedRecipient !== undefined,
     claimCall,
     lordsClaimable,
     claimRewards,

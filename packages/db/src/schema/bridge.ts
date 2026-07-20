@@ -4,9 +4,9 @@ import {
   numeric,
   pgEnum,
   pgTable,
-  primaryKey,
   text,
   timestamp,
+  unique,
 } from "drizzle-orm/pg-core";
 
 export const bridgeEventTypeEnum = pgEnum("BridgeEventType", [
@@ -37,12 +37,13 @@ export const realmsBridgeRequestsRelations = relations(
 export const realmsBridgeEvents = pgTable(
   "realms_bridge_events",
   {
+    _event_id: text("_event_id").notNull().primaryKey(),
     _id: text("_id").notNull(),
     hash: text("hash").notNull(),
     type: bridgeEventTypeEnum().notNull(),
     timestamp: timestamp("timestamp").notNull(),
   },
-  (t) => [primaryKey({ columns: [t._id, t.type] })],
+  (t) => [unique("realms_bridge_events_request_type_unique").on(t._id, t.type)],
 );
 export const realmsBridgeEventsRelations = relations(
   realmsBridgeEvents,
@@ -54,14 +55,10 @@ export const realmsBridgeEventsRelations = relations(
   }),
 );
 
-export const realmsLordsClaims = pgTable(
-  "realms_lords_claims",
-  {
-    _id: text("_id"),
-    hash: text("hash").notNull(),
-    amount: numeric("amount", { scale: 0 }).notNull(),
-    recipient: text("recipient").notNull(),
-    timestamp: timestamp({ mode: "string" }).notNull(),
-  },
-  (t) => [primaryKey({ columns: [t.amount, t.hash] })],
-);
+export const realmsLordsClaims = pgTable("realms_lords_claims", {
+  _id: text("_id").notNull().primaryKey(),
+  hash: text("hash").notNull(),
+  amount: numeric("amount", { scale: 0 }).notNull(),
+  recipient: text("recipient").notNull(),
+  timestamp: timestamp({ mode: "string" }).notNull(),
+});

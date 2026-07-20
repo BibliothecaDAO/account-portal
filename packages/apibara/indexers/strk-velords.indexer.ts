@@ -1,4 +1,3 @@
-//import type { ApibaraRuntimeConfig } from "apibara/types";
 import type {
   ExtractTablesWithRelations,
   TablesRelationalConfig,
@@ -10,7 +9,7 @@ import { useLogger } from "@apibara/indexer/plugins";
 import { drizzleStorage, useDrizzleStorage } from "@apibara/plugin-drizzle";
 import { decodeEvent, getSelector, StarknetStream } from "@apibara/starknet";
 
-import { ChainId, StakingAddresses } from "@realms-world/constants";
+import { StakingAddresses } from "@realms-world/constants";
 import { db } from "@realms-world/db/poolClient";
 import {
   velords_lords_locked,
@@ -18,27 +17,26 @@ import {
 } from "@realms-world/db/schema";
 
 import { env } from "../env";
+import { resolveStarknetIndexerRuntime } from "../starknet-runtime";
 import { toDecimalAmount } from "./amount-utils";
+import { buildIndexerEventId } from "./event-identity";
+import { toStarknetAddress } from "./starknet-value";
 
-export default function (/*runtimeConfig: ApibaraRuntimeConfig*/) {
+export default function () {
   return createIndexer({ database: db });
 }
-const l2ChainId =
-  env.VITE_PUBLIC_CHAIN === "sepolia" ? ChainId.SN_SEPOLIA : ChainId.SN_MAIN;
+const starknetRuntime = resolveStarknetIndexerRuntime(env.VITE_PUBLIC_CHAIN);
+const l2ChainId = starknetRuntime.chainId;
 
 export function createIndexer<
   TQueryResult extends PgQueryResultHKT,
   TFullSchema extends Record<string, unknown> = Record<string, never>,
-  TSchema extends
-    TablesRelationalConfig = ExtractTablesWithRelations<TFullSchema>,
+  TSchema extends TablesRelationalConfig =
+    ExtractTablesWithRelations<TFullSchema>,
 >({ database }: { database: PgDatabase<TQueryResult, TFullSchema, TSchema> }) {
   return defineIndexer(StarknetStream)({
-    streamUrl:
-      env.VITE_PUBLIC_CHAIN === "sepolia"
-        ? "https://starknet-sepolia.preview.apibara.org"
-        : "https://starknet.preview.apibara.org",
-
-    finality: "pending",
+    streamUrl: starknetRuntime.streamUrl,
+    finality: starknetRuntime.finality,
     startingCursor: {
       orderKey: env.VITE_PUBLIC_CHAIN === "sepolia" ? 76_103n : 699_904n,
     },
@@ -59,7 +57,7 @@ export function createIndexer<
         db: database,
         idColumn: "_id",
         persistState: true,
-        indexerName: "starknet-realms-lords-claims",
+        indexerName: "starknet-velords",
       }),
     ],
     async transform({ endCursor, block, finality }) {
@@ -85,8 +83,9 @@ export function createIndexer<
           await db
             .insert(velords_rewards_received)
             .values({
+              _id: buildIndexerEventId(transactionHash, event.eventIndex),
               transaction_hash: transactionHash,
-              sender: args.sender.toString(),
+              sender: toStarknetAddress(args.sender),
               amount: toDecimalAmount(args.amount),
               timestamp: block.header.timestamp,
             })
@@ -102,11 +101,12 @@ export function createIndexer<
           await db
             .insert(velords_lords_locked)
             .values({
+              _id: buildIndexerEventId(transactionHash, event.eventIndex),
               transaction_hash: transactionHash,
-              owner: args.owner.toString(),
+              owner: toStarknetAddress(args.owner),
               amount: toDecimalAmount(args.amount),
               timestamp: block.header.timestamp,
-              end_time: args.end_time,
+              end_time: Number(args.end_time),
             })
             .onConflictDoNothing();
         }

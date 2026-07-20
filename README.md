@@ -10,26 +10,64 @@
 
 # Realms.World Account Portal
 
-### The account potal
+## Account portal
 
-[Realms.World](https://realms.world) is the central hub for the Realms Autonomous World, offering a comprehensive marketplace NFTs on Ethereum and Starknet. Features include:
+[Realms.World](https://realms.world) is the central hub for the Realms
+Autonomous World. This repository contains the account portal and its indexers.
+Features include:
 
 - Realms Bridge (Ethereum <> Starknet)
 - Realms rewards and VeLords functionality
 - Governance (delegation and voting)
 
-### Contributing
+## Local development
 
-We welcome contributions from the community to help improve Realms.World.
+Prerequisites are Node.js 22.12 or newer and pnpm 10.30.3.
 
-## Setup
+```sh
+cp .env.example .env
+pnpm install --frozen-lockfile
+pnpm dev
+```
 
-1. Copy `.env.example` to `.env` in the root and update the variables
-2. `pnpm i`
-3. `pnpm dev` for running the dash
+The root `.env.example` is the canonical environment template. Keep secrets in
+server-only variables such as `ALCHEMY_API_KEY`, `ETHPLORER_API_KEY`, and
+`BETTER_AUTH_SECRET`; variables prefixed with `VITE_PUBLIC_` are shipped to the
+browser. Production requires an HTTPS `VITE_BASE_URL`, the active Torii
+deployment in `VITE_TORII_API_URL`, and a unique `BETTER_AUTH_SECRET` of at
+least 32 characters.
 
-We will review your contribution and provide feedback. Once your changes have been approved, they will be merged into the main branch.
+## Validation
+
+Run the same quality gate used by CI:
+
+```sh
+pnpm check
+```
+
+This runs linting, strict type checking, tests, the application/indexer builds,
+the frontend bundle budget, and an HTTP smoke test against the production
+server artifact.
+
+## Production deployment
+
+Apply checked-in migrations once per environment before rolling out the new
+application and indexers:
+
+```sh
+pnpm db:migrate
+```
+
+The migration runner uses a PostgreSQL advisory lock, records checksums, and is
+safe to run from one deployment job at a time. Do not use `db:push` for
+production releases. After deployment, verify `GET /api/health` returns a 200
+response with `{"status":"ok"}`.
+
+## Contributing
+
+We welcome focused contributions. Keep the worktree passing `pnpm check` and
+include tests for behavior changes.
 
 ## License
 
-Realms.World is an open-source project released under the MIT License. This license allows you to freely use, modify, and distribute the code, as long as you include the original copyright and permission notice in any copy of the software or substantial portions of it
+Realms.World is released under the MIT License.

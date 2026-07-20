@@ -1,4 +1,5 @@
 import type { SQL } from "@realms-world/db";
+import { StarknetAddressSchema } from "@/lib/validation/chain-address";
 import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -12,13 +13,13 @@ import { velords_rewards_received } from "@realms-world/db/schema";
 /* -------------------------------------------------------------------------- */
 
 const GetVelordsBurnsInput = z.object({
-  sender: z.string().optional(),
-  startTimestamp: z.date().optional(),
-  endTimestamp: z.date().optional(),
+  sender: StarknetAddressSchema.optional(),
+  startTimestamp: z.coerce.date().optional(),
+  endTimestamp: z.coerce.date().optional(),
 });
 
 export const getVelordsBurns = createServerFn({ method: "GET" })
-  .inputValidator((input: unknown) => GetVelordsBurnsInput.parse(input))
+  .validator((input: unknown) => GetVelordsBurnsInput.parse(input))
   .handler(async (ctx) => {
     const { sender, startTimestamp, endTimestamp } = ctx.data;
     const whereFilter: SQL[] = [];

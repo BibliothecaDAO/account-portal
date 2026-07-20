@@ -1,12 +1,5 @@
-/*import { networkId, opts } from "@/config";
-import {
-  clone,
-  formatProposal,
-  isProposalWithMetadata,
-  joinHighlightProposal,
-} from "@/utils/helpers";*/
-import { graphql } from "@/gql/snapshot";
 import type { UserVotesQueryVariables } from "@/gql/snapshot/graphql";
+import { graphql } from "@/gql/snapshot";
 import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -57,23 +50,17 @@ const USER_VOTES_QUERY = graphql(`
 /*                  loadUserVotes Server Function                           */
 /* -------------------------------------------------------------------------- */
 
-// Define a Zod schema for the UserVotes request input.
 const LoadUserVotesInput = z.object({
-  spaceIds: z.array(z.string()).min(1),
-  voter: z.string(),
-  limit: z.number().min(1),
-  skip: z.number().min(0).default(0),
+  spaceIds: z.array(z.string().min(1).max(256)).min(1).max(10),
+  voter: z.string().min(1).max(66),
+  limit: z.number().int().min(1).max(100),
+  skip: z.number().int().min(0).max(10_000).default(0),
 });
 
-/**
- * This function wraps the loadUserVotes logic and uses generic fetch
- * to execute GraphQL POST calls instead of Apollo.
- */
 export const getUserVotes = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) => LoadUserVotesInput.parse(input))
+  .validator((input: unknown) => LoadUserVotesInput.parse(input))
   .handler(async (ctx) => {
     const { spaceIds, limit, skip, voter } = ctx.data;
-    // Define variables for the UserVotes query.
     const variables: UserVotesQueryVariables = {
       first: limit,
       skip,
@@ -81,11 +68,7 @@ export const getUserVotes = createServerFn({ method: "POST" })
       voter,
     };
 
-    // Fetch UserVotes using the generic fetch helper.
-    const UserVotesData = await execute(USER_VOTES_QUERY, variables);
-
-    // Filter and format the UserVotes before returning them.
-    return UserVotesData;
+    return execute(USER_VOTES_QUERY, variables);
   });
 
 /* -------------------------------------------------------------------------- */
@@ -103,7 +86,10 @@ export const getUserVotesQueryOptions = (
       input.limit,
       input.skip,
     ],
-    queryFn: () => getUserVotes({ data: input }),
+    queryFn: () =>
+      input.voter
+        ? getUserVotes({ data: input })
+        : Promise.resolve({ votes: [] }),
     enabled: !!input.voter,
     staleTime: USER_VOTES_STALE_TIME_MS,
   });

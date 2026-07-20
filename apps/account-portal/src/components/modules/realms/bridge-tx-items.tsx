@@ -8,10 +8,15 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useWriteFinalizeWithdrawRealms } from "@/hooks/bridge/useWriteFinalizeWithdrawRealms";
 import { useToast } from "@/hooks/use-toast";
+import {
+  ethereumTransactionUrl,
+  resolveBridgeOwnerAddresses,
+} from "@/lib/bridge/bridge-history";
 import { getBridgeTransactionsQueryOptions } from "@/lib/getBridgeTransactions";
-import { cn, shortenAddress } from "@/utils/utils";
+import { cn, shortenAddress, SUPPORTED_L2_CHAIN_ID } from "@/utils/utils";
 import { useAccount, useExplorer } from "@starknet-start/react";
 import { useSuspenseQuery } from "@tanstack/react-query";
+import { env } from "env";
 import { ArrowRight } from "lucide-react";
 import { useAccount as useL1Account } from "wagmi";
 
@@ -36,14 +41,21 @@ const BridgeTransactionItems = () => {
 
   const handleCompleteWithdraw = async (transaction: {
     token_ids: number[];
+    from_chain: string;
     from_address: string;
     to_address: string;
     req_hash: string;
   }) => {
+    const { l1Address, l2Address } = resolveBridgeOwnerAddresses({
+      fromChain: transaction.from_chain,
+      l2Chain: SUPPORTED_L2_CHAIN_ID.toString(),
+      fromAddress: transaction.from_address,
+      toAddress: transaction.to_address,
+    });
     const hash = await writeAsync({
       hash: transaction.req_hash,
-      l1Address: transaction.from_address,
-      l2Address: transaction.to_address,
+      l1Address,
+      l2Address,
       tokenIds: transaction.token_ids.map((id) => BigInt(id)),
     });
     if (hash) {
@@ -63,7 +75,7 @@ const BridgeTransactionItems = () => {
         );
 
         return (
-          <AccordionItem key={transaction.id} value={transaction.id}>
+          <AccordionItem key={transaction._id} value={transaction._id}>
             <AccordionTrigger className="flex w-full items-center justify-between hover:no-underline">
               <div className="flex w-full justify-between px-2">
                 <div className="flex flex-col justify-center">
@@ -99,7 +111,7 @@ const BridgeTransactionItems = () => {
                         e.stopPropagation();
                         await handleCompleteWithdraw(transaction);
                       }}
-                      className="z-20 mt-2 rounded border-success"
+                      className="border-success z-20 mt-2 rounded"
                       disabled={isWithdrawPending}
                     >
                       Complete Withdraw
@@ -113,9 +125,7 @@ const BridgeTransactionItems = () => {
             <AccordionContent>
               <div className="flex flex-col space-y-1 py-2">
                 <span
-                  className={cn(
-                    isCompleted ? "text-success" : "text-warning",
-                  )}
+                  className={cn(isCompleted ? "text-success" : "text-warning")}
                 >
                   {isCompleted ? "Completed" : "In Progress"}
                 </span>
@@ -128,7 +138,11 @@ const BridgeTransactionItems = () => {
                   {transaction.events.map((event, idx) => {
                     const explorerLink = event.type.endsWith("l2")
                       ? explorer.transaction(event.hash)
-                      : "https://sepolia.etherscan.io/tx/" + event.hash;
+                      : ethereumTransactionUrl(
+                          env.VITE_PUBLIC_CHAIN,
+                          event.hash,
+                        );
+                    if (!explorerLink) return null;
                     return (
                       <a
                         key={event.hash + idx}

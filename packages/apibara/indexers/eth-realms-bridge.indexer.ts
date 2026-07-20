@@ -1,12 +1,10 @@
-//import type { ApibaraRuntimeConfig } from "apibara/types";
 import type { ApibaraRuntimeConfig } from "apibara/types";
-
 import { EvmStream } from "@apibara/evm";
 import { defineIndexer } from "@apibara/indexer";
 import { useLogger } from "@apibara/indexer/plugins";
 import { drizzleStorage, useDrizzleStorage } from "@apibara/plugin-drizzle";
 import { uint256 } from "starknet";
-import { decodeEventLog, encodeEventTopics, numberToHex, parseAbi } from "viem";
+import { decodeEventLog, encodeEventTopics, parseAbi } from "viem";
 
 import {
   ChainId,
@@ -19,7 +17,15 @@ import {
   realmsBridgeRequests,
 } from "@realms-world/db/schema";
 
+import type { BridgeEventType } from "./bridge-request-id";
 import { env } from "../env";
+import {
+  BRIDGE_STORAGE_ID_COLUMNS,
+  bridgeAccountsFromMessagingPayload,
+  buildBridgeEventId,
+  buildBridgeRequestIdFromMessagingPayload,
+  toDatabaseTokenIds,
+} from "./bridge-request-id";
 
 const abi = parseAbi([
   "event LogMessageToL2(address indexed fromAddress, uint256 indexed toAddress,uint256 indexed selector,uint256[] payload,uint256 nonce,uint256 fee)",
@@ -32,14 +38,14 @@ const chainId =
   env.VITE_PUBLIC_CHAIN === "sepolia" ? ChainId.SEPOLIA : ChainId.MAINNET;
 const l2ChainId =
   env.VITE_PUBLIC_CHAIN === "sepolia" ? ChainId.SN_SEPOLIA : ChainId.SN_MAIN;
+const eventTypeMap = {
+  LogMessageToL2: "deposit_initiated_l1",
+  ConsumedMessageToL2: "withdraw_completed_l2",
+  LogMessageToL1: "withdraw_available_l1",
+  ConsumedMessageToL1: "withdraw_completed_l1",
+} as const satisfies Record<string, BridgeEventType>;
 
 export default function (_runtimeConfig: ApibaraRuntimeConfig) {
-  console.log("eth indexer started");
-  console.log(env.VITE_PUBLIC_CHAIN);
-  console.log("messaging ", STARKNET_MESSAGING[chainId]);
-  console.log("from ", REALMS_BRIDGE_ADDRESS[chainId]);
-  console.log("to " + BigInt(REALMS_BRIDGE_ADDRESS[l2ChainId]));
-
   return defineIndexer(EvmStream)({
     streamUrl:
       env.VITE_PUBLIC_CHAIN === "sepolia"
@@ -105,7 +111,7 @@ export default function (_runtimeConfig: ApibaraRuntimeConfig) {
       drizzleStorage({
         db: db,
         persistState: true,
-        idColumn: "_id",
+        idColumn: BRIDGE_STORAGE_ID_COLUMNS,
         indexerName: "eth-realms-bridge",
       }),
     ],
@@ -131,9 +137,13 @@ export default function (_runtimeConfig: ApibaraRuntimeConfig) {
         const tokenCount = Number(decoded.args.payload[4]);
         const idArray = decoded.args.payload.slice(5);
 
-        if (idArray.length < tokenCount * 2) {
-          throw new Error("Insufficient data in payload for token IDs");
-        }
+        const requestId = buildBridgeRequestIdFromMessagingPayload(
+          decoded.args.payload,
+        );
+        const { fromAddress, toAddress } = bridgeAccountsFromMessagingPayload(
+          decoded.eventName,
+          decoded.args.payload,
+        );
 
         const tokenIds = Array.from({ length: tokenCount }, (_, i) => {
           const index = i * 2;
@@ -152,39 +162,33 @@ export default function (_runtimeConfig: ApibaraRuntimeConfig) {
         await db
           .insert(realmsBridgeRequests)
           .values({
-            from_chain: fromChain,
-            from_address: numberToHex(decoded.args.payload[2]),
-            to_address: numberToHex(decoded.args.payload[3]),
-            token_ids: tokenIds,
+            from_chain: fromChain.toString(),
+            from_address: fromAddress,
+            to_address: toAddress,
+            token_ids: toDatabaseTokenIds(tokenIds),
             timestamp: header.timestamp,
             tx_hash: log.transactionHash,
-            _id: decoded.args.payload,
-            req_hash: uint256.uint256ToBN({
-              low: decoded.args.payload[0],
-              high: decoded.args.payload[1],
-            }),
+            _id: requestId,
+            req_hash: uint256
+              .uint256ToBN({
+                low: decoded.args.payload[0],
+                high: decoded.args.payload[1],
+              })
+              .toString(),
           })
           .onConflictDoNothing();
 
-        const eventTypeMap = {
-          LogMessageToL2: "deposit_initiated_l1",
-          ConsumedMessageToL2: "withdraw_completed_l2",
-          LogMessageToL1: "withdraw_available_l1",
-          ConsumedMessageToL1: "withdraw_completed_l1",
-        };
-
         const eventType = eventTypeMap[decoded.eventName];
-        if (eventType) {
-          await db
-            .insert(realmsBridgeEvents)
-            .values({
-              timestamp: header.timestamp,
-              hash: log.transactionHash,
-              type: eventType,
-              _id: decoded.args.payload,
-            })
-            .onConflictDoNothing();
-        }
+        await db
+          .insert(realmsBridgeEvents)
+          .values({
+            _event_id: buildBridgeEventId(requestId, eventType),
+            timestamp: header.timestamp,
+            hash: log.transactionHash,
+            type: eventType,
+            _id: requestId,
+          })
+          .onConflictDoNothing();
       }
     },
   });

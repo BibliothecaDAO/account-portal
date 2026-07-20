@@ -4,12 +4,20 @@ import { env } from "env";
 
 import { db } from "@realms-world/db/client";
 
+import { resolveAuthRuntimeConfig } from "./auth/auth-config";
 import { siws } from "./auth/auth-siws-plugin";
 
-// Create Starknet auth plug
+const authRuntime = resolveAuthRuntimeConfig({
+  nodeEnv: process.env.NODE_ENV,
+  baseUrl: env.VITE_BASE_URL,
+  secret: process.env.BETTER_AUTH_SECRET,
+  allowInsecureLoopback:
+    process.env.ACCOUNT_PORTAL_PRODUCTION_SMOKE_TEST === "true",
+});
 
 export const auth = betterAuth({
-  baseURL: env.VITE_BASE_URL ?? "http://localhost:3000",
+  ...authRuntime,
+  appName: "Realms Account Portal",
   database: drizzleAdapter(db, {
     provider: "pg",
   }),
@@ -22,5 +30,21 @@ export const auth = betterAuth({
     },
   },
 
-  plugins: [siws({ domain: env.VITE_BASE_URL ?? "http://localhost:3000" })],
+  rateLimit: {
+    enabled: true,
+    storage: "database",
+    window: 60,
+    max: 60,
+    customRules: {
+      "/siws/nonce": { window: 60, max: 5 },
+      "/siws/verify": { window: 60, max: 10 },
+    },
+  },
+
+  plugins: [
+    siws({
+      domain: authRuntime.baseURL,
+      chainId: env.VITE_PUBLIC_CHAIN === "sepolia" ? "SN_SEPOLIA" : "SN_MAIN",
+    }),
+  ],
 });

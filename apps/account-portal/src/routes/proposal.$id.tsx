@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { ProposalResults } from "@/components/modules/governance/proposal-results";
 import { ProposalUserVoteBadge } from "@/components/modules/governance/proposal-user-vote-badge";
 import { ProposalVoteAction } from "@/components/modules/governance/proposal-vote-action";
@@ -18,6 +19,7 @@ import { useStarkDisplayName } from "@/hooks/use-stark-name";
 import { getProposalQueryOptions } from "@/lib/snapshot/getProposals";
 import { getUserVotesQueryOptions } from "@/lib/snapshot/getUserVotes";
 import { isMatchingProposalVote } from "@/lib/snapshot/proposal-id";
+import { normalizeProposalMetadata } from "@/lib/snapshot/proposal-metadata";
 import {
   formatAddress,
   shortenAddress,
@@ -26,23 +28,10 @@ import {
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { formatDistanceToNow } from "date-fns";
-import { env } from "env";
 import { CheckCircle2, MinusCircle, XCircle } from "lucide-react";
 import { num } from "starknet";
 
 import { SnapshotSpaceAddresses } from "@realms-world/constants";
-
-// Define the expected types for the proposal data we need
-/*interface ProposalData {
-  metadata?: {
-    title?: string;
-    body?: string;
-  };
-  author?: {
-    id: string;
-  };
-  created?: number;
-}*/
 
 export const Route = createFileRoute("/proposal/$id")({
   component: RouteComponent,
@@ -79,6 +68,7 @@ function RouteComponent() {
   const userVoteRef = userVotesQuery?.votes?.find((vote) =>
     isMatchingProposalVote(vote?.proposal, id),
   );
+  const userVoteChoice = userVoteRef?.choice;
 
   const proposal = proposalQuery.proposal;
   const authorAddress = (proposal?.author.id ?? "0x0") as `0x${string}`;
@@ -88,18 +78,14 @@ function RouteComponent() {
     return <div>Proposal not found</div>;
   }
 
-  const title = proposal.metadata?.title as string;
-  let body = proposal.metadata?.body as string;
+  const metadata = normalizeProposalMetadata(proposal.metadata);
+  const title = metadata.title ?? `Proposal #${proposal.id}`;
+  const body = metadata.body;
   const authorId = proposal.author.id;
   const createdTime = proposal.created
     ? new Date(proposal.created * 1000)
     : null;
 
-  if (body && typeof body === "string") {
-    body = body.replace(/ipfs:\/\/\S+/g, (match) =>
-      match.replace("ipfs://", env.VITE_PUBLIC_IPFS_GATEWAY ?? ""),
-    );
-  }
   const isActive = proposal.max_end * 1000 > Date.now();
 
   // Determine proposal status if vote has ended
@@ -133,10 +119,12 @@ function RouteComponent() {
 
   return (
     <SidebarProvider
-      style={{
-        "--sidebar-width": "20rem",
-        "--sidebar-width-mobile": "20rem",
-      }}
+      style={
+        {
+          "--sidebar-width": "20rem",
+          "--sidebar-width-mobile": "20rem",
+        } as CSSProperties
+      }
     >
       <SidebarInset>
         <div className="container mx-auto max-w-4xl py-8">
@@ -205,10 +193,12 @@ function RouteComponent() {
                 <ProposalVoteAction proposal={proposal} />
               </>
             )}
-            {userVoteRef && (
+            {(userVoteChoice === 1 ||
+              userVoteChoice === 2 ||
+              userVoteChoice === 3) && (
               <>
                 <SidebarGroupLabel>You Voted:</SidebarGroupLabel>
-                <ProposalUserVoteBadge choice={userVoteRef.choice} />
+                <ProposalUserVoteBadge choice={userVoteChoice} />
               </>
             )}
           </SidebarGroup>

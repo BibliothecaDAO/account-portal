@@ -19,6 +19,7 @@ import { Route as ProposalListRouteImport } from './routes/proposal.list'
 import { Route as ProposalIdRouteImport } from './routes/proposal.$id'
 import { Route as DelegateProfileRouteImport } from './routes/delegate.profile'
 import { Route as DelegateListRouteImport } from './routes/delegate.list'
+import { Route as ApiHealthRouteImport } from './routes/api/health'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
 const IndexRoute = IndexRouteImport.update({
@@ -71,6 +72,11 @@ const DelegateListRoute = DelegateListRouteImport.update({
   path: '/delegate/list',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiHealthRoute = ApiHealthRouteImport.update({
+  id: '/api/health',
+  path: '/api/health',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -79,6 +85,7 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/api/health': typeof ApiHealthRoute
   '/delegate/list': typeof DelegateListRoute
   '/delegate/profile': typeof DelegateProfileRoute
   '/proposal/$id': typeof ProposalIdRoute
@@ -92,6 +99,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/api/health': typeof ApiHealthRoute
   '/delegate/list': typeof DelegateListRoute
   '/delegate/profile': typeof DelegateProfileRoute
   '/proposal/$id': typeof ProposalIdRoute
@@ -106,6 +114,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/api/health': typeof ApiHealthRoute
   '/delegate/list': typeof DelegateListRoute
   '/delegate/profile': typeof DelegateProfileRoute
   '/proposal/$id': typeof ProposalIdRoute
@@ -121,6 +130,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/api/health'
     | '/delegate/list'
     | '/delegate/profile'
     | '/proposal/$id'
@@ -134,6 +144,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/api/health'
     | '/delegate/list'
     | '/delegate/profile'
     | '/proposal/$id'
@@ -147,6 +158,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/api/health'
     | '/delegate/list'
     | '/delegate/profile'
     | '/proposal/$id'
@@ -161,6 +173,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ApiHealthRoute: typeof ApiHealthRoute
   DelegateListRoute: typeof DelegateListRoute
   DelegateProfileRoute: typeof DelegateProfileRoute
   ProposalIdRoute: typeof ProposalIdRoute
@@ -245,6 +258,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DelegateListRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/health': {
+      id: '/api/health'
+      path: '/api/health'
+      fullPath: '/api/health'
+      preLoaderRoute: typeof ApiHealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -257,6 +277,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ApiHealthRoute: ApiHealthRoute,
   DelegateListRoute: DelegateListRoute,
   DelegateProfileRoute: DelegateProfileRoute,
   ProposalIdRoute: ProposalIdRoute,

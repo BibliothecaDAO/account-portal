@@ -1,3 +1,4 @@
+import type { BridgeRealm } from "@/types/ark";
 import type { RowSelectionState } from "@tanstack/react-table";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import EthereumIcon from "@/components/icons/ethereum.svg?react";
@@ -9,7 +10,9 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { useStarknetWallet } from "@/hooks/use-starknet-wallet";
+import { mapL1RealmToBridgeRealm } from "@/lib/bridge/realm-mapper";
 import { getAccountTokensQueryOptions } from "@/lib/eternum/getPortfolioCollections";
+import { parseRealmMetadata } from "@/lib/eternum/realm-metadata";
 import { getL1RealmsQueryOptions } from "@/lib/getL1Realms";
 import { SUPPORTED_L2_CHAIN_ID } from "@/utils/utils";
 import { useAccount } from "@starknet-start/react";
@@ -51,35 +54,22 @@ function RouteComponent() {
     "Ethereum",
   );
 
-  const mappedRealms = useMemo(() => {
+  const mappedRealms = useMemo<BridgeRealm[]>(() => {
     if (selectedAsset === "Ethereum") {
-      return (
-        l1Realms?.tokens?.map((realm: any) => ({
-          token_id: parseInt(realm.token?.tokenId),
-          name: realm.token?.name,
-          attributes:
-            realm.token?.attributes?.map((attribute: any) => ({
-              ...attribute,
-              trait_type: attribute.key,
-            })) ?? [],
-        })) ?? []
-      );
+      return l1Realms?.tokens.map(mapL1RealmToBridgeRealm) ?? [];
     } else if (selectedAsset === "Starknet") {
-      return l2Realms?.map((realm: any) => {
-        let parsedMetadata: any = null;
-        try {
-          parsedMetadata = realm.metadata ? JSON.parse(realm.metadata) : null;
-        } catch {
-          parsedMetadata = null;
-        }
-        const { attributes, name } = parsedMetadata ?? {};
-        return {
-          token_id: realm.token_id,
-          name: name,
-          attributes: attributes,
-        };
-      });
+      return (
+        l2Realms?.map((realm) => {
+          const { attributes, name } = parseRealmMetadata(realm.metadata) ?? {};
+          return {
+            token_id: realm.token_id,
+            name: name,
+            attributes: attributes,
+          };
+        }) ?? []
+      );
     }
+    return [];
   }, [selectedAsset, l2Realms, l1Realms]);
 
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
@@ -102,7 +92,6 @@ function RouteComponent() {
   const swapAssets = () => {
     setSelectedAsset((prev) => (prev === "Ethereum" ? "Starknet" : "Ethereum"));
   };
-  //const { openConnectModal } = useConnectModal();
   const { openStarknetKitModal } = useStarknetWallet();
 
   const selectedRows = table.getFilteredSelectedRowModel().rows;
@@ -134,7 +123,12 @@ function RouteComponent() {
               </>
             )}
           </div>
-          <Button size="icon" variant="outline" onClick={swapAssets} className="rounded-full">
+          <Button
+            size="icon"
+            variant="outline"
+            onClick={swapAssets}
+            className="rounded-full"
+          >
             <ArrowLeftRight className="h-4 w-4" />
           </Button>
           <div className="realm-subtle-panel flex items-center gap-2 rounded-lg px-4 py-2.5">
@@ -159,7 +153,8 @@ function RouteComponent() {
               Your Ethereum wallet is not connected
             </AlertTitle>
             <AlertDescription>
-              Connect your Ethereum wallet using the sidebar to view and bridge your Realms
+              Connect your Ethereum wallet using the sidebar to view and bridge
+              your Realms
             </AlertDescription>
           </Alert>
         )}
@@ -176,8 +171,8 @@ function RouteComponent() {
                 onClick={() => openStarknetKitModal()}
               >
                 Connect your Starknet wallet
-              </Button>
-              {" "}to view and bridge your Realms
+              </Button>{" "}
+              to view and bridge your Realms
             </AlertDescription>
           </Alert>
         )}

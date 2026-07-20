@@ -24,18 +24,21 @@
   "license": "MIT",
   "scripts": {
     "build": "tsc  --noEmit",
+    "typecheck": "tsc --noEmit",
     "dev": "tsc --watch",
     "clean": "git clean -xdf .cache .turbo dist node_modules",
     "lint": "eslint",
     "format": "prettier --check \"**/*.{mjs,ts,md,json}\"",
+    "migrate": "pnpm with-env node scripts/migrate.mjs",
     "push": "pnpm with-env drizzle-kit push",
     "studio": "pnpm with-env drizzle-kit studio",
+    "test": "node --test scripts/migrate-core.test.mjs",
     "with-env": "dotenv -e ../../.env --"
   },
   "dependencies": {
     "@neondatabase/serverless": "1.0.2",
     "drizzle-orm": "catalog:",
-    "drizzle-zod": "^0.8.3",
+    "pg": "^8.18.0",
     "ws": "^8.19.0",
     "zod": "catalog:"
   },
@@ -44,9 +47,8 @@
     "@types/ws": "^8.18.1",
     "dotenv-cli": "catalog:",
     "drizzle-kit": "catalog:",
-    "pg": "^8.18.0",
-    "prettier": "catalog:",
     "postgres-range": "^1.1.4",
+    "prettier": "catalog:",
     "typescript": "catalog:"
   }
 }

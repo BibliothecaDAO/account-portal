@@ -17,9 +17,7 @@ import { useERC721SetApprovalForAll } from "./useERC721SetApprovalForAll";
 
 export default function useERC721Approval() {
   const { address } = useAccount();
-  const { writeAsync, data, isPending } = useERC721SetApprovalForAll({
-    onSuccess: (data) => console.log("approved" + data),
-  });
+  const { writeAsync, data, isPending } = useERC721SetApprovalForAll({});
   const { data: isApprovedForAll, refetch } = useReadContract({
     abi: erc721Abi,
     address: CollectionAddresses.realms[SUPPORTED_L1_CHAIN_ID] as `0x${string}`,

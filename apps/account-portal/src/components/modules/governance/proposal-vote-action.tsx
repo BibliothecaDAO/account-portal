@@ -1,4 +1,4 @@
-import type { Proposal } from "@/gql/graphql";
+import type { ProposalFieldsFragment } from "@/gql/snapshot/graphql";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,17 +14,23 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useVoteProposal } from "@/hooks/governance/use-vote-proposal";
 import { useStarknetWallet } from "@/hooks/use-starknet-wallet";
+import { normalizeProposalMetadata } from "@/lib/snapshot/proposal-metadata";
 import { Choice } from "@/types/snapshot";
 import { useAccount } from "@starknet-start/react";
 import { Check, Minus, X } from "lucide-react";
 
-export const ProposalVoteAction = ({ proposal }: { proposal: Proposal }) => {
+export const ProposalVoteAction = ({
+  proposal,
+}: {
+  proposal: ProposalFieldsFragment;
+}) => {
   const { vote, selectedChoice, setSelectedChoice } = useVoteProposal(proposal);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [voteReason, setVoteReason] = useState("");
+  const [voteError, setVoteError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const proposalTitle =
-    ((proposal as { metadata?: { title?: string } }).metadata?.title ??
-      "this proposal");
+    normalizeProposalMetadata(proposal.metadata).title ?? "this proposal";
   const { address } = useAccount();
   const { openStarknetKitModal } = useStarknetWallet();
 
@@ -34,6 +40,7 @@ export const ProposalVoteAction = ({ proposal }: { proposal: Proposal }) => {
     }
 
     setSelectedChoice(choice);
+    setVoteError(null);
     setVoteReason(
       choice === Choice.For
         ? "I support this proposal"
@@ -45,14 +52,18 @@ export const ProposalVoteAction = ({ proposal }: { proposal: Proposal }) => {
   };
 
   const handleVoteSubmit = async () => {
-    if (selectedChoice !== null) {
-      await vote(voteReason)
-        .then(() => {
-          setDialogOpen(false);
-        })
-        .catch((error) => {
-          console.error("Error submitting vote:", error);
-        });
+    if (selectedChoice === null || isSubmitting) return;
+
+    setIsSubmitting(true);
+    setVoteError(null);
+    try {
+      const result = await vote(voteReason);
+      if (!result) throw new Error("Vote was not submitted");
+      setDialogOpen(false);
+    } catch {
+      setVoteError("Your vote was not submitted. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -63,32 +74,37 @@ export const ProposalVoteAction = ({ proposal }: { proposal: Proposal }) => {
           onClick={() => openVoteDialog(Choice.For)}
           variant="outline"
           size="icon"
-          className="rounded-full border-success bg-success/10 hover:bg-success/20"
+          className="border-success bg-success/10 hover:bg-success/20 rounded-full"
           title="Vote FOR"
         >
-          <Check className="h-5 w-5 text-success" />
+          <Check className="text-success h-5 w-5" />
         </Button>
         <Button
           onClick={() => openVoteDialog(Choice.Abstain)}
           variant="outline"
           size="icon"
-          className="rounded-full border-muted-foreground bg-muted hover:bg-muted/80"
+          className="border-muted-foreground bg-muted hover:bg-muted/80 rounded-full"
           title="Vote ABSTAIN"
         >
-          <Minus className="h-5 w-5 text-muted-foreground" />
+          <Minus className="text-muted-foreground h-5 w-5" />
         </Button>
         <Button
           onClick={() => openVoteDialog(Choice.Against)}
           variant="outline"
           size="icon"
-          className="rounded-full border-destructive bg-destructive/10 hover:bg-destructive/20"
+          className="border-destructive bg-destructive/10 hover:bg-destructive/20 rounded-full"
           title="Vote AGAINST"
         >
-          <X className="h-5 w-5 text-destructive" />
+          <X className="text-destructive h-5 w-5" />
         </Button>
       </div>
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Dialog
+        open={dialogOpen}
+        onOpenChange={(open) => {
+          if (!isSubmitting) setDialogOpen(open);
+        }}
+      >
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Confirm Your Vote</DialogTitle>
@@ -99,6 +115,7 @@ export const ProposalVoteAction = ({ proposal }: { proposal: Proposal }) => {
 
           <div className="grid gap-4 py-4">
             <RadioGroup
+              disabled={isSubmitting}
               value={selectedChoice?.toString()}
               onValueChange={(value) =>
                 setSelectedChoice(Number(value) as Choice)
@@ -113,7 +130,7 @@ export const ProposalVoteAction = ({ proposal }: { proposal: Proposal }) => {
                 />
                 <Label
                   htmlFor="vote-for"
-                  className="flex items-center text-success"
+                  className="text-success flex items-center"
                 >
                   <Check className="mr-1 h-4 w-4" /> For
                 </Label>
@@ -127,7 +144,7 @@ export const ProposalVoteAction = ({ proposal }: { proposal: Proposal }) => {
                 />
                 <Label
                   htmlFor="vote-abstain"
-                  className="flex items-center text-muted-foreground"
+                  className="text-muted-foreground flex items-center"
                 >
                   <Minus className="mr-1 h-4 w-4" /> Abstain
                 </Label>
@@ -141,7 +158,7 @@ export const ProposalVoteAction = ({ proposal }: { proposal: Proposal }) => {
                 />
                 <Label
                   htmlFor="vote-against"
-                  className="flex items-center text-destructive"
+                  className="text-destructive flex items-center"
                 >
                   <X className="mr-1 h-4 w-4" /> Against
                 </Label>
@@ -151,19 +168,31 @@ export const ProposalVoteAction = ({ proposal }: { proposal: Proposal }) => {
             <div className="grid gap-2">
               <Label htmlFor="vote-reason">Reason for your vote</Label>
               <Input
+                disabled={isSubmitting}
                 id="vote-reason"
                 value={voteReason}
                 onChange={(e) => setVoteReason(e.target.value)}
                 placeholder="Enter your reason for voting this way"
               />
             </div>
+            {voteError && (
+              <p role="alert" className="text-destructive text-sm">
+                {voteError}
+              </p>
+            )}
           </div>
 
           <DialogFooter>
-            <Button onClick={() => setDialogOpen(false)} variant="outline">
+            <Button
+              onClick={() => setDialogOpen(false)}
+              variant="outline"
+              disabled={isSubmitting}
+            >
               Cancel
             </Button>
-            <Button onClick={handleVoteSubmit}>Submit Vote</Button>
+            <Button onClick={handleVoteSubmit} disabled={isSubmitting}>
+              {isSubmitting ? "Submitting…" : "Submit Vote"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -1,12 +1,12 @@
+import { StarknetAddressSchema } from "@/lib/validation/chain-address";
 import { SUPPORTED_L2_CHAIN_ID } from "@/utils/utils";
 import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
-import {
-  marketplaceCollections,
-} from "@realms-world/constants";
+import { marketplaceCollections } from "@realms-world/constants";
 
+import { parseToriiTokenId } from "./account-token";
 import { fetchSQL } from "./apiClient";
 import { QUERIES } from "./queries";
 
@@ -24,54 +24,45 @@ export interface RawTokenBalanceWithMetadata {
   order_id?: string;
 }
 
+export type AccountToken = Omit<RawTokenBalanceWithMetadata, "token_id"> & {
+  token_id: number;
+};
+
 /* -------------------------------------------------------------------------- */
 /*                             getAccountTokens Endpoint                             */
 /* -------------------------------------------------------------------------- */
 
 const GetAccountTokensInput = z.object({
-  address: z.string().optional(),
-  collectionAddress: z.string().optional(),
-  itemsPerPage: z.number().optional(),
-  page: z.number().optional(),
+  address: StarknetAddressSchema,
+  collectionAddress: StarknetAddressSchema,
 });
 
 export const getAccountTokens = createServerFn({ method: "GET" })
-  .inputValidator((input: unknown) => GetAccountTokensInput.parse(input))
+  .validator((input: unknown) => GetAccountTokensInput.parse(input))
   .handler(async (ctx) => {
     const { address, collectionAddress } = ctx.data;
     const collectionId =
       marketplaceCollections.realms.id[SUPPORTED_L2_CHAIN_ID];
     const query = QUERIES.TOKEN_BALANCES_WITH_METADATA.replaceAll(
       "{contractAddress}",
-      collectionAddress ?? "",
+      collectionAddress,
     )
       .replace("{collectionId}", collectionId.toString())
-      .replace("{accountAddress}", address ?? "");
+      .replace("{accountAddress}", address);
 
-    try {
-      const result = await fetchSQL<RawTokenBalanceWithMetadata[]>(query);
-      const resultsWithParsedTokenId = result.map((r) => ({
-        ...r,
-        token_id: Number.parseInt(r.token_id.split(":")[1] ?? "0", 16) || 0,
-      }));
-      return resultsWithParsedTokenId;
-    } catch (error) {
-      console.error("Failed to fetch token balances with metadata", error);
-      return [];
-    }
+    const result = await fetchSQL<RawTokenBalanceWithMetadata[]>(query);
+    return result.map((token) => ({
+      ...token,
+      token_id: parseToriiTokenId(token.token_id),
+    }));
   });
 
-export const getAccountTokensQueryOptions = (
-  input: z.infer<typeof GetAccountTokensInput>,
-) =>
+export const getAccountTokensQueryOptions = (input: {
+  address?: string;
+  collectionAddress: string;
+}) =>
   queryOptions({
-    queryKey: [
-      "getAccountTokens",
-      input.address,
-      input.collectionAddress,
-      input.page,
-      input.itemsPerPage,
-    ],
+    queryKey: ["getAccountTokens", input.address, input.collectionAddress],
     queryFn: () =>
       input.address
         ? getAccountTokens({
@@ -80,6 +71,6 @@ export const getAccountTokensQueryOptions = (
               collectionAddress: input.collectionAddress,
             },
           })
-        : null,
+        : Promise.resolve([] as AccountToken[]),
     enabled: !!input.address,
   });
