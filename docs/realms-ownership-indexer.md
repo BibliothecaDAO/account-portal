@@ -3,6 +3,8 @@
 The account portal reads Starknet Realm ownership from PostgreSQL. The
 `strk-realms-ownership` Apibara indexer rebuilds that table from ERC-721
 `Transfer` events, beginning immediately before mainnet block `664162`.
+All Starknet indexers select the current DNA stream host through the shared
+`packages/apibara/streams.ts` configuration.
 
 Apibara's Drizzle storage plugin records and reverses database writes during a
 Starknet reorganisation. Transfers update the current owner, and transfers to
@@ -32,10 +34,17 @@ This is a read-only RPC URL; it is not a wallet credential.
 5. Redeploy the account portal against the same `DATABASE_URL`.
 6. Run `pnpm --filter @realms-world/apibara ownership:smoke`.
 
-For an ownership assertion, set `REALM_OWNERSHIP_SMOKE_ADDRESS` and
-`REALM_OWNERSHIP_SMOKE_EXPECTED_COUNT` before running the smoke test. The known
-incident wallet can therefore be checked for exactly 17 records without
-hard-coding a personal address in the repository.
+Before running the production smoke test, set
+`REALM_OWNERSHIP_SMOKE_ADDRESS` and
+`REALM_OWNERSHIP_SMOKE_EXPECTED_COUNT`. Both are required: the test rejects an
+empty index and verifies the chosen wallet's exact count. The known incident
+wallet can therefore be checked for exactly 17 records without hard-coding a
+personal address in the repository.
+
+The account portal polls ownership every 15 seconds while a connected-wallet
+screen is visible. This keeps recent transfers available for bridge selection
+while avoiding background-tab polling. A missing checkpoint is reported as an
+unavailable indexer; an old checkpoint is reported as stale.
 
 ## Local verification
 
