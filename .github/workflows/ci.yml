@@ -37,6 +37,9 @@ jobs:
       - name: Lint (exclude apibara)
         run: pnpm -r --filter '!@realms-world/apibara' --if-present run lint
 
+      - name: Lint Apibara indexers
+        run: pnpm --filter @realms-world/apibara lint
+
       - name: Format check (exclude apibara)
         run: pnpm -r --filter '!@realms-world/apibara' --if-present run format
 
@@ -45,6 +48,17 @@ jobs:
 
       - name: Build db
         run: pnpm --filter @realms-world/db build
+
+      - name: Test account portal
+        run: pnpm --filter @realms-world/account-portal test
+        env:
+          CI: "true"
+
+      - name: Test Apibara indexers
+        run: pnpm --filter @realms-world/apibara test --run
+
+      - name: Build Apibara indexers
+        run: pnpm --filter @realms-world/apibara build
 
       - name: Build account-portal
         run: pnpm --filter @realms-world/account-portal exec vite build
