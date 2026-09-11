@@ -105,10 +105,6 @@ const data = {
           url: "https://www.coingecko.com/en/coins/lords",
         },
         {
-          title: "Merch Shop",
-          url: "https://shop.realms.world/",
-        },
-        {
           title: "Discord",
           url: "https://discord.com/invite/realmsworld",
         },
