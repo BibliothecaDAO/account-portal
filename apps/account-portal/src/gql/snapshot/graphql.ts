@@ -541,7 +541,6 @@ export type Proposal = {
   executed: Scalars['Boolean']['output'];
   execution_destination?: Maybe<Scalars['String']['output']>;
   execution_hash: Scalars['String']['output'];
-  execution_ready: Scalars['Boolean']['output'];
   execution_strategy: Scalars['String']['output'];
   execution_strategy_details?: Maybe<ExecutionStrategy>;
   execution_strategy_type: Scalars['String']['output'];
@@ -1044,10 +1043,6 @@ export type Proposal_Filter = {
   execution_hash_not_contains?: InputMaybe<Scalars['String']['input']>;
   execution_hash_not_contains_nocase?: InputMaybe<Scalars['String']['input']>;
   execution_hash_not_in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
-  execution_ready?: InputMaybe<Scalars['Boolean']['input']>;
-  execution_ready_in?: InputMaybe<Array<InputMaybe<Scalars['Boolean']['input']>>>;
-  execution_ready_not?: InputMaybe<Scalars['Boolean']['input']>;
-  execution_ready_not_in?: InputMaybe<Array<InputMaybe<Scalars['Boolean']['input']>>>;
   execution_strategy?: InputMaybe<Scalars['String']['input']>;
   execution_strategy_contains?: InputMaybe<Scalars['String']['input']>;
   execution_strategy_contains_nocase?: InputMaybe<Scalars['String']['input']>;
@@ -1261,7 +1256,6 @@ export enum Proposal_OrderBy {
   Executed = 'executed',
   ExecutionDestination = 'execution_destination',
   ExecutionHash = 'execution_hash',
-  ExecutionReady = 'execution_ready',
   ExecutionStrategy = 'execution_strategy',
   ExecutionStrategyDetails = 'execution_strategy_details',
   ExecutionStrategyType = 'execution_strategy_type',
@@ -3331,14 +3325,14 @@ export enum _Metadata_OrderBy {
   Value = 'value'
 }
 
-export type ProposalFieldsFragment = { __typename?: 'Proposal', id: string, proposal_id: number, quorum: any, execution_hash: string, start: number, min_end: number, max_end: number, snapshot: number, scores_1: any, scores_2: any, scores_3: any, scores_total: any, execution_time: number, execution_strategy: string, execution_strategy_type: string, execution_destination?: string | null, timelock_veto_guardian?: string | null, strategies_indices: Array<number>, strategies: Array<string>, strategies_params: Array<string>, created: number, edited?: number | null, tx: string, execution_tx?: string | null, veto_tx?: string | null, vote_count: number, execution_ready: boolean, executed: boolean, vetoed: boolean, completed: boolean, cancelled: boolean, space: { __typename?: 'Space', id: string, controller: string, authenticators: Array<string>, metadata?: { __typename?: 'SpaceMetadataItem', id: string, name: string, avatar: string, voting_power_symbol: string, treasuries: Array<string>, executors: Array<string>, executors_types: Array<string>, executors_strategies: Array<{ __typename?: 'ExecutionStrategy', id: string, address: string, destination_address?: string | null, type: string, treasury_chain?: number | null, treasury?: string | null }> } | null, strategies_parsed_metadata: Array<{ __typename?: 'StrategiesParsedMetadataItem', index: number, data?: { __typename?: 'StrategiesParsedMetadataDataItem', id: string, name: string, description: string, decimals: number, symbol: string, token?: string | null, payload?: string | null } | null }> }, author: { __typename?: 'User', id: string, address_type: number }, metadata?: { __typename?: 'ProposalMetadataItem', id: string, title?: any | null, body?: any | null, discussion?: any | null, execution?: any | null, choices: Array<string>, labels: Array<string> } | null };
+export type ProposalFieldsFragment = { __typename?: 'Proposal', id: string, proposal_id: number, quorum: any, execution_hash: string, start: number, min_end: number, max_end: number, snapshot: number, scores_1: any, scores_2: any, scores_3: any, scores_total: any, execution_time: number, execution_strategy: string, execution_strategy_type: string, execution_destination?: string | null, timelock_veto_guardian?: string | null, strategies_indices: Array<number>, strategies: Array<string>, strategies_params: Array<string>, created: number, edited?: number | null, tx: string, execution_tx?: string | null, veto_tx?: string | null, vote_count: number, executed: boolean, vetoed: boolean, completed: boolean, cancelled: boolean, space: { __typename?: 'Space', id: string, controller: string, authenticators: Array<string>, metadata?: { __typename?: 'SpaceMetadataItem', id: string, name: string, avatar: string, voting_power_symbol: string, treasuries: Array<string>, executors: Array<string>, executors_types: Array<string>, executors_strategies: Array<{ __typename?: 'ExecutionStrategy', id: string, address: string, destination_address?: string | null, type: string, treasury_chain?: number | null, treasury?: string | null }> } | null, strategies_parsed_metadata: Array<{ __typename?: 'StrategiesParsedMetadataItem', index: number, data?: { __typename?: 'StrategiesParsedMetadataDataItem', id: string, name: string, description: string, decimals: number, symbol: string, token?: string | null, payload?: string | null } | null }> }, author: { __typename?: 'User', id: string, address_type: number }, metadata?: { __typename?: 'ProposalMetadataItem', id: string, title?: any | null, body?: any | null, discussion?: any | null, execution?: any | null, choices: Array<string>, labels: Array<string> } | null };
 
 export type ProposalQueryVariables = Exact<{
   id: Scalars['String']['input'];
 }>;
 
 
-export type ProposalQuery = { __typename?: 'Query', proposal?: { __typename?: 'Proposal', id: string, proposal_id: number, quorum: any, execution_hash: string, start: number, min_end: number, max_end: number, snapshot: number, scores_1: any, scores_2: any, scores_3: any, scores_total: any, execution_time: number, execution_strategy: string, execution_strategy_type: string, execution_destination?: string | null, timelock_veto_guardian?: string | null, strategies_indices: Array<number>, strategies: Array<string>, strategies_params: Array<string>, created: number, edited?: number | null, tx: string, execution_tx?: string | null, veto_tx?: string | null, vote_count: number, execution_ready: boolean, executed: boolean, vetoed: boolean, completed: boolean, cancelled: boolean, space: { __typename?: 'Space', id: string, controller: string, authenticators: Array<string>, metadata?: { __typename?: 'SpaceMetadataItem', id: string, name: string, avatar: string, voting_power_symbol: string, treasuries: Array<string>, executors: Array<string>, executors_types: Array<string>, executors_strategies: Array<{ __typename?: 'ExecutionStrategy', id: string, address: string, destination_address?: string | null, type: string, treasury_chain?: number | null, treasury?: string | null }> } | null, strategies_parsed_metadata: Array<{ __typename?: 'StrategiesParsedMetadataItem', index: number, data?: { __typename?: 'StrategiesParsedMetadataDataItem', id: string, name: string, description: string, decimals: number, symbol: string, token?: string | null, payload?: string | null } | null }> }, author: { __typename?: 'User', id: string, address_type: number }, metadata?: { __typename?: 'ProposalMetadataItem', id: string, title?: any | null, body?: any | null, discussion?: any | null, execution?: any | null, choices: Array<string>, labels: Array<string> } | null } | null };
+export type ProposalQuery = { __typename?: 'Query', proposal?: { __typename?: 'Proposal', id: string, proposal_id: number, quorum: any, execution_hash: string, start: number, min_end: number, max_end: number, snapshot: number, scores_1: any, scores_2: any, scores_3: any, scores_total: any, execution_time: number, execution_strategy: string, execution_strategy_type: string, execution_destination?: string | null, timelock_veto_guardian?: string | null, strategies_indices: Array<number>, strategies: Array<string>, strategies_params: Array<string>, created: number, edited?: number | null, tx: string, execution_tx?: string | null, veto_tx?: string | null, vote_count: number, executed: boolean, vetoed: boolean, completed: boolean, cancelled: boolean, space: { __typename?: 'Space', id: string, controller: string, authenticators: Array<string>, metadata?: { __typename?: 'SpaceMetadataItem', id: string, name: string, avatar: string, voting_power_symbol: string, treasuries: Array<string>, executors: Array<string>, executors_types: Array<string>, executors_strategies: Array<{ __typename?: 'ExecutionStrategy', id: string, address: string, destination_address?: string | null, type: string, treasury_chain?: number | null, treasury?: string | null }> } | null, strategies_parsed_metadata: Array<{ __typename?: 'StrategiesParsedMetadataItem', index: number, data?: { __typename?: 'StrategiesParsedMetadataDataItem', id: string, name: string, description: string, decimals: number, symbol: string, token?: string | null, payload?: string | null } | null }> }, author: { __typename?: 'User', id: string, address_type: number }, metadata?: { __typename?: 'ProposalMetadataItem', id: string, title?: any | null, body?: any | null, discussion?: any | null, execution?: any | null, choices: Array<string>, labels: Array<string> } | null } | null };
 
 export type ProposalsQueryVariables = Exact<{
   first: Scalars['Int']['input'];
@@ -3347,7 +3341,7 @@ export type ProposalsQueryVariables = Exact<{
 }>;
 
 
-export type ProposalsQuery = { __typename?: 'Query', proposals: Array<{ __typename?: 'Proposal', id: string, proposal_id: number, quorum: any, execution_hash: string, start: number, min_end: number, max_end: number, snapshot: number, scores_1: any, scores_2: any, scores_3: any, scores_total: any, execution_time: number, execution_strategy: string, execution_strategy_type: string, execution_destination?: string | null, timelock_veto_guardian?: string | null, strategies_indices: Array<number>, strategies: Array<string>, strategies_params: Array<string>, created: number, edited?: number | null, tx: string, execution_tx?: string | null, veto_tx?: string | null, vote_count: number, execution_ready: boolean, executed: boolean, vetoed: boolean, completed: boolean, cancelled: boolean, space: { __typename?: 'Space', id: string, controller: string, authenticators: Array<string>, metadata?: { __typename?: 'SpaceMetadataItem', id: string, name: string, avatar: string, voting_power_symbol: string, treasuries: Array<string>, executors: Array<string>, executors_types: Array<string>, executors_strategies: Array<{ __typename?: 'ExecutionStrategy', id: string, address: string, destination_address?: string | null, type: string, treasury_chain?: number | null, treasury?: string | null }> } | null, strategies_parsed_metadata: Array<{ __typename?: 'StrategiesParsedMetadataItem', index: number, data?: { __typename?: 'StrategiesParsedMetadataDataItem', id: string, name: string, description: string, decimals: number, symbol: string, token?: string | null, payload?: string | null } | null }> }, author: { __typename?: 'User', id: string, address_type: number }, metadata?: { __typename?: 'ProposalMetadataItem', id: string, title?: any | null, body?: any | null, discussion?: any | null, execution?: any | null, choices: Array<string>, labels: Array<string> } | null }> };
+export type ProposalsQuery = { __typename?: 'Query', proposals: Array<{ __typename?: 'Proposal', id: string, proposal_id: number, quorum: any, execution_hash: string, start: number, min_end: number, max_end: number, snapshot: number, scores_1: any, scores_2: any, scores_3: any, scores_total: any, execution_time: number, execution_strategy: string, execution_strategy_type: string, execution_destination?: string | null, timelock_veto_guardian?: string | null, strategies_indices: Array<number>, strategies: Array<string>, strategies_params: Array<string>, created: number, edited?: number | null, tx: string, execution_tx?: string | null, veto_tx?: string | null, vote_count: number, executed: boolean, vetoed: boolean, completed: boolean, cancelled: boolean, space: { __typename?: 'Space', id: string, controller: string, authenticators: Array<string>, metadata?: { __typename?: 'SpaceMetadataItem', id: string, name: string, avatar: string, voting_power_symbol: string, treasuries: Array<string>, executors: Array<string>, executors_types: Array<string>, executors_strategies: Array<{ __typename?: 'ExecutionStrategy', id: string, address: string, destination_address?: string | null, type: string, treasury_chain?: number | null, treasury?: string | null }> } | null, strategies_parsed_metadata: Array<{ __typename?: 'StrategiesParsedMetadataItem', index: number, data?: { __typename?: 'StrategiesParsedMetadataDataItem', id: string, name: string, description: string, decimals: number, symbol: string, token?: string | null, payload?: string | null } | null }> }, author: { __typename?: 'User', id: string, address_type: number }, metadata?: { __typename?: 'ProposalMetadataItem', id: string, title?: any | null, body?: any | null, discussion?: any | null, execution?: any | null, choices: Array<string>, labels: Array<string> } | null }> };
 
 export type VoteFieldsFragment = { __typename?: 'Vote', id: string, proposal: number, choice: number, vp: any, created: number, tx: string, voter: { __typename?: 'User', id: string }, space: { __typename?: 'Space', id: string }, metadata?: { __typename?: 'VoteMetadataItem', reason: any } | null };
 
@@ -3450,7 +3444,6 @@ export const ProposalFieldsFragmentDoc = new TypedDocumentString(`
   execution_tx
   veto_tx
   vote_count
-  execution_ready
   executed
   vetoed
   completed
@@ -3556,7 +3549,6 @@ export const ProposalDocument = new TypedDocumentString(`
   execution_tx
   veto_tx
   vote_count
-  execution_ready
   executed
   vetoed
   completed
@@ -3648,7 +3640,6 @@ export const ProposalsDocument = new TypedDocumentString(`
   execution_tx
   veto_tx
   vote_count
-  execution_ready
   executed
   vetoed
   completed
