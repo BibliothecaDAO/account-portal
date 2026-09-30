@@ -1,0 +1,23 @@
+{
+  "name": "@realms-world/bridge",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint",
+    "test": "vitest run",
+    "format": "prettier --check \"**/*.{ts,json}\""
+  },
+  "dependencies": {
+    "@realms-world/constants": "workspace:*"
+  },
+  "devDependencies": {
+    "@realms-world/eslint-config": "workspace:*",
+    "typescript": "catalog:",
+    "vitest": "^1.6.1"
+  }
+}

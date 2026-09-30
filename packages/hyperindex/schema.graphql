@@ -1,0 +1,19 @@
+type L1BridgeEvent {
+  id: ID!
+  request_key: String! @index
+  network: String! @index
+  direction: String!
+  req_hash: String!
+  owner_l1: String! @index
+  owner_l2: String! @index
+  token_ids: [String!]!
+  payload: [String!]!
+  source_chain: String!
+  event_name: String!
+  type: String!
+  block_number: BigInt! @index
+  block_hash: String!
+  transaction_hash: String!
+  log_index: Int!
+  timestamp: Timestamp! @index
+}

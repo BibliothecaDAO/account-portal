@@ -1,0 +1,30 @@
+{
+  "name": "@realms-world/hyperindex",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "codegen": "ENVIO_CONFIG=${ENVIO_CONFIG:-config.mainnet.yaml} envio codegen",
+    "typecheck": "tsc --noEmit",
+    "test": "ENVIO_CONFIG=${ENVIO_CONFIG:-config.mainnet.yaml} vitest run",
+    "lint": "eslint src test",
+    "start": "node scripts/start.mjs",
+    "test:runtime": "node --test scripts/*.test.mjs"
+  },
+  "dependencies": {
+    "@realms-world/bridge": "workspace:*",
+    "envio": "3.12.1",
+    "pg": "8.16.3",
+    "yaml": "2.8.2"
+  },
+  "devDependencies": {
+    "@realms-world/eslint-config": "workspace:*",
+    "@types/node": "^22.0.0",
+    "eslint": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "^1.6.1"
+  }
+}

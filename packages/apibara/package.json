@@ -17,7 +17,8 @@
     "drizzle:generate": "drizzle-kit generate",
     "drizzle:migrate": "drizzle-kit migrate",
     "drizzle:push": "drizzle-kit push",
-    "with-env": "dotenv -e ../../.env --"
+    "with-env": "dotenv -e ../../.env --",
+    "test:shadow": "node --test bridge-shadow/runtime-config.test.mjs bridge-shadow/metadata-schema.test.mjs"
   },
   "devDependencies": {
     "@types/node": "^20.19.33",
@@ -43,6 +44,7 @@
     "pg": "^8.18.0",
     "starknet": "catalog:",
     "viem": "catalog:",
-    "zod": "catalog:"
+    "zod": "catalog:",
+    "@realms-world/bridge": "workspace:*"
   }
 }

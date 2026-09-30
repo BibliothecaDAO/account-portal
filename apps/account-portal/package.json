@@ -95,6 +95,7 @@
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^1.6.1",
     "wagmi": "^3.5.0",
-    "zod": "catalog:"
+    "zod": "catalog:",
+    "@realms-world/bridge": "workspace:*"
   }
 }

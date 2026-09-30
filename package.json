@@ -13,7 +13,9 @@
     "apibara:build": "pnpm --filter @realms-world/apibara build",
     "db:push": "pnpm --filter @realms-world/db with-env drizzle-kit push",
     "db:pull": "pnpm --filter @realms-world/db with-env drizzle-kit pull",
-    "lint": "pnpm --recursive run lint"
+    "lint": "pnpm --recursive run lint",
+    "hyperindex:codegen": "pnpm --filter @realms-world/hyperindex codegen",
+    "hyperindex:start": "pnpm --filter @realms-world/hyperindex start"
   },
   "devDependencies": {
     "@ianvs/prettier-plugin-sort-imports": "^4.5.1",
@@ -32,13 +34,16 @@
     "ignoredBuiltDependencies": [
       "bufferutil",
       "cbor-extract",
-      "esbuild",
       "protobufjs",
       "utf-8-validate"
     ],
     "onlyBuiltDependencies": [
-      "@reown/appkit"
-    ]
+      "@reown/appkit",
+      "esbuild"
+    ],
+    "patchedDependencies": {
+      "@apibara/plugin-drizzle@2.1.0-beta.53": "patches/@apibara__plugin-drizzle@2.1.0-beta.53.patch"
+    }
   },
   "overrides": {
     "@noble/ciphers": "1.3.0",

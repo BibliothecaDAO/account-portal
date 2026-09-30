@@ -12,12 +12,20 @@ import {
   useDrizzleStorage as getDrizzleStorage,
 } from "@apibara/plugin-drizzle";
 import { decodeEvent, getSelector, StarknetStream } from "@apibara/starknet";
+import { eq } from "drizzle-orm";
 import { uint256 } from "starknet";
 import { numberToHex } from "viem";
 
+import {
+  createBridgeEventId,
+  normalizeBridgeRequest,
+} from "@realms-world/bridge";
 import { ChainId, REALMS_BRIDGE_ADDRESS } from "@realms-world/constants";
 import { db } from "@realms-world/db/poolClient";
 import {
+  l2BridgeEvents,
+  l2BridgeProgress,
+  l2BridgeRequests,
   realmsBridgeEvents,
   realmsBridgeRequests,
 } from "@realms-world/db/schema";
@@ -135,7 +143,14 @@ export function createIndexer<
   TFullSchema extends Record<string, unknown> = Record<string, never>,
   TSchema extends TablesRelationalConfig =
     ExtractTablesWithRelations<TFullSchema>,
->({ database }: { database: PgDatabase<TQueryResult, TFullSchema, TSchema> }) {
+>({
+  database,
+  storage = env.APIBARA_BRIDGE_STORAGE,
+}: {
+  database: PgDatabase<TQueryResult, TFullSchema, TSchema>;
+  storage?: "legacy" | "isolated";
+}) {
+  const isolated = storage === "isolated";
   return defineIndexer(StarknetStream)({
     streamUrl: getStarknetStreamUrl(env.VITE_PUBLIC_CHAIN),
 
@@ -144,6 +159,7 @@ export function createIndexer<
       orderKey: env.VITE_PUBLIC_CHAIN === "sepolia" ? 76_103n : 664_161n,
     },
     filter: {
+      ...(isolated ? { header: "on_data_or_on_new_block" as const } : {}),
       events: [
         {
           address: REALMS_BRIDGE_ADDRESS[l2ChainId] as `0x${string}`,
@@ -158,16 +174,19 @@ export function createIndexer<
     plugins: [
       drizzleStorage({
         db: database,
-        schema: getRelationalSchema({
-          realmsBridgeEvents,
-          realmsBridgeRequests,
-        }),
+        schema: getRelationalSchema(
+          isolated
+            ? { l2BridgeEvents, l2BridgeRequests, l2BridgeProgress }
+            : { realmsBridgeEvents, realmsBridgeRequests },
+        ),
         idColumn: "_id",
         persistState: true,
-        indexerName: "starknet-realms-bridge",
+        indexerName: isolated
+          ? `starknet-realms-bridge-isolated-${env.VITE_PUBLIC_CHAIN}-v1`
+          : "starknet-realms-bridge",
       }),
     ],
-    async transform({ endCursor, block, finality }) {
+    async transform({ endCursor, block, finality, production }) {
       const logger = getLogger();
       const { db } = getDrizzleStorage();
       const { events } = block;
@@ -179,6 +198,105 @@ export function createIndexer<
         finality,
       );
 
+      if (isolated) {
+        // DNA pending headers can omit the hash. The plugin invalidates every
+        // pending batch before its replacement, including these temporary IDs.
+        const canonicalHash = block.header.blockHash;
+        if (!canonicalHash && finality !== "pending")
+          throw new Error("Missing accepted Starknet block hash");
+        const blockHash =
+          canonicalHash ?? `pending:${block.header.blockNumber}`;
+        for (const event of events) {
+          const completed = event.keys[0] === withdrawRequestCompletedSelector;
+          if (!completed && event.keys[0] !== depositRequestInitiatedSelector)
+            continue;
+          const eventName = completed
+            ? "WithdrawRequestCompleted"
+            : "DepositRequestInitiated";
+          const decoded = parseBridgeEvent(
+            decodeEvent({
+              abi: abi as Abi,
+              eventName: `bridge::interfaces::${eventName}`,
+              event,
+            }),
+          );
+          const normalized = normalizeBridgeRequest(
+            env.VITE_PUBLIC_CHAIN,
+            completed ? "deposit" : "withdrawal",
+            {
+              reqHash: decoded.reqContent.hash,
+              ownerL1: decoded.reqContent.ownerL1Address,
+              ownerL2: decoded.reqContent.ownerL2,
+              tokenIds: decoded.reqContent.ids,
+            },
+          );
+          const request = {
+            _id: normalized.requestKey,
+            network: normalized.network,
+            direction: normalized.direction,
+            req_hash: normalized.reqHash,
+            owner_l1: normalized.ownerL1,
+            owner_l2: normalized.ownerL2,
+            token_ids: normalized.tokenIds,
+            payload: normalized.payload,
+          };
+          const existing = await db
+            .select()
+            .from(l2BridgeRequests)
+            .where(eq(l2BridgeRequests._id, request._id));
+          if (
+            existing[0] &&
+            (existing[0].owner_l1 !== request.owner_l1 ||
+              existing[0].owner_l2 !== request.owner_l2 ||
+              JSON.stringify(existing[0].token_ids) !==
+                JSON.stringify(request.token_ids))
+          ) {
+            throw new Error(`Conflicting bridge request ${request._id}`);
+          }
+          await db
+            .insert(l2BridgeRequests)
+            .values(request)
+            .onConflictDoNothing();
+          await db
+            .insert(l2BridgeEvents)
+            .values({
+              ...request,
+              _id: `${canonicalHash ? "" : `pending:${block.header.blockNumber}:`}${createBridgeEventId(
+                String(l2ChainId),
+                canonicalHash ?? "0x0",
+                decoded.transactionHash,
+                event.eventIndex,
+              )}`,
+              request_key: request._id,
+              source_chain: String(l2ChainId),
+              event_name: eventName,
+              type: completed
+                ? "withdraw_completed_l2"
+                : "deposit_initiated_l2",
+              block_number: block.header.blockNumber.toString(),
+              block_hash: blockHash,
+              transaction_hash: decoded.transactionHash,
+              log_index: event.eventIndex,
+              timestamp: block.header.timestamp,
+            })
+            .onConflictDoNothing();
+        }
+        const progress = {
+          _id: env.VITE_PUBLIC_CHAIN,
+          network: env.VITE_PUBLIC_CHAIN,
+          source_chain: String(l2ChainId),
+          block_number: block.header.blockNumber.toString(),
+          block_hash: blockHash,
+          block_timestamp: block.header.timestamp,
+          observed_at: new Date(),
+          production,
+        };
+        await db
+          .insert(l2BridgeProgress)
+          .values(progress)
+          .onConflictDoUpdate({ target: l2BridgeProgress._id, set: progress });
+        return;
+      }
       for (const event of events) {
         if (event.keys[0] === withdrawRequestCompletedSelector) {
           const decoded = parseBridgeEvent(
@@ -192,7 +310,7 @@ export function createIndexer<
           await db
             .insert(realmsBridgeRequests)
             .values({
-              from_chain: chainId,
+              from_chain: String(chainId),
               from_address: numberToHex(decoded.reqContent.ownerL1Address),
               to_address: numberToHex(decoded.reqContent.ownerL2),
               token_ids: decoded.reqContent.ids.map((id) => Number(id)),
@@ -224,7 +342,7 @@ export function createIndexer<
           await db
             .insert(realmsBridgeRequests)
             .values({
-              from_chain: l2ChainId,
+              from_chain: String(l2ChainId),
               from_address: numberToHex(decoded.reqContent.ownerL2),
               to_address: numberToHex(decoded.reqContent.ownerL1Address),
               token_ids: decoded.reqContent.ids.map((id) => Number(id)),

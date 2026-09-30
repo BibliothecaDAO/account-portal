@@ -35,16 +35,19 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Lint (exclude apibara)
-        run: pnpm -r --filter '!@realms-world/apibara' --if-present run lint
+        run: pnpm -r --filter '!@realms-world/apibara' --filter '!@realms-world/hyperindex' --if-present run lint
 
       - name: Lint Apibara indexers
         run: pnpm --filter @realms-world/apibara lint
 
       - name: Format check (exclude apibara)
-        run: pnpm -r --filter '!@realms-world/apibara' --if-present run format
+        run: pnpm -r --filter '!@realms-world/apibara' --filter '!@realms-world/hyperindex' --if-present run format
 
       - name: Typecheck constants
         run: pnpm --filter @realms-world/constants typecheck
+
+      - name: Verify bridge normalization
+        run: pnpm --filter @realms-world/bridge typecheck && pnpm --filter @realms-world/bridge test
 
       - name: Build db
         run: pnpm --filter @realms-world/db build
@@ -64,3 +67,55 @@ jobs:
         run: pnpm --filter @realms-world/account-portal exec vite build
         env:
           CI: "true"
+
+  hyperindex:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: hyperindex_test
+          POSTGRES_PASSWORD: local-ci-only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.30.3
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22.18.0
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Verify HyperIndex (both networks)
+        run: |
+          for config in config.mainnet.yaml config.sepolia.yaml; do
+            ENVIO_CONFIG="$config" pnpm --filter @realms-world/hyperindex codegen
+            pnpm --filter @realms-world/hyperindex typecheck
+            ENVIO_CONFIG="$config" pnpm --filter @realms-world/hyperindex test
+          done
+          pnpm --filter @realms-world/hyperindex lint
+          pnpm --filter @realms-world/hyperindex test:runtime
+        env:
+          HYPERINDEX_TEST_DATABASE_URL: postgresql://postgres:local-ci-only@127.0.0.1:5432/hyperindex_test
+
+      - name: Build HyperIndex container
+        run: docker build -f packages/hyperindex/Dockerfile -t realms-hyperindex:ci .
+
+      - name: Verify isolated Starknet metadata permissions
+        run: node packages/apibara/bridge-shadow/metadata-role.integration.mjs
+        env:
+          BRIDGE_SHADOW_TEST_DATABASE_URL: postgresql://postgres:local-ci-only@127.0.0.1:5432/hyperindex_test
+
+      - name: Build isolated Starknet bridge container
+        run: docker build -f packages/apibara/Dockerfile.bridge-shadow -t realms-bridge-shadow:ci .

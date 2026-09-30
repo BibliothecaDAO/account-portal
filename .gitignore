@@ -39,3 +39,10 @@ app.config.ts.timestamp_*
 packages/db/drizzle/meta/
 
 *.sql
+
+# Reviewed source migrations (generated SQL remains ignored).
+!packages/db/sql/*.sql
+
+# Generated HyperIndex runtime and declarations; regenerate with codegen.
+packages/hyperindex/.envio/
+packages/hyperindex/envio-env.d.ts
