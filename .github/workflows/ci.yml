@@ -35,13 +35,13 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Lint (exclude apibara)
-        run: pnpm -r --filter '!@realms-world/apibara' --filter '!@realms-world/hyperindex' --if-present run lint
+        run: pnpm -r --filter '!core' --filter '!@realms-world/apibara' --filter '!@realms-world/hyperindex' --if-present run lint
 
       - name: Lint Apibara indexers
         run: pnpm --filter @realms-world/apibara lint
 
       - name: Format check (exclude apibara)
-        run: pnpm -r --filter '!@realms-world/apibara' --filter '!@realms-world/hyperindex' --if-present run format
+        run: pnpm -r --filter '!core' --filter '!@realms-world/apibara' --filter '!@realms-world/hyperindex' --if-present run format
 
       - name: Typecheck constants
         run: pnpm --filter @realms-world/constants typecheck
