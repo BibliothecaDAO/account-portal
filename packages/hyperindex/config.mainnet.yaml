@@ -1,0 +1,28 @@
+name: realms-l1-mainnet
+ecosystem: evm
+schema: schema.graphql
+handlers: src/handlers
+address_format: lowercase
+rollback_on_reorg: true
+raw_events: false
+field_selection:
+  # number, hash and timestamp are mandatory built-in block fields in v3.12.1.
+  block_fields: []
+  transaction_fields: [hash]
+contracts:
+  - name: StarknetMessaging
+    events:
+      - event: LogMessageToL2(address indexed fromAddress, uint256 indexed toAddress, uint256 indexed selector, uint256[] payload, uint256 nonce, uint256 fee)
+      - event: ConsumedMessageToL2(address indexed fromAddress, uint256 indexed toAddress, uint256 indexed selector, uint256[] payload, uint256 nonce)
+      - event: LogMessageToL1(uint256 indexed fromAddress, address indexed toAddress, uint256[] payload)
+      - event: ConsumedMessageToL1(uint256 indexed fromAddress, address indexed toAddress, uint256[] payload)
+chains:
+  - id: 1
+    start_block: 20433152
+    max_reorg_depth: 200
+    block_lag: 0
+    hypersync_config:
+      url: https://1.hypersync.xyz
+    contracts:
+      - name: StarknetMessaging
+        address: "0xc662c410c0ecf747543f5ba90660f6abebd9c8c4"

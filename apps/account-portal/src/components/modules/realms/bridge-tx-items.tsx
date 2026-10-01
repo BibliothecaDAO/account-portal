@@ -1,3 +1,4 @@
+import type { BridgeHistoryTransaction } from "@/lib/bridge-history";
 import {
   Accordion,
   AccordionContent,
@@ -8,9 +9,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useWriteFinalizeWithdrawRealms } from "@/hooks/bridge/useWriteFinalizeWithdrawRealms";
 import { useToast } from "@/hooks/use-toast";
+import { getBridgeEventExplorer } from "@/lib/bridge-history";
 import { getBridgeTransactionsQueryOptions } from "@/lib/getBridgeTransactions";
 import { cn, shortenAddress } from "@/utils/utils";
-import { useAccount, useExplorer } from "@starknet-start/react";
+import { useAccount } from "@starknet-start/react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { ArrowRight } from "lucide-react";
 import { useAccount as useL1Account } from "wagmi";
@@ -18,7 +20,6 @@ import { useAccount as useL1Account } from "wagmi";
 import { TransactionChains } from "./bridge-tx-chains";
 
 const BridgeTransactionItems = () => {
-  const explorer = useExplorer();
   const { writeAsync, isPending: isWithdrawPending } =
     useWriteFinalizeWithdrawRealms();
 
@@ -32,18 +33,35 @@ const BridgeTransactionItems = () => {
       l2Account: l2Address,
     }),
   );
-  const transactions = bridgeTxsQuery.data;
+  const history = bridgeTxsQuery.data;
+  const transactions = history?.transactions;
+  const canCompleteWithdraw =
+    !bridgeTxsQuery.isRefetchError &&
+    (history?.status === "ready" || history?.status === "legacy");
+  const statusMessage = bridgeTxsQuery.isRefetchError
+    ? "Bridge history could not be refreshed. Withdrawals are temporarily paused."
+    : history?.status === "syncing"
+      ? "Bridge history is syncing. Withdrawals will become available when both chains are up to date."
+      : history?.status === "stale"
+        ? "Bridge history is delayed. Shown statuses may be out of date; withdrawals are temporarily paused."
+        : history?.status === "unavailable"
+          ? "Bridge history is temporarily unavailable. Please try again shortly."
+          : history?.status === "legacy"
+            ? "Bridge history may be delayed. Check the linked transactions for the latest status."
+            : null;
 
-  const handleCompleteWithdraw = async (transaction: {
-    token_ids: number[];
-    from_address: string;
-    to_address: string;
-    req_hash: string;
-  }) => {
+  const handleCompleteWithdraw = async (
+    transaction: BridgeHistoryTransaction,
+  ) => {
+    if (
+      !canCompleteWithdraw ||
+      Date.now() - bridgeTxsQuery.dataUpdatedAt > 60_000
+    )
+      return;
     const hash = await writeAsync({
       hash: transaction.req_hash,
-      l1Address: transaction.from_address,
-      l2Address: transaction.to_address,
+      l1Address: transaction.owner_l1,
+      l2Address: transaction.owner_l2,
       tokenIds: transaction.token_ids.map((id) => BigInt(id)),
     });
     if (hash) {
@@ -54,103 +72,108 @@ const BridgeTransactionItems = () => {
     }
   };
   return (
-    <Accordion type="single" collapsible>
-      {transactions?.map((transaction) => {
-        const isCompleted = transaction.events.some(
-          (event) =>
-            event.type === "withdraw_completed_l1" ||
-            event.type === "withdraw_completed_l2",
-        );
+    <div>
+      {statusMessage && (
+        <p role="status" className="text-muted-foreground mb-3 text-sm">
+          {statusMessage}
+        </p>
+      )}
+      <Accordion type="single" collapsible>
+        {transactions?.map((transaction) => {
+          const isCompleted = transaction.events.some(
+            (event) =>
+              event.type === "withdraw_completed_l1" ||
+              event.type === "withdraw_completed_l2",
+          );
 
-        return (
-          <AccordionItem key={transaction.id} value={transaction.id}>
-            <AccordionTrigger className="flex w-full items-center justify-between hover:no-underline">
-              <div className="flex w-full justify-between px-2">
-                <div className="flex flex-col justify-center">
-                  <div className="flex items-center gap-2">
-                    <TransactionChains fromChain={transaction.from_chain} />
+          return (
+            <AccordionItem key={transaction.id} value={transaction.id}>
+              <AccordionTrigger className="flex w-full items-center justify-between hover:no-underline">
+                <div className="flex w-full justify-between px-2">
+                  <div className="flex flex-col justify-center">
+                    <div className="flex items-center gap-2">
+                      <TransactionChains fromChain={transaction.from_chain} />
+                    </div>
+                    <span className="text-muted-foreground text-sm">
+                      {transaction.timestamp.toLocaleString()}
+                    </span>
                   </div>
-                  <span className="text-muted-foreground text-sm">
-                    {transaction.timestamp.toLocaleString()}
-                  </span>
-                </div>
-                <div className="flex flex-col items-end justify-end">
-                  <div className="flex gap-1">
-                    {transaction.token_ids.slice(0, 3).map((id) => (
-                      <Badge variant="outline" className="w-fit" key={id}>
-                        #{id}
-                      </Badge>
-                    ))}
-                    {transaction.token_ids.length > 3 && (
-                      <Badge key="more">
-                        +{transaction.token_ids.length - 3}
-                      </Badge>
+                  <div className="flex flex-col items-end justify-end">
+                    <div className="flex gap-1">
+                      {transaction.token_ids.slice(0, 3).map((id) => (
+                        <Badge variant="outline" className="w-fit" key={id}>
+                          #{id}
+                        </Badge>
+                      ))}
+                      {transaction.token_ids.length > 3 && (
+                        <Badge key="more">
+                          +{transaction.token_ids.length - 3}
+                        </Badge>
+                      )}
+                    </div>
+                    {isCompleted ? (
+                      <span className="text-muted-foreground">Completed</span>
+                    ) : transaction.events.some(
+                        (event) => event.type === "withdraw_available_l1",
+                      ) ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          await handleCompleteWithdraw(transaction);
+                        }}
+                        className="border-success z-20 mt-2 rounded"
+                        disabled={isWithdrawPending || !canCompleteWithdraw}
+                      >
+                        Complete Withdraw
+                      </Button>
+                    ) : (
+                      <span className="text-muted-foreground">In Progress</span>
                     )}
                   </div>
-                  {isCompleted ? (
-                    <span className="text-muted-foreground">Completed</span>
-                  ) : transaction.events.some(
-                      (event) => event.type === "withdraw_available_l1",
-                    ) ? (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={async (e) => {
-                        e.stopPropagation();
-                        await handleCompleteWithdraw(transaction);
-                      }}
-                      className="z-20 mt-2 rounded border-success"
-                      disabled={isWithdrawPending}
-                    >
-                      Complete Withdraw
-                    </Button>
-                  ) : (
-                    <span className="text-muted-foreground">In Progress</span>
-                  )}
                 </div>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className="flex flex-col space-y-1 py-2">
-                <span
-                  className={cn(
-                    isCompleted ? "text-success" : "text-warning",
-                  )}
-                >
-                  {isCompleted ? "Completed" : "In Progress"}
-                </span>
-                <div className="flex items-center gap-2">
-                  {shortenAddress(transaction.from_address)}
-                  <ArrowRight />
-                  {shortenAddress(transaction.to_address)}
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="flex flex-col space-y-1 py-2">
+                  <span
+                    className={cn(
+                      isCompleted ? "text-success" : "text-warning",
+                    )}
+                  >
+                    {isCompleted ? "Completed" : "In Progress"}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    {shortenAddress(transaction.from_address)}
+                    <ArrowRight />
+                    {shortenAddress(transaction.to_address)}
+                  </div>
+                  <div className="mt-2 flex items-center gap-2">
+                    {transaction.events.map((event) => {
+                      const explorer = getBridgeEventExplorer(
+                        history?.network ?? "mainnet",
+                        event.source_chain,
+                        event.hash,
+                      );
+                      return (
+                        <a
+                          key={event.id}
+                          href={explorer.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <Button variant="outline">{explorer.name}</Button>
+                        </a>
+                      );
+                    })}
+                  </div>
                 </div>
-                <div className="mt-2 flex items-center gap-2">
-                  {transaction.events.map((event, idx) => {
-                    const explorerLink = event.type.endsWith("l2")
-                      ? explorer.transaction(event.hash)
-                      : "https://sepolia.etherscan.io/tx/" + event.hash;
-                    return (
-                      <a
-                        key={event.hash + idx}
-                        href={explorerLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <Button variant="outline">
-                          {event.type.endsWith("l2")
-                            ? "Starkscan"
-                            : "Etherscan"}
-                        </Button>
-                      </a>
-                    );
-                  })}
-                </div>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-        );
-      })}
-    </Accordion>
+              </AccordionContent>
+            </AccordionItem>
+          );
+        })}
+      </Accordion>
+    </div>
   );
 };
 

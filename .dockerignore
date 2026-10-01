@@ -1,0 +1,13 @@
+.git
+**/node_modules
+**/.env
+**/.env.*
+!**/.env.example
+**/.envio
+**/.apibara
+**/generated
+**/dist
+**/.output
+**/.vinxi
+**/coverage
+**/*.log

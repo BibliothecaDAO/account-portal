@@ -37,7 +37,8 @@
     "drizzle-orm": "catalog:",
     "drizzle-zod": "^0.8.3",
     "ws": "^8.19.0",
-    "zod": "catalog:"
+    "zod": "catalog:",
+    "@realms-world/bridge": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.19.11",

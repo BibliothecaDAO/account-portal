@@ -1,0 +1,15 @@
+# Repository root build context; no credentials required during build.
+FROM node:22.18.0-bookworm-slim
+RUN corepack enable && corepack prepare pnpm@10.30.3 --activate
+WORKDIR /workspace
+COPY --chown=node:node . .
+RUN pnpm install --frozen-lockfile --filter @realms-world/apibara... \
+    && pnpm --filter @realms-world/apibara exec apibara build --dir bridge-shadow \
+    && pnpm --filter @realms-world/apibara test:shadow \
+    && node packages/apibara/bridge-shadow/check-runtime.mjs \
+    && chown -R node:node /workspace
+USER node
+WORKDIR /workspace/packages/apibara
+ENV NODE_ENV=production APIBARA_BRIDGE_STORAGE=isolated
+STOPSIGNAL SIGTERM
+CMD ["node", "bridge-shadow/start.mjs"]

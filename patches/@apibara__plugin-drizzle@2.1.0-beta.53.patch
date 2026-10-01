@@ -1,0 +1,139 @@
+diff --git a/dist/shared/plugin-drizzle.2d226351.mjs b/dist/shared/plugin-drizzle.2d226351.mjs
+--- a/dist/shared/plugin-drizzle.2d226351.mjs
++++ b/dist/shared/plugin-drizzle.2d226351.mjs
+@@ -1,6 +1,11 @@
+ const DRIZZLE_PROPERTY = "_drizzle";
+ const DRIZZLE_STORAGE_DB_PROPERTY = "_drizzleStorageDB";
+-const SCHEMA_NAME = "airfoil";
++// Local, version-pinned patch: only the isolated bridge deployment selects an
++// alternate metadata namespace. Absence preserves legacy persistence exactly.
++const SCHEMA_NAME = process.env.APIBARA_STORAGE_SCHEMA ?? "airfoil";
++if (process.env.APIBARA_STORAGE_SCHEMA !== undefined && !["airfoil_l2_bridge_mainnet", "airfoil_l2_bridge_sepolia"].includes(SCHEMA_NAME)) {
++  throw new Error("Invalid APIBARA_STORAGE_SCHEMA");
++}
+ 
+ export { DRIZZLE_PROPERTY as D, SCHEMA_NAME as S, DRIZZLE_STORAGE_DB_PROPERTY as a };
+ //# sourceMappingURL=plugin-drizzle.2d226351.mjs.map
+diff --git a/dist/shared/plugin-drizzle.cae20704.cjs b/dist/shared/plugin-drizzle.cae20704.cjs
+--- a/dist/shared/plugin-drizzle.cae20704.cjs
++++ b/dist/shared/plugin-drizzle.cae20704.cjs
+@@ -2,7 +2,12 @@
+ 
+ const DRIZZLE_PROPERTY = "_drizzle";
+ const DRIZZLE_STORAGE_DB_PROPERTY = "_drizzleStorageDB";
+-const SCHEMA_NAME = "airfoil";
++// Local, version-pinned patch: only the isolated bridge deployment selects an
++// alternate metadata namespace. Absence preserves legacy persistence exactly.
++const SCHEMA_NAME = process.env.APIBARA_STORAGE_SCHEMA ?? "airfoil";
++if (process.env.APIBARA_STORAGE_SCHEMA !== undefined && !["airfoil_l2_bridge_mainnet", "airfoil_l2_bridge_sepolia"].includes(SCHEMA_NAME)) {
++  throw new Error("Invalid APIBARA_STORAGE_SCHEMA");
++}
+ 
+ exports.DRIZZLE_PROPERTY = DRIZZLE_PROPERTY;
+ exports.DRIZZLE_STORAGE_DB_PROPERTY = DRIZZLE_STORAGE_DB_PROPERTY;
+diff --git a/src/constants.ts b/src/constants.ts
+--- a/src/constants.ts
++++ b/src/constants.ts
+@@ -1,3 +1,8 @@
+ export const DRIZZLE_PROPERTY = "_drizzle";
+ export const DRIZZLE_STORAGE_DB_PROPERTY = "_drizzleStorageDB";
+-export const SCHEMA_NAME = "airfoil";
++// Local, version-pinned patch: only the isolated bridge deployment selects an
++// alternate metadata namespace. Absence preserves legacy persistence exactly.
++export const SCHEMA_NAME = process.env.APIBARA_STORAGE_SCHEMA ?? "airfoil";
++if (process.env.APIBARA_STORAGE_SCHEMA !== undefined && !["airfoil_l2_bridge_mainnet", "airfoil_l2_bridge_sepolia"].includes(SCHEMA_NAME)) {
++  throw new Error("Invalid APIBARA_STORAGE_SCHEMA");
++}
+diff --git a/dist/index.mjs b/dist/index.mjs
+--- a/dist/index.mjs
++++ b/dist/index.mjs
+@@ -150,11 +150,13 @@
+   // Add more migration arrays for future versions
+ ];
+ async function initializePersistentState(tx) {
+-  await tx.execute(
++  if (SCHEMA_NAME === "airfoil") {
++    await tx.execute(
+     sql.raw(`
+       CREATE SCHEMA IF NOT EXISTS ${SCHEMA_NAME};
+   `)
+   );
++  }
+   await tx.execute(
+     sql.raw(`
+     CREATE TABLE IF NOT EXISTS ${SCHEMA_NAME}.${SCHEMA_VERSION_TABLE_NAME} (
+@@ -374,9 +376,11 @@
+ });
+ async function initializeReorgRollbackTable(tx, indexerId) {
+   try {
++    if (SCHEMA_NAME === "airfoil") {
+     await tx.execute(`
+     CREATE SCHEMA IF NOT EXISTS ${SCHEMA_NAME};
+     `);
++  }
+     await tx.execute(
+       sql.raw(`
+         CREATE TABLE IF NOT EXISTS ${SCHEMA_NAME}.${ROLLBACK_TABLE_NAME}(
+diff --git a/dist/index.cjs b/dist/index.cjs
+--- a/dist/index.cjs
++++ b/dist/index.cjs
+@@ -152,11 +152,13 @@
+   // Add more migration arrays for future versions
+ ];
+ async function initializePersistentState(tx) {
+-  await tx.execute(
++  if (constants.SCHEMA_NAME === "airfoil") {
++    await tx.execute(
+     drizzleOrm.sql.raw(`
+       CREATE SCHEMA IF NOT EXISTS ${constants.SCHEMA_NAME};
+   `)
+   );
++  }
+   await tx.execute(
+     drizzleOrm.sql.raw(`
+     CREATE TABLE IF NOT EXISTS ${constants.SCHEMA_NAME}.${SCHEMA_VERSION_TABLE_NAME} (
+@@ -376,9 +378,11 @@
+ });
+ async function initializeReorgRollbackTable(tx, indexerId) {
+   try {
++    if (constants.SCHEMA_NAME === "airfoil") {
+     await tx.execute(`
+     CREATE SCHEMA IF NOT EXISTS ${constants.SCHEMA_NAME};
+     `);
++  }
+     await tx.execute(
+       drizzleOrm.sql.raw(`
+         CREATE TABLE IF NOT EXISTS ${constants.SCHEMA_NAME}.${ROLLBACK_TABLE_NAME}(
+diff --git a/src/persistence.ts b/src/persistence.ts
+--- a/src/persistence.ts
++++ b/src/persistence.ts
+@@ -82,11 +82,13 @@
+     TablesRelationalConfig = ExtractTablesWithRelations<TFullSchema>,
+ >(tx: PgTransaction<TQueryResult, TFullSchema, TSchema>) {
+   // Create schema if it doesn't exist
+-  await tx.execute(
++  if (SCHEMA_NAME === "airfoil") {
++    await tx.execute(
+     sql.raw(`
+       CREATE SCHEMA IF NOT EXISTS ${SCHEMA_NAME};
+   `),
+   );
++  }
+ 
+   // Create schema version table
+   await tx.execute(
+diff --git a/src/storage.ts b/src/storage.ts
+--- a/src/storage.ts
++++ b/src/storage.ts
+@@ -53,9 +53,11 @@
+ >(tx: PgTransaction<TQueryResult, TFullSchema, TSchema>, indexerId: string) {
+   try {
+     // Create schema if it doesn't exist
++    if (SCHEMA_NAME === "airfoil") {
+     await tx.execute(`
+     CREATE SCHEMA IF NOT EXISTS ${SCHEMA_NAME};
+     `);
++  }
+     // Create the audit log table
+     await tx.execute(
+       sql.raw(`

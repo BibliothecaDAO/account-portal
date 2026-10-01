@@ -1,5 +1,6 @@
 import { relations } from "drizzle-orm";
 import {
+  index,
   integer,
   numeric,
   pgEnum,
@@ -65,3 +66,58 @@ export const realmsLordsClaims = pgTable(
   },
   (t) => [primaryKey({ columns: [t.amount, t.hash] })],
 );
+
+// Apibara alone owns these tables. HyperIndex entities are deliberately absent
+// from this schema entrypoint so Drizzle cannot generate their DDL.
+export const l2BridgeRequests = pgTable("l2_bridge_requests", {
+  _id: text("_id").primaryKey(),
+  network: text("network").notNull(),
+  direction: text("direction").notNull(),
+  req_hash: text("req_hash").notNull(),
+  owner_l1: text("owner_l1").notNull(),
+  owner_l2: text("owner_l2").notNull(),
+  token_ids: text("token_ids").array().notNull(),
+  payload: text("payload").array().notNull(),
+});
+
+export const l2BridgeEvents = pgTable(
+  "l2_bridge_events",
+  {
+    _id: text("_id").primaryKey(),
+    request_key: text("request_key").notNull(),
+    network: text("network").notNull(),
+    direction: text("direction").notNull(),
+    req_hash: text("req_hash").notNull(),
+    owner_l1: text("owner_l1").notNull(),
+    owner_l2: text("owner_l2").notNull(),
+    token_ids: text("token_ids").array().notNull(),
+    payload: text("payload").array().notNull(),
+    source_chain: text("source_chain").notNull(),
+    event_name: text("event_name").notNull(),
+    type: text("type").notNull(),
+    block_number: numeric("block_number", { scale: 0 }).notNull(),
+    block_hash: text("block_hash").notNull(),
+    transaction_hash: text("transaction_hash").notNull(),
+    log_index: integer("log_index").notNull(),
+    timestamp: timestamp("timestamp", { withTimezone: true }).notNull(),
+  },
+  (t) => [
+    index("l2_bridge_events_request").on(t.request_key),
+    index("l2_bridge_events_owner_l1").on(t.network, t.owner_l1),
+    index("l2_bridge_events_owner_l2").on(t.network, t.owner_l2),
+  ],
+);
+
+export const l2BridgeProgress = pgTable("l2_bridge_progress", {
+  _id: text("_id").primaryKey(),
+  network: text("network").notNull(),
+  source_chain: text("source_chain").notNull(),
+  block_number: numeric("block_number", { scale: 0 }).notNull(),
+  block_hash: text("block_hash").notNull(),
+  block_timestamp: timestamp("block_timestamp", {
+    withTimezone: true,
+  }).notNull(),
+  observed_at: timestamp("observed_at", { withTimezone: true }).notNull(),
+  // Comes from DNA's production mode, never inferred from bridge activity.
+  production: text("production").notNull(),
+});
