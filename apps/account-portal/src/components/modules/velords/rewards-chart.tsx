@@ -71,7 +71,9 @@ export function VeLordsRewardsChart({
 
   const handlePeriodChange = (value: string) => {
     const period = value as "3m" | "6m" | "1y";
-    setLocalSelectedPeriod(period);
+    if (selectedPeriod === undefined) {
+      setLocalSelectedPeriod(period);
+    }
     onTimePeriodChange?.(period);
   };
 
@@ -159,30 +161,34 @@ export function VeLordsRewardsChart({
   );
 
   // Build dynamic chart config using labels
-  const dynamicChartConfig: Record<
-    string,
-      { label: string; color: string; icon?: typeof LordsIcon }
-  > &
-    typeof chartConfig = {
-    ...chartConfig,
-    ...Object.fromEntries(
-      allSenderLabels.map((label, index) => [
-        `amounts.${label}`,
-        {
-          label,
-          color: (() => {
-            const senderAddress = data?.find(
-              (item) => getVelordsSourceLabel(item.sender) === label,
-            )?.sender;
-            const knownColor = senderAddress
-              ? sourceColors[senderAddress as keyof typeof sourceColors]
-              : undefined;
-            return knownColor ?? fallbackSourceColors[index % fallbackSourceColors.length];
-          })(),
-        },
-      ]),
-    ),
-  };
+  const dynamicChartConfig = useMemo<
+    Record<string, { label: string; color: string; icon?: typeof LordsIcon }> &
+      typeof chartConfig
+  >(
+    () => ({
+      ...chartConfig,
+      ...Object.fromEntries(
+        allSenderLabels.map((label, index) => [
+          `amounts.${label}`,
+          {
+            label,
+            color: (() => {
+              const senderAddress = data?.find(
+                (item) => getVelordsSourceLabel(item.sender) === label,
+              )?.sender;
+              const knownColor = senderAddress
+                ? sourceColors[senderAddress as keyof typeof sourceColors]
+                : undefined;
+              return (
+                knownColor ?? fallbackSourceColors[index % fallbackSourceColors.length]
+              );
+            })(),
+          },
+        ]),
+      ),
+    }),
+    [allSenderLabels, data],
+  );
 
   return (
     <Card>
@@ -221,7 +227,7 @@ export function VeLordsRewardsChart({
 
       <ChartContainer
         config={dynamicChartConfig}
-        className="max-h-[800px] w-full overflow-x-auto"
+        className="max-h-[800px] w-full overflow-hidden"
       >
         {errorMessage ? (
           <div className="text-destructive p-6 text-sm">{errorMessage}</div>
@@ -274,6 +280,7 @@ export function VeLordsRewardsChart({
               yAxisId="amount"
               fill={dynamicChartConfig[`amounts.${label}`].color}
               stroke={dynamicChartConfig[`amounts.${label}`].color}
+              isAnimationActive={false}
               radius={
                 index === allSenderLabels.length - 1
                   ? [4, 4, 0, 0]
@@ -289,6 +296,7 @@ export function VeLordsRewardsChart({
             stroke="var(--color-apy)"
             fill="var(--color-apy)"
             activeDot={{ r: 8 }}
+            isAnimationActive={false}
           />
         </BarChart>
         )}
