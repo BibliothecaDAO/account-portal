@@ -1,0 +1,29 @@
+{
+  "name": "@realms-world/rpc-indexer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "probe": "node dist/probe.mjs",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint",
+    "test": "vitest run",
+    "format": "prettier --check \"**/*.{ts,mjs,md,json}\""
+  },
+  "dependencies": {
+    "@realms-world/constants": "workspace:*",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@realms-world/eslint-config": "workspace:*",
+    "@types/node": "^22.19.13",
+    "esbuild": "0.27.3",
+    "starknet": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "^1.6.1"
+  }
+}
