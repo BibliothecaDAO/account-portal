@@ -5,11 +5,15 @@ import {
   getLastConnectedWalletName,
   isAutoReconnectDisabled,
 } from "@/utils/connectWallet";
+import { rescanInjectedWallets } from "@/utils/starknet-wallet-store";
 import { useAccount, useConnect } from "@starknet-start/react";
 
 // Injected wallets are discovered asynchronously after mount; stop waiting for
 // the last-used wallet to appear after this long.
 const WALLET_DISCOVERY_TIMEOUT_MS = 3000;
+// Extensions can inject `window.starknet_*` after get-starknet's initial scan,
+// so rescan while waiting for them.
+const WALLET_RESCAN_INTERVAL_MS = 250;
 
 // Module-level so the attempt happens once per page load, even across StrictMode
 // double effects and remounts.
@@ -44,11 +48,19 @@ export function StarknetAutoReconnect() {
   const [discoveryTimedOut, setDiscoveryTimedOut] = useState(false);
 
   useEffect(() => {
-    const timeout = setTimeout(
-      () => setDiscoveryTimedOut(true),
-      WALLET_DISCOVERY_TIMEOUT_MS,
+    rescanInjectedWallets();
+    const interval = setInterval(
+      rescanInjectedWallets,
+      WALLET_RESCAN_INTERVAL_MS,
     );
-    return () => clearTimeout(timeout);
+    const timeout = setTimeout(() => {
+      clearInterval(interval);
+      setDiscoveryTimedOut(true);
+    }, WALLET_DISCOVERY_TIMEOUT_MS);
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
   }, []);
 
   useEffect(() => {

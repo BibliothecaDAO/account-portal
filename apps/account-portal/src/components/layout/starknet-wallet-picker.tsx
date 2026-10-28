@@ -12,6 +12,7 @@ import {
   useStarknetWallet,
 } from "@/hooks/use-starknet-wallet";
 import { getConnectorIcon, isCartridgeController } from "@/utils/connectWallet";
+import { rescanInjectedWallets } from "@/utils/starknet-wallet-store";
 import { cn } from "@/utils/utils";
 import { Loader2 } from "lucide-react";
 
@@ -22,7 +23,11 @@ export function StarknetWalletPickerProvider({
   children: React.ReactNode;
 }) {
   const [isOpen, setIsOpen] = useState(false);
-  const openPicker = useCallback(() => setIsOpen(true), []);
+  const openPicker = useCallback(() => {
+    // Pick up extension wallets that injected after the startup scans.
+    rescanInjectedWallets();
+    setIsOpen(true);
+  }, []);
   const value = useMemo(() => ({ openPicker }), [openPicker]);
 
   return (

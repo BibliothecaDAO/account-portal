@@ -3,6 +3,7 @@ import React from "react";
 import { StarknetAutoReconnect } from "@/components/layout/starknet-auto-reconnect";
 import { StarknetWalletPickerProvider } from "@/components/layout/starknet-wallet-picker";
 import { cartridgeControllerWallet } from "@/utils/cartridge-controller";
+import { starknetWalletStore } from "@/utils/starknet-wallet-store";
 import { expectedStarknetChain } from "@/utils/starknet-chain";
 import { mainnet, sepolia } from "@starknet-start/chains";
 import { voyager } from "@starknet-start/explorers";
@@ -34,6 +35,7 @@ export function StarknetProvider({ children }: { children: React.ReactNode }) {
       provider={provider}
       explorer={voyager}
       extraWallets={extraWallets}
+      store={starknetWalletStore}
     >
       <StarknetWalletPickerProvider>
         <StarknetAutoReconnect />
