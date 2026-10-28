@@ -1,14 +1,29 @@
 # Direct RPC indexer migration plan
 
-Status: proposed implementation plan, 29 October 2026. Repository baseline: `1227d40b3918e8e49e5011f892e44c336aeab56a`. Ekubo source reviewed at [`d09e515351db44486845bf0a79b882828f41c67f`](https://github.com/EkuboProtocol/indexer/tree/d09e515351db44486845bf0a79b882828f41c67f), committed 28 October 2026.
+Status: proposed implementation plan, 29 October 2026; reviewed and revised the same day (see [Review revision](#review-revision-29-october-2026)). Implementation has started with Phase 0 and Phase 1 in [`packages/rpc-indexer`](../packages/rpc-indexer/README.md). Repository baseline: `1227d40b3918e8e49e5011f892e44c336aeab56a`. Ekubo source reviewed at [`d09e515351db44486845bf0a79b882828f41c67f`](https://github.com/EkuboProtocol/indexer/tree/d09e515351db44486845bf0a79b882828f41c67f), committed 28 October 2026.
 
 Replace the deployed Starknet Apibara workloads with one TypeScript RPC worker, then migrate the Ethereum bridge from HyperIndex to the same package. Keep separate durable checkpoints for workloads with different polling intervals. Rebuild into isolated PostgreSQL schemas and switch application readers individually after comparison. Retain the old indexers during the rollback period.
 
-The recommended initial intervals are 30 seconds for Starknet ownership, claims and bridge events, five minutes for veLORDS history, and 60 seconds for the Ethereum bridge. Persist accepted blocks with hashes; pending/preconfirmed updates are outside the first implementation. This changes visibility latency and must be verified in the bridge and ownership UI before cutover.
+The recommended initial intervals are 30 seconds for all Starknet data (one group when verified address-list queries are available; otherwise 30 seconds for ownership, claims and bridge and five minutes for veLORDS), and 60 seconds for the Ethereum bridge. Persist accepted blocks with hashes; pending/preconfirmed updates are outside the first implementation. This changes visibility latency and must be verified in the bridge and ownership UI before cutover.
 
 The implementation should adapt Ekubo's transport and recovery mechanisms, while using storage and projections designed for this repository. A simple `getEvents` loop does not replace the rollback behavior currently supplied by Apibara and HyperIndex.
 
-This change is a plan only. No new worker, schema, reader selection or deployment is applied by it. Source and tests were inspected; Ekubo's test suite was not executed, and Alchemy capabilities and resource consumption have not been measured for the proposed worker.
+No worker, schema, reader selection or deployment is applied yet. Source and tests were inspected; Ekubo's test suite was not executed, and Alchemy capabilities and resource consumption have not been measured for the proposed worker.
+
+## Review revision (29 October 2026)
+
+The original plan's correctness analysis holds: the event-position mismatch, the legacy key collisions, the address-scoped query rule and the snapshot/recovery requirements were all confirmed against the code. The revision changes cost, grouping, ordering and first-slice scope. Sections below are edited in place; this list is the summary.
+
+1. **Economics are the deciding constraint.** After the 28 October launcher change the three Apibara services measured 375 MB combined, roughly $4 a month of Railway RAM. The original 20–25M CU budget would use most of Alchemy's account-wide 30M free allowance and, if paid, cost more than the services it replaces. The revised read cycle below targets roughly 9–11M CU/month baseline for all three chains and 3.6–5.8M for Starknet alone.
+2. **Hash-pinned ranges replace two of the three per-poll header reads.** A Starknet `getEvents` range starts at the stored hash of a recent checkpoint and ends at the hash of the head just read. A reorged start fails the query instead of needing a separate cursor read, and an end that disappears mid-pagination fails the next page. One head read plus one events query per address set is the steady-state Starknet poll. Ethereum cannot pin ranges by hash and keeps the original three-read cycle.
+3. **One Starknet group when address lists are verified.** With a verified address list, veLORDS adds no request to the 30-second poll, so a separate five-minute group only adds a checkpoint, a recovery state and cross-group anchor rules while making veLORDS slower. Use one `starknet` group in that mode. Keep the two-group split only in individual-address mode, where it is cheaper. The engine supports N groups either way, so this is configuration, not architecture.
+4. **Finality is read every ten minutes, not every minute.** Persisted finality only guards destructive recovery; the configured rollback-depth limit already fails closed between reads.
+5. **Backfill uses adaptive ranges.** Starknet mainnet was at block 17,094,917 on 28 October, so fixed 1,000-block ranges mean more than 16,000 ranges from block 664,162. Grow sparse ranges and shrink near the page cap, always keeping the original start and requiring complete results.
+6. **Replay all Starknet domains together, then cut readers over one at a time, claims first.** The claims worker is stopped and its data is stale, so there is no working source to regress against and it is the most valuable cutover. Order: claims, veLORDS, ownership, L2 bridge.
+7. **Ethereum migration becomes a measured decision, not an automatic phase.** HyperIndex already supplies validated L1 data. Move L1 to RPC only if the measured Railway saving from retiring HyperIndex exceeds roughly 5M CU/month of Alchemy usage.
+8. **Legacy value formats must be reproduced exactly.** Apibara decodes `ContractAddress` and transaction hashes as zero-padded 64-hex strings (`0x` + 64), so legacy claims and veLORDS rows store padded addresses. Ownership stores unpadded `0x` addresses. RPC returns unpadded felts. Each decoder has a per-domain legacy format and fixture tests.
+9. **The first implementation slice is the probe and pure decoders,** shared by every later phase: the package, a typed JSON-RPC transport, a Starknet reader with verified pagination, decoders for all six Starknet event families, and the bounded capability probe.
+10. The reader-selection table had broken Markdown (the `legacy|rpc` pipes split columns); it is fixed.
 
 ## Scope and current consumers
 
@@ -16,11 +31,11 @@ Deployment observations below refer to the Railway inspection on 28 October, rec
 
 | Workload                  | Current source and destination                                                     | Target stream                                                  | Initial interval |
 | ------------------------- | ---------------------------------------------------------------------------------- | -------------------------------------------------------------- | ---------------- |
-| Realm ownership           | Apibara `strk-realms-ownership`; mutable owner table and progress                  | `starknet-fast`                                                | 30 s             |
-| Realm LORDS claims        | Apibara `strk-realms-lords-claims`; service was stopped on a Drizzle schema error  | `starknet-fast`, sharing the Realms contract query             | 30 s             |
-| Starknet bridge           | Legacy Apibara bridge plus isolated L2 shadow                                      | `starknet-fast`; one ingestion feeds the new bridge projection | 30 s             |
-| veLORDS locks and rewards | Apibara `strk-velords`; two contracts and two history tables                       | `starknet-velords`                                             | 300 s            |
-| Ethereum bridge           | HyperIndex shadow using HyperSync; legacy Apibara implementation remains in source | `ethereum-bridge`, migrated last                               | 60 s             |
+| Realm ownership           | Apibara `strk-realms-ownership`; mutable owner table and progress                  | `starknet` (or `starknet-fast` in individual-address mode)     | 30 s             |
+| Realm LORDS claims        | Apibara `strk-realms-lords-claims`; service was stopped on a Drizzle schema error  | `starknet`, sharing the Realms contract query                  | 30 s             |
+| Starknet bridge           | Legacy Apibara bridge plus isolated L2 shadow                                      | `starknet`; one ingestion feeds the new bridge projection      | 30 s             |
+| veLORDS locks and rewards | Apibara `strk-velords`; two contracts and two history tables                       | `starknet` (or `starknet-velords` in individual-address mode)  | 30 s (300 s)     |
+| Ethereum bridge           | HyperIndex shadow using HyperSync; legacy Apibara implementation remains in source | `ethereum-bridge`, migrated last and only if cost justifies it | 60 s             |
 | Delegates                 | Commented indexer and stopped service                                              | Remains disabled                                               | None             |
 | Burner transfers          | Source exists, but no active service was identified                                | Remains disabled unless separately enabled                     | None             |
 
@@ -122,7 +137,7 @@ The official v0.10.0 event filter accepts one address; [v0.10.1][S2] and [v0.10.
 
 Probe `starknet_specVersion`, chain ID, real event positions, hash-bounded pagination and address-list results. Compare an address-list query with the union of the equivalent individual queries over the same settled, hash-checked range. Enable it only when they agree. Persist the selected capability mode with the deployment configuration.
 
-Without address-list support, use individual address queries and combine them before committing the group. Never fall back to an unrestricted chain-wide `Transfer` scan. With address lists, union the allowed selectors and still check each address/selector pair locally, since the server filter is a cross-product superset.
+Without address-list support, use individual address queries and combine them before committing the group. The selected mode also selects the Starknet grouping (see [Target architecture](#target-architecture)). Never fall back to an unrestricted chain-wide `Transfer` scan. With address lists, union the allowed selectors and still check each address/selector pair locally, since the server filter is a cross-product superset.
 
 ## Target architecture
 
@@ -143,14 +158,16 @@ flowchart LR
 
 Run one worker per environment initially, with independent stream loops and a bounded RPC request pool. Serialize database commits on the session holding the writer lock. A slow RPC request must not hold a database transaction or prevent another stream from fetching. A failed stream stops its own progress and reports degraded readiness; lock loss or a database integrity failure stops all writes.
 
-The two Starknet groups are:
+Starknet grouping depends on the verified query capability:
 
-1. `starknet-fast`: ownership and claims on the Realms contract, plus both Realms bridge events. All queries share one group checkpoint, so a poll only commits when every filter's range is complete.
-2. `starknet-velords`: `ModifyLock` and `RewardReceived`, with its own slower checkpoint and recovery history.
+- **Address-list mode (preferred):** one `starknet` group queries Realms (`Transfer`, `RewardClaimed`), the Realms bridge (both request events), veLORDS (`ModifyLock`) and the reward pool (`RewardReceived`) in a single address-list query per page, every 30 seconds. One checkpoint, one recovery history, no cross-group anchor sharing.
+- **Individual-address mode (fallback):** `starknet-fast` (Realms and bridge, 30 seconds) and `starknet-velords` (veLORDS and reward pool, 300 seconds), each with its own head read, checkpoint and recovery history. Do not share head or end validation between the two groups; the saving is small and the certification rules are not.
 
-The Ethereum bridge is a third group. Share identical head/header reads within a scheduling cycle where safe, but never share a completed cursor between groups. Cache immutable headers by chain and hash; a numbered header used to prove canonicality must be freshly validated. Clear cycle caches when changing endpoint or abandoning a snapshot.
+All queries in a group share one checkpoint, so a poll only commits when every filter's range is complete. Each filter keeps its own inclusive lower bound.
 
-A shared end validation must happen after all reads it certifies. If the slow group is catching up to a different height, misses that cycle, or exceeds its time budget, give it its own anchor reads and account for the extra calls. Do not reuse a fast group's earlier end check to certify later slow-group data. The fast group's shared checkpoint also deliberately couples its domains: a malformed claims event blocks that group's ownership and bridge advance until resolved. Split it into additional streams only if operational evidence justifies the extra checkpoints and reads.
+The Ethereum bridge is a separate group. Never share a completed cursor between groups. Cache immutable headers by chain and hash; a numbered header used to prove canonicality must be freshly validated. Clear caches when changing endpoint or abandoning a snapshot.
+
+A group's shared checkpoint deliberately couples its domains: a malformed claims event blocks ownership, bridge and (in address-list mode) veLORDS progress until resolved. The decoders are small and fixture-tested, and readiness reports the blocking failure. Split into additional groups only if operational evidence justifies the extra checkpoints and reads.
 
 Use three modules with small interfaces:
 
@@ -180,6 +197,22 @@ packages/rpc-indexer/
   README.md
   THIRD_PARTY_NOTICES.md
 ```
+
+## Steady-state read cycle
+
+Starknet, per group per poll:
+
+1. Read the head with `starknet_getBlockWithTxHashes("latest")` for number, hash and timestamp. If the head has not moved past the cursor, record the observation and stop.
+2. Choose the range start: the most recent retained checkpoint at least the overlap window below the cursor (or the configured start for a new stream). Keep the last few dozen committed checkpoints (height and hash) per stream for this; they cost one small row per commit and are pruned beyond the rollback-depth limit.
+3. Query `starknet_getEvents` with `from_block = {block_hash: checkpoint}` and `to_block = {block_hash: head}`, following continuation tokens. `BLOCK_NOT_FOUND` on the start means the checkpoint is no longer canonical: enter recovery and try an older checkpoint. `BLOCK_NOT_FOUND` on the end or on a later page means the head moved: discard the read.
+4. Compare events in the overlap with stored events (identity and content digest) in both directions. A mismatch is either a reorg inside the window or earlier incomplete data, and is repaired in the same transaction as the advance.
+5. Fetch a header for each new event-bearing block (timestamp and hash check against the event's `block_hash`), then commit events, projections and the new checkpoint `(head, head hash)`.
+
+Because both ends are hash-pinned, a canonical start proves everything beneath it is canonical, and the overlap reread catches both shallow reorgs and the provider-incompleteness case Ekubo's restart comparison addresses. An eventless poll costs one head read plus one query per address set. The separate cursor and end rechecks of the original plan are only needed when the probe shows the endpoint does not reject unknown block hashes; in that case fall back to the three-read cycle and budget for it.
+
+Ethereum cannot pin `eth_getLogs` ranges by hash, so it keeps the original cycle: head read, logs by number from the overlap start, then re-read the range end and the stored cursor header before committing.
+
+Finality (`l1_accepted` on Starknet, `finalized` on Ethereum) is read every ten minutes per chain and only ever raises the persisted finalized checkpoint after the window beneath it has been reconciled.
 
 ## Storage and transaction contract
 
@@ -218,7 +251,7 @@ Use a dedicated session-capable PostgreSQL connection for the advisory lock and 
 
 The [veLORDS tables](../packages/db/src/schema/velords.ts) and [claims table](../packages/db/src/schema/bridge.ts) use `(amount, transaction_hash/hash)` primary keys. Different events can collide on those values. The new authoritative history must use event identity. Compare legacy-compatible output and separately report any recovered events that legacy keys omitted; do not label every difference a new-indexer bug or deliberately discard those events without analysis.
 
-Extract and test decoders from the existing handlers without importing their runtime environment or Apibara plugins. Prefer decoders using the existing Starknet library and explicit ABIs. If retaining an Apibara codec temporarily, record it as a remaining dependency and remove it before final retirement. Preserve uint256 handling, timestamp units, recipient normalization, the exact L1 bridge topic filters and all existing bridge status strings.
+Extract and test decoders from the existing handlers without importing their runtime environment or Apibara plugins. Reproduce each domain's legacy value format: Apibara emits zero-padded 64-hex felts, so legacy claims recipients, veLORDS senders/owners and transaction hashes are padded, while ownership owners are unpadded `0x` hex. Prefer decoders using the existing Starknet library and explicit ABIs. If retaining an Apibara codec temporarily, record it as a remaining dependency and remove it before final retirement. Preserve uint256 handling, timestamp units, recipient normalization, the exact L1 bridge topic filters and all existing bridge status strings.
 
 Keep `normalizeBridgeRequest`, `decodeBridgePayload`, and logical request keys in [the shared bridge package](../packages/bridge/src/index.ts). Preserve the deliberately broad `LogMessageToL2` filter until a separate, evidenced change narrows it. Physical source chain must remain separate from the logical completion status.
 
@@ -237,18 +270,18 @@ Keep `normalizeBridgeRequest`, `decodeBridgePayload`, and logical request keys i
 
 Start with fixed polling intervals. Add adaptive idle backoff only after fixed-cadence cost/freshness measurements and recovery tests pass. The maximum interval must respect both the product freshness target and the range's ability to drain new blocks plus overlap. Persisted coverage and recovery remain correct when the interval changes.
 
-Initial probe/build settings can use a 20-second request deadline, three retries, four concurrent RPC reads, 1,000 blocks per range, 1,000 events per page and a 20-page range limit. Cap buffered response bytes as well as page count. These are starting settings for testing, not asserted Alchemy limits. Start the comparison window at Ekubo's 120 seconds and measure the effective retained block span. Preflight must resolve any range/cadence mismatch before deployment; hitting a limit should refuse or explicitly split the range, never drop remaining pages. Keep backfill rate limits independent of the live schedule so replay cannot starve current readers.
+Initial probe/build settings can use a 20-second request deadline, three retries, four concurrent RPC reads, 1,000 blocks per live range, 1,000 events per page and a 20-page range limit. Backfill starts at 10,000 blocks per range, doubles after a range that fits in one page (up to the endpoint's measured range limit) and halves after a range that needed more than half the page cap. Cap buffered response bytes as well as page count. These are starting settings for testing, not asserted Alchemy limits. Start the comparison window at Ekubo's 120 seconds and measure the effective retained block span. Preflight must resolve any range/cadence mismatch before deployment; hitting a limit should refuse or explicitly split the range, never drop remaining pages. Keep backfill rate limits independent of the live schedule so replay cannot starve current readers.
 
 ## Application read migration
 
 Add source selection in the server-side data layer, with the default preserving each current source. Use typed adapters or query builders for a selected generation, not a second synchronization job copying new rows into legacy tables. Validate all schema identifiers and network bindings.
 
-| Reader                    | Proposed selection                                         | Rollback target                                              |
-| ------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
-| veLORDS history/analytics | `VELORDS_HISTORY_SOURCE=legacy                             | rpc`                                                         | Current Apibara tables, only while their worker remains caught up                    |
-| Realm ownership           | `REALM_OWNERSHIP_SOURCE=legacy                             | rpc`                                                         | Current ownership table and its matching progress                                    |
-| Claims history            | `REALMS_CLAIMS_SOURCE=legacy                               | rpc`                                                         | Legacy data is known potentially stale; do not present it as a fresh recovery source |
-| Bridge history            | Preserve `legacy` and `hyperindex`; add `hybrid` and `rpc` | A validated, current source pair, not an arbitrary old table |
+| Reader                    | Proposed selection                                         | Rollback target                                                                      |
+| ------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Claims history            | `REALMS_CLAIMS_SOURCE`: `legacy` or `rpc`                  | Legacy data is known potentially stale; do not present it as a fresh recovery source |
+| veLORDS history/analytics | `VELORDS_HISTORY_SOURCE`: `legacy` or `rpc`                | Current Apibara tables, only while their worker remains caught up                    |
+| Realm ownership           | `REALM_OWNERSHIP_SOURCE`: `legacy` or `rpc`                | Current ownership table and its matching progress                                    |
+| Bridge history            | Preserve `legacy` and `hyperindex`; add `hybrid` and `rpc` | A validated, current source pair, not an arbitrary old table                         |
 
 Define bridge modes explicitly: `hyperindex` retains HyperIndex L1 plus existing isolated Apibara L2; `hybrid` uses HyperIndex L1 plus RPC L2; `rpc` uses RPC L1 plus RPC L2. The existing shared-table `legacy` mode remains available while needed, but does not become a safe rollback merely because it exists. Confirm whether its L1 data is still maintained.
 
@@ -264,16 +297,19 @@ Five-minute veLORDS polling affects historical analytics and activity visibility
 
 Alchemy currently lists 20 CU for Starknet event/header reads and 60 CU for Ethereum logs. The pricing documentation lists $0.525 per million CU and a separate 30M-CU free plan. Account terms and remaining allowance must be checked at implementation time. These are request-based estimates, not a measured bill. [Method rates][A3], [plans][A4].
 
-For a 30-day month, there are 86,400 fast polls, 8,640 slow polls and 43,200 Ethereum polls. The model includes a head read, range-end recheck and saved-cursor check for each fast/Ethereum poll. A slow poll aligned with a fast poll can reuse that cycle's head/end validation but still checks its own cursor. Finality read allowance is one 20-CU read per minute per chain; additional finality validation is included in the budget margin.
+For a 30-day month there are 86,400 polls at 30 seconds, 8,640 at five minutes, 43,200 at 60 seconds and 4,320 finality reads per chain at ten minutes. Using the revised read cycle:
 
 | Mode                                             | Starknet baseline | Ethereum baseline | Combined baseline |
 | ------------------------------------------------ | ----------------: | ----------------: | ----------------: |
-| One query per contract                           |   10.02M CU/month |             6.05M |            16.07M |
-| Verified address-list queries per Starknet group |    8.12M CU/month |             6.05M |            14.17M |
+| Address-list mode, one Starknet group            |    3.54M CU/month |             5.27M |             8.81M |
+| Individual-address mode, fast and veLORDS groups |    5.79M CU/month |             5.27M |            11.06M |
+| Original plan, for comparison                    |      8.12M–10.02M |             6.05M |     14.17M–16.07M |
 
-For the first row: `Starknet = 86,400 × 100 + 8,640 × 60 + 43,200 × 20`; `Ethereum = 43,200 × 120 + 43,200 × 20`. In address-list mode, fast/slow cycle costs become 80/40 CU. This refines the earlier approximate 16M estimate with two explicit Starknet checkpoints; it is conditional on cycle sharing actually being implemented.
+Arithmetic: address-list Starknet `86,400 × (20 head + 20 query) + 4,320 × 20`; individual Starknet `86,400 × (20 + 2 × 20) + 8,640 × (20 + 2 × 20) + 4,320 × 20`; Ethereum `43,200 × (20 head + 60 logs + 20 end + 20 cursor) + 4,320 × 20`. The individual-address figure keeps two groups because folding veLORDS into a 30-second poll would add `86,400 × 2 × 20 = 3.46M` CU.
 
-Budget **20–25M CU/month initially**, then replace the estimate with measured per-method counts. Costs above baseline include extra event pages, one header per new event-bearing block, retries, finality verification, audits, restarts and missed cache sharing. A second full request page every fast poll alone adds 1.728M CU/month. Historical backfill is a separate budget; never assume it fits the steady-state allowance.
+Budget **12–15M CU/month initially**, or **5–8M** while L1 stays on HyperIndex, then replace the estimate with measured per-method counts. Costs above baseline include extra event pages, one header per new event-bearing block, retries, audits, restarts and the three-read fallback if hash pinning is unavailable (`86,400 × 40 = 3.46M` more). Historical backfill is a separate budget: with adaptive ranges the Starknet replay from block 664,162 is dominated by one header per event-bearing block and should stay in the low single-digit millions of CU; measure it in Phase 0 rather than assume it.
+
+At PAYG rates the combined baseline is roughly $4.60–5.80 a month, compared with roughly $4 a month of Railway RAM (375 MB) for the three Starknet services after the 28 October change, and the new worker still needs its own Railway memory. Inside the free allowance the Alchemy cost is zero, but the allowance is shared with the portal. The migration is therefore justified mainly by retiring the DNA/Apibara dependency, the stopped claims worker and the custom Drizzle patch, not by a large saving. Ethereum's 5.3M CU is only worth spending if retiring HyperIndex saves at least as much.
 
 Track attempts, not just successful high-level calls. Report counters by chain, stream and method; estimated CU/day; pagination; retries; range sizes; time at head; and cache hits. Reconcile estimates with Alchemy's account usage. The 30M free limit is account-wide and PAYG charges from its first CU, so leave room for the portal and other applications. No paid-plan change is part of this implementation plan.
 
@@ -306,23 +342,23 @@ Implement both chain adapters, bounded queries, snapshot validation, independent
 
 Gate: the fault tests below pass against the real store and runtime, including restart with a fork, ambiguous commit, and a missing event beneath a canonical cursor. Schema/role isolation prevents writes to legacy or HyperIndex objects. Empty-range progress works.
 
-### Phase 3 Replay veLORDS and validate the shared worker
+### Phase 3 Replay all Starknet domains and switch claims and veLORDS
 
-Deploy a shadow with only the veLORDS group enabled into the new schema. Replay from the configured boundary with live readers unchanged. Use bounded chunks and a low-priority backfill queue; no database transaction spans RPC waits. Record progress, request counts, backfill completion and resource use.
+Deploy a shadow with every Starknet filter enabled into the new schema, in the grouping selected by Phase 0. Replay from each filter's configured boundary with live readers unchanged. Use adaptive backfill chunks and a low-priority backfill queue; no database transaction spans RPC waits. Record progress, request counts, backfill completion and resource use. Replaying once avoids adding the fast group later as a fingerprint migration.
 
-Compare every stored lock/reward event and analytics aggregates over historical periods, including any rows affected by legacy key collisions. Perform a deployed stop/restart and verify exact continuation. First reader cutover is veLORDS, after the shadow reaches head and the actual cost/freshness measurements pass.
+Cut readers over one at a time with their server-side selectors, in this order:
 
-Gate: historical completeness, zero unexplained semantic mismatches, successful restart, expected five-minute maximum scheduling delay plus processing time, and a working reader rollback while the old worker remains current.
+1. **Claims.** The legacy worker is stopped, so the comparison is against independent chain evidence (bounded receipt checks) rather than the stale table. Report rows the legacy `(amount, hash)` key dropped.
+2. **veLORDS.** Compare every stored lock/reward event and analytics aggregates over historical periods, including rows affected by legacy key collisions.
+3. **Ownership.** Compare all tokens at a pinned common accepted block, selected `owner_of` calls, mint/burn transitions and multiple-transfer ordering. Verify the known ownership smoke wallet through environment-supplied expectations. Check inventory readiness, wallet transfers and bridge token selection.
 
-### Phase 4 Replay the fast Starknet group and switch ownership and claims
+Perform a deployed stop/restart and verify exact continuation before the first cutover.
 
-Add ownership, claims and L2 bridge to the same new generation with a fresh independent fast-stream cursor. Adding this group is a migration, not a silent mutation of an existing fingerprint. Replay all three domains; legacy bridge readers remain unchanged.
+Gate per reader: historical completeness, zero unexplained semantic mismatches, legacy value formats reproduced exactly, successful restart, expected scheduling delay plus processing time, correct pending-to-indexed UX and a working reader rollback where a current legacy source exists. Do not advertise a stale legacy claims reader as an automatic rollback.
 
-Compare all ownership tokens at a pinned common accepted block, selected `owner_of` calls, mint/burn transitions, and multiple-transfer ordering. Verify the known ownership smoke wallet through environment-supplied expectations. Claims require replay and independent chain evidence because the stopped legacy service is not a complete oracle.
+### Phase 4 (merged into Phase 3)
 
-Switch ownership and claims individually with their server-side source selectors. Check inventory readiness, wallet transfers, bridge token selection and claims history.
-
-Gate: complete owner-state parity at the same hash, all claim discrepancies resolved, correct pending-to-indexed UX, and no regression in stale/unavailable handling. Do not advertise a stale legacy claims reader as an automatic rollback.
+The original separate fast-group replay is folded into Phase 3. Phase numbers below are kept so earlier references stay valid.
 
 ### Phase 5 Switch L2 bridge reads with HyperIndex still supplying L1
 
@@ -334,7 +370,7 @@ Gate: all expected L1/L2 evidence is present, no duplicated logical requests, st
 
 ### Phase 6 Convert Ethereum and finish the direct RPC target
 
-Enable the Ethereum group and replay from the existing inclusive L1 start block into its own stream tables. Retain HyperIndex for parity and fallback. Confirm its exact four route filters, including the asymmetric `LogMessageToL2` filter. Prefer a single safe topic-union query plus local route validation; split by filter only if provider volume requires it and include those extra calls in the budget.
+Start this phase only if measured Starknet costs match the budget and retiring HyperIndex saves more than the roughly 5.3M CU/month the Ethereum group will use; otherwise keep `hybrid` as the final bridge mode. Enable the Ethereum group and replay from the existing inclusive L1 start block into its own stream tables. Retain HyperIndex for parity and fallback. Confirm its exact four route filters, including the asymmetric `LogMessageToL2` filter. Prefer a single safe topic-union query plus local route validation; split by filter only if provider volume requires it and include those extra calls in the budget.
 
 Compare complete normalized event sets with HyperIndex at a common block/hash, then compare merged bridge snapshots and all actions. Switch `hybrid` to `rpc` when both RPC streams are ready. Ethereum is deliberately last because an independently validated L1 source already exists.
 
@@ -366,8 +402,9 @@ Only then remove unused Apibara/Envio runtime dependencies, launch scripts and t
 | 429 inside HTTP 200, timeout, 5xx and persistent authorization error    | Bounded retry policy and actionable sanitized failure                                    |
 | Crash before commit, after commit, or lost commit response              | Restart converges on exactly the same events and projections                             |
 | Second worker and loss of lock connection                               | At most one writer; old session cannot continue issuing writes after lock loss           |
-| Slow group fails while fast group advances                              | Slow cursor/readiness remains unchanged; fast progress never covers its missing work     |
-| Shared-cache fork or endpoint switch                                    | Cached numbered data does not certify a new snapshot                                     |
+| Slow group fails while fast group advances (individual-address mode)    | Slow cursor/readiness remains unchanged; fast progress never covers its missing work     |
+| Range start hash reorged out, or head hash reorged out mid-pagination   | Query fails, read is discarded, recovery picks an older checkpoint; nothing is committed |
+| Cache reuse after a fork or endpoint switch                             | Cached numbered data does not certify a new snapshot                                     |
 | L2 rollback while L1 completion exists                                  | Only L2 evidence rewinds; merged status is recomputed from surviving sources             |
 | Eventless blocks and quiet contracts                                    | Freshness advances on verified range completion, not on last event or timer              |
 | Filter/decoder/schema generation changes                                | Explicit replay/migration required; no silent reuse of incompatible cursors              |
@@ -413,7 +450,7 @@ Claims may have no healthy legacy fallback. In that case show unavailable/stale 
 
 Run targeted formatting/lint, package typechecks and runtime tests for implementation changes. Run the portal tests/build whenever readers, shared types or dependencies change. Keep the existing Apibara and HyperIndex checks until those paths are intentionally retired. Validate the actual deployed image, not only a development entrypoint.
 
-The conversion is complete when every enabled reader uses a complete validated RPC projection; all three groups resume correctly after restart and tested faults; pending-to-accepted latency is acceptable; measured provider/hosting costs meet the selected budget; and superseded services can be stopped without losing freshness. The immediately actionable first deliverable is the bounded capability probe and event-position fixtures from Phase 0.
+The conversion is complete when every enabled reader uses a complete validated RPC projection; all three groups resume correctly after restart and tested faults; pending-to-accepted latency is acceptable; measured provider/hosting costs meet the selected budget; and superseded services can be stopped without losing freshness. The first deliverable is the bounded capability probe, the Starknet reader and the pure decoders from Phases 0 and 1, now in `packages/rpc-indexer`. Next: run the probe against Alchemy mainnet and Sepolia, record the capability results in this document, and capture event fixtures for every family.
 
 [E1]: https://github.com/EkuboProtocol/indexer/blob/d09e515351db44486845bf0a79b882828f41c67f/src/starknet/eventStream.ts
 [E2]: https://github.com/EkuboProtocol/indexer/blob/d09e515351db44486845bf0a79b882828f41c67f/src/evm/logStream.ts
