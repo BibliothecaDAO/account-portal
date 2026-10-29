@@ -11,6 +11,10 @@ const FUNCTION = "depositTokens";
 const U128_MASK = (1n << 128n) - 1n;
 const LEGACY_FEE_PER_TOKEN_GWEI = 40_000;
 const FEE_BUFFER_BPS = 12_000n;
+// Starknet core's sendMessageToL2 reverts with L1_MSG_FEE_BELOW_MIN below
+// this, so wallets can't estimate gas for the deposit (e.g. 1 Realm on the
+// legacy 40k gwei/token fallback).
+const MIN_MESSAGE_FEE_WEI = parseGwei("50000");
 
 interface StarknetEstimateMessageFeeResponse {
   result?: {
@@ -234,6 +238,8 @@ export function useWriteDepositRealms({
           feeEstimateError,
         );
       }
+
+      if (value < MIN_MESSAGE_FEE_WEI) value = MIN_MESSAGE_FEE_WEI;
 
       return await writeContractAsync({
         address: l1BridgeAddress,
