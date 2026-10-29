@@ -407,6 +407,29 @@ describe("Starknet worker", () => {
     ).rejects.toBeInstanceOf(FingerprintMismatchError);
   });
 
+  it("orders checkpoints numerically across a digit boundary", async () => {
+    let state = await store.loadState(GROUP.id);
+    for (const height of [999_999n, 1_000_000n]) {
+      await store.commit({
+        streamId: GROUP.id,
+        expected: { height: state.processedHeight, hash: state.processedHash },
+        blocks: [],
+        cursor: {
+          height,
+          hash: toHex(height),
+          timestamp: new Date(),
+          atHead: false,
+        },
+        head: 2_000_000n,
+      });
+      state = await store.loadState(GROUP.id);
+    }
+    expect(state.checkpoints.map((c) => c.height)).toEqual([
+      1_000_000n,
+      999_999n,
+    ]);
+  });
+
   it("applies migrations idempotently", async () => {
     expect(await migrate(db as unknown as Queryable, SCHEMA)).toEqual([]);
   });

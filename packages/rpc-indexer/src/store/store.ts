@@ -166,9 +166,10 @@ export class PostgresStore {
       }>(
         `SELECT block_number::text, block_hash, transaction_hash,
                 event_index_in_transaction, from_address, keys, data
-         FROM ${this.schema}.events
-         WHERE stream_id = $1 AND block_number BETWEEN $2 AND $3
-         ORDER BY block_number, transaction_index, event_index_in_transaction`,
+         FROM ${this.schema}.events e
+         WHERE e.stream_id = $1 AND e.block_number BETWEEN $2 AND $3
+         -- Qualified so the numeric column sorts, not the ::text output alias.
+         ORDER BY e.block_number, e.transaction_index, e.event_index_in_transaction`,
         [streamId, from.toString(), to.toString()],
       );
       return rows.map((row) => ({
@@ -520,7 +521,9 @@ export class PostgresStore {
       at_head: boolean;
     }>(
       `SELECT height::text, hash, block_timestamp, at_head
-       FROM ${this.schema}.checkpoints WHERE stream_id = $1 ORDER BY height DESC`,
+       FROM ${this.schema}.checkpoints c WHERE c.stream_id = $1
+       -- Qualified so the numeric column sorts, not the ::text output alias.
+       ORDER BY c.height DESC`,
       [streamId],
     );
     return {
