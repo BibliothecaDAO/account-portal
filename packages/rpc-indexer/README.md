@@ -52,20 +52,24 @@ services running; nothing reads this schema yet.
 
 Variables:
 
-| Variable              | Value                                                                                    |
-| --------------------- | ---------------------------------------------------------------------------------------- |
-| `RPC_INDEXER_NETWORK` | `mainnet` or `sepolia` (required; there is no default)                                   |
-| `RPC_INDEXER_SCHEMA`  | `rpc_indexer_mainnet_v1` (must match the network)                                        |
-| `DATABASE_URL`        | A direct, session-capable Postgres URL, not a transaction pooler                         |
-| `STARKNET_RPC_URL`    | Alchemy Starknet `v0_10` URL                                                             |
-| `STARKNET_RPC_LABEL`  | Optional non-secret name for logs, e.g. `alchemy-starknet`                               |
-| `STARKNET_QUERY_MODE` | `individual` (default) until the probe's `addressListParity` passes, then `address-list` |
+| Variable              | Value                                                                                   |
+| --------------------- | --------------------------------------------------------------------------------------- |
+| `RPC_INDEXER_NETWORK` | `mainnet` or `sepolia` (required; there is no default)                                  |
+| `RPC_INDEXER_SCHEMA`  | `rpc_indexer_mainnet_v1` (must match the network)                                       |
+| `DATABASE_URL`        | A direct, session-capable Postgres URL, not a transaction pooler                        |
+| `STARKNET_RPC_URL`    | Alchemy Starknet `v0_10` URL                                                            |
+| `STARKNET_RPC_LABEL`  | Optional non-secret name for logs, e.g. `alchemy-starknet`                              |
+| `STARKNET_QUERY_MODE` | `address-list` on Alchemy mainnet (probe passed on 29 Oct); the default is `individual` |
 
 Optional tuning: `STARKNET_FAST_INTERVAL_MS` (30000), `STARKNET_SLOW_INTERVAL_MS`
 (300000, individual mode only), `STARKNET_OVERLAP_BLOCKS` (64),
 `STARKNET_INITIAL_RANGE_BLOCKS` (10000), `STARKNET_MAX_RANGE_BLOCKS` (500000),
 `STARKNET_CHUNK_SIZE` (1000), `STARKNET_MAX_PAGES` (20), `RPC_TIMEOUT_MS`,
 `RPC_MAX_RETRIES`.
+
+For the mainnet backfill, `STARKNET_INITIAL_RANGE_BLOCKS=100000` and
+`STARKNET_MAX_RANGE_BLOCKS=2000000` suit the sparse history; the worker halves
+a range whenever it hits the page cap.
 
 Before the first start, run the migration once with the same variables, for
 example as a Railway one-off command or locally:
