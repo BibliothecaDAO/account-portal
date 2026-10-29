@@ -174,7 +174,7 @@ const BridgeSidebar: React.FC<BridgeSidebarProps> = ({
                   ? "Unable to verify Starknet account"
                   : isL2AccountDeployed === false
                     ? "Deploy Starknet account first"
-                    : isApproveForAllPending
+                    : isApproveForAllPending || approveForAllLoading
                       ? "Approving"
                       : `Approve Bridge`}
             </Button>

@@ -4,6 +4,7 @@ import { erc721Abi } from "viem";
 import {
   useAccount,
   useBlockNumber,
+  usePublicClient,
   useReadContract,
   useWaitForTransactionReceipt,
 } from "wagmi";
@@ -17,6 +18,7 @@ import { useERC721SetApprovalForAll } from "./useERC721SetApprovalForAll";
 
 export default function useERC721Approval() {
   const { address } = useAccount();
+  const publicClient = usePublicClient({ chainId: SUPPORTED_L1_CHAIN_ID });
   const { writeAsync, data, isPending } = useERC721SetApprovalForAll({
     onSuccess: (data) => console.log("approved" + data),
   });
@@ -42,13 +44,23 @@ export default function useERC721Approval() {
     }
   }, [blockNumber, refetch, address, isApprovedForAll]);
 
-  const approveForAll = async () =>
-    await writeAsync({
+  // Resolves once the approval is mined: the deposit that follows is simulated
+  // by the wallet against current chain state and reverts while it is pending.
+  const approveForAll = async () => {
+    if (!publicClient) throw new Error("Missing L1 Public Client");
+    const hash = await writeAsync({
       contractAddress: CollectionAddresses.realms[
         SUPPORTED_L1_CHAIN_ID
       ] as `0x${string}`,
       operator: REALMS_BRIDGE_ADDRESS[SUPPORTED_L1_CHAIN_ID] as `0x${string}`,
     });
+    const receipt = await publicClient.waitForTransactionReceipt({ hash });
+    if (receipt.status !== "success") {
+      throw new Error("Bridge approval transaction failed.");
+    }
+    await refetch();
+    return hash;
+  };
 
   const { isLoading: approveForAllLoading } = useWaitForTransactionReceipt({
     hash: data,
