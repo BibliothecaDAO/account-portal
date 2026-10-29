@@ -25,6 +25,24 @@ The original plan's correctness analysis holds: the event-position mismatch, the
 9. **The first implementation slice is the probe and pure decoders,** shared by every later phase: the package, a typed JSON-RPC transport, a Starknet reader with verified pagination, decoders for all six Starknet event families, and the bounded capability probe.
 10. The reader-selection table had broken Markdown (the `legacy|rpc` pipes split columns); it is fixed.
 
+## Phase 0 results (29 October 2026, Alchemy mainnet)
+
+The probe ran against Alchemy's Starknet `v0_10` endpoint at head 17,100,290.
+
+| Check                  | Result                                                                                                                             |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Spec version and chain | `0.10.3-rc.0`, `SN_MAIN`                                                                                                           |
+| Unknown block hash     | Rejected with `BLOCK_NOT_FOUND`, so the hash-pinned read cycle is usable                                                           |
+| Block cadence          | 1.67 s per block (1,000 blocks in 1,672 s): a 30 s poll covers about 18 blocks; the 64-block overlap is about 107 s                |
+| `l1_accepted` lag      | 4,424 blocks, about two hours                                                                                                      |
+| Event positions        | Present for every family and checked against receipts: `event_index` is transaction-local, as expected                             |
+| Event families         | Transfer, RewardClaimed, ModifyLock and RewardReceived found and decoded; no bridge request event in the last two million blocks   |
+| Address-list parity    | Address list equals the union of individual queries (20 events over 1,000,000 blocks): use `address-list` mode, one Starknet group |
+| Range limit            | A single query over all 16.4M blocks since the start boundary is accepted                                                          |
+| Pagination             | Pages carry a continuation token even when nearly empty: the endpoint bounds blocks scanned per page, so page count limits ranges  |
+
+Consequences: deploy with `STARKNET_QUERY_MODE=address-list` (Starknet baseline about 3.5M CU/month). Backfill ranges grow while a read uses at most a quarter of the page cap and halve on the cap, so the very sparse history (roughly 20 events per million blocks) is read in large ranges. Bridge request decoding still needs a real fixture from older history before the L2 bridge cutover.
+
 ## Scope and current consumers
 
 Deployment observations below refer to the Railway inspection on 28 October, recorded in [the cost investigation](./apibara-railway-costs.md). Recheck live services and portal environment selections before implementation cutover. A repository default does not establish the deployed reader selection.

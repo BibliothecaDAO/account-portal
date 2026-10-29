@@ -2,6 +2,7 @@ import { PGlite } from "@electric-sql/pglite";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import type {
+  EventRead,
   StarknetBlockHeader,
   StarknetBlockId,
   StarknetEvent,
@@ -10,10 +11,7 @@ import type {
 import type { Felt } from "../src/felt";
 import type { Queryable } from "../src/store/migrations";
 import type { StarknetReaderLike } from "../src/stream/processor";
-import {
-  BlockNotFoundError,
-  IncompleteRangeError,
-} from "../src/chains/starknet";
+import { BlockNotFoundError, PageLimitError } from "../src/chains/starknet";
 import {
   groupFingerprint,
   STARKNET_CHAIN_IDS,
@@ -126,7 +124,7 @@ class SimChain implements StarknetReaderLike {
     }
   }
 
-  getEvents(range: StarknetEventRange): Promise<StarknetEvent[]> {
+  readEvents(range: StarknetEventRange): Promise<EventRead> {
     try {
       const from = range.from.hash
         ? this.resolve({ block_hash: range.from.hash })
@@ -159,9 +157,9 @@ class SimChain implements StarknetReaderLike {
       }
       if (this.failPageLimitOnce && events.length > 1) {
         this.failPageLimitOnce = false;
-        throw new IncompleteRangeError("Range exceeds 1 pages; split it");
+        throw new PageLimitError("Range exceeds 1 pages; split it");
       }
-      return Promise.resolve(events);
+      return Promise.resolve({ events, pages: 1 });
     } catch (error) {
       return Promise.reject(error as Error);
     }

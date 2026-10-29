@@ -1,4 +1,5 @@
 import type {
+  EventRead,
   StarknetBlockHeader,
   StarknetBlockId,
   StarknetEvent,
@@ -14,7 +15,11 @@ import type {
   StoredEvent,
   StreamState,
 } from "../store/store";
-import { BlockNotFoundError, IncompleteRangeError } from "../chains/starknet";
+import {
+  BlockNotFoundError,
+  IncompleteRangeError,
+  PageLimitError,
+} from "../chains/starknet";
 import { decodeStarknetEvent } from "../decoders/starknet";
 
 // One polling group. Each poll reads a hash-pinned range starting at a
@@ -24,7 +29,7 @@ import { decodeStarknetEvent } from "../decoders/starknet";
 
 export interface StarknetReaderLike {
   getBlockHeader(blockId: StarknetBlockId): Promise<StarknetBlockHeader>;
-  getEvents(range: StarknetEventRange): Promise<StarknetEvent[]>;
+  readEvents(range: StarknetEventRange): Promise<EventRead>;
 }
 
 export interface ProcessorOptions {
@@ -126,9 +131,9 @@ export class StreamProcessor {
         ? head
         : await this.reader.getBlockHeader({ block_number: Number(endNumber) });
 
-    let events: StarknetEvent[];
+    let read: EventRead;
     try {
-      events = await this.reader.getEvents({
+      read = await this.reader.readEvents({
         from: start,
         to: { number: end.number, hash: end.hash },
         filters: this.group.filters,
@@ -137,10 +142,7 @@ export class StreamProcessor {
         maxPages: this.options.maxPages,
       });
     } catch (error) {
-      if (
-        error instanceof IncompleteRangeError &&
-        error.message.includes("pages")
-      ) {
+      if (error instanceof PageLimitError) {
         if (this.rangeBlocks <= 1n) throw error;
         this.rangeBlocks = maxBigInt(1n, this.rangeBlocks / 2n);
         return { status: "range-split", rangeBlocks: this.rangeBlocks };
@@ -151,7 +153,7 @@ export class StreamProcessor {
       throw error;
     }
 
-    events = events.filter((event) => {
+    const events = read.events.filter((event) => {
       const startBlock = this.filterStarts
         .get(event.fromAddress)
         ?.get(event.keys[0] as Felt);
@@ -183,8 +185,9 @@ export class StreamProcessor {
       head: head.number,
     });
 
-    // Grow sparse ranges during catch-up; the page cap shrinks them again.
-    if (!caughtUp && events.length < this.options.chunkSize / 2) {
+    // Grow ranges during catch-up while they use few pages; the page cap
+    // shrinks them again.
+    if (!caughtUp && read.pages * 4 <= this.options.maxPages) {
       this.rangeBlocks = minBigInt(
         this.options.maxRangeBlocks,
         this.rangeBlocks * 2n,

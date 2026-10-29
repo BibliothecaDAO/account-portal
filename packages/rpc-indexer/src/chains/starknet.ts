@@ -74,6 +74,20 @@ export class IncompleteRangeError extends Error {
   }
 }
 
+/** The range needs more pages than allowed; split it and retry. */
+export class PageLimitError extends IncompleteRangeError {
+  constructor(message: string) {
+    super(message);
+    this.name = "PageLimitError";
+  }
+}
+
+export interface EventRead {
+  events: StarknetEvent[];
+  /** Pages requested, summed over address queries. */
+  pages: number;
+}
+
 export class InvalidRpcDataError extends Error {
   constructor(message: string) {
     super(message);
@@ -171,15 +185,22 @@ export class StarknetReader {
     };
   }
 
+  async getEvents(range: StarknetEventRange): Promise<StarknetEvent[]> {
+    return (await this.readEvents(range)).events;
+  }
+
   /**
    * Read every matching event in [from, to]. Each address set is paginated to
    * completion; any failed, repeated or over-limit page fails the whole range.
+   * Endpoints may return a continuation token on a page with few events (they
+   * also bound blocks scanned per page), so page count, not event count,
+   * measures how wide a range can be.
    */
-  async getEvents(range: StarknetEventRange): Promise<StarknetEvent[]> {
+  async readEvents(range: StarknetEventRange): Promise<EventRead> {
     if (range.from.number > range.to.number) {
       throw new RangeError("Event range start is after its end");
     }
-    if (range.filters.length === 0) return [];
+    if (range.filters.length === 0) return { events: [], pages: 0 };
 
     const selectorsByAddress = new Map<Felt, Set<Felt>>();
     for (const filter of range.filters) {
@@ -209,8 +230,11 @@ export class StarknetReader {
           }));
 
     const events: StarknetEvent[] = [];
+    let pages = 0;
     for (const query of queries) {
-      events.push(...(await this.paginate(range, query)));
+      const read = await this.paginate(range, query);
+      events.push(...read.events);
+      pages += read.pages;
     }
 
     const blockHashes = new Map<bigint, Felt>();
@@ -245,13 +269,13 @@ export class StarknetReader {
     if (endHash && endHash !== end.hash) {
       throw new IncompleteRangeError("Range end hash changed during the read");
     }
-    return matching.sort(compareStarknetEvents);
+    return { events: matching.sort(compareStarknetEvents), pages };
   }
 
   private async paginate(
     range: StarknetEventRange,
     query: { address: Felt | Felt[]; selectors: Felt[] },
-  ): Promise<StarknetEvent[]> {
+  ): Promise<EventRead> {
     const chunkSize = range.chunkSize ?? 1_000;
     const maxPages = range.maxPages ?? 20;
     const seenTokens = new Set<string>();
@@ -260,7 +284,7 @@ export class StarknetReader {
 
     for (let page = 0; ; page++) {
       if (page >= maxPages) {
-        throw new IncompleteRangeError(
+        throw new PageLimitError(
           `Range ${range.from.number}-${range.to.number} exceeds ${maxPages} pages; split it`,
         );
       }
@@ -286,7 +310,9 @@ export class StarknetReader {
       }
 
       const next = result.continuation_token;
-      if (next === undefined || next === null) return events;
+      if (next === undefined || next === null) {
+        return { events, pages: page + 1 };
+      }
       if (typeof next !== "string" || next.length === 0) {
         invalid("continuation token is not a non-empty string");
       }

@@ -3,8 +3,8 @@ import { describe, expect, it } from "vitest";
 import type { JsonRpcClient } from "../src/rpc/json-rpc";
 import {
   BlockNotFoundError,
-  IncompleteRangeError,
   InvalidRpcDataError,
+  PageLimitError,
   StarknetReader,
 } from "../src/chains/starknet";
 import { STARKNET_SELECTORS } from "../src/decoders/starknet";
@@ -124,7 +124,7 @@ describe("StarknetReader.getEvents", () => {
     );
     await expect(
       reader.getEvents({ ...range, chunkSize: 1, maxPages: 2 }),
-    ).rejects.toBeInstanceOf(IncompleteRangeError);
+    ).rejects.toBeInstanceOf(PageLimitError);
   });
 
   it("rejects repeated continuation tokens", async () => {
@@ -271,5 +271,22 @@ describe("StarknetReader.getBlockHeader", () => {
       timestamp: new Date(1_700_000_000_000),
       status: "ACCEPTED_ON_L2",
     });
+  });
+});
+
+describe("StarknetReader.readEvents", () => {
+  it("counts pages even when pages hold fewer events than the chunk size", async () => {
+    let calls = 0;
+    const rpc = {
+      call: () =>
+        Promise.resolve(
+          ++calls < 3
+            ? { events: [], continuation_token: `t${calls}` }
+            : { events: [rawEvent(105, 0, 0)] },
+        ),
+    } as unknown as JsonRpcClient;
+    const read = await new StarknetReader(rpc).readEvents(range);
+    expect(read).toMatchObject({ pages: 3 });
+    expect(read.events).toHaveLength(1);
   });
 });

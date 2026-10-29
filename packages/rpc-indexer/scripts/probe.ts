@@ -215,7 +215,8 @@ async function main() {
     });
   }
 
-  // Small pages must return exactly the same events as one large page.
+  // Small pages must return exactly the same events as large ones. Endpoints
+  // may also split by blocks scanned, so record how many pages each took.
   const paged = samples.find(
     (sample) => sample.events.length >= 2 && sample.events.length <= 30,
   );
@@ -227,21 +228,23 @@ async function main() {
         to: { number: last.blockNumber, hash: last.blockHash },
         filters: [paged.filter],
         addressList: false,
+        maxPages: 50,
       };
-      const whole = await reader.getEvents({
-        ...range,
-        chunkSize: 1_000,
-        maxPages: 1,
-      });
-      const pages = await reader.getEvents({
-        ...range,
-        chunkSize: Math.ceil(whole.length / 3),
-        maxPages: 10,
-      });
-      if (whole.map(eventKey).join() !== pages.map(eventKey).join()) {
-        throw new Error("paginated result differs from single-page result");
+      const whole = await reader.readEvents({ ...range, chunkSize: 1_000 });
+      const chunkSize = Math.max(1, Math.ceil(whole.events.length / 3));
+      const small = await reader.readEvents({ ...range, chunkSize });
+      if (
+        whole.events.map(eventKey).join() !== small.events.map(eventKey).join()
+      ) {
+        throw new Error("paginated result differs from large-page result");
       }
-      return { events: whole.length, chunkSize: Math.ceil(whole.length / 3) };
+      return {
+        blocks: (last.blockNumber - paged.from + 1n).toString(),
+        events: whole.events.length,
+        pagesAtChunk1000: whole.pages,
+        chunkSize,
+        pagesAtSmallChunk: small.pages,
+      };
     });
   }
 
