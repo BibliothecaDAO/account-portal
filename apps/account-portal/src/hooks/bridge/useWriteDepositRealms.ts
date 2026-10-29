@@ -1,20 +1,22 @@
+import type { PublicClient } from "viem";
 import { useCallback } from "react";
-import { env } from "env";
 import { StarknetBridgeRealms as L1_REALMS_BRIDGE_ABI } from "@/abi/L1/StarknetBridgeRealms";
 import { SUPPORTED_L1_CHAIN_ID } from "@/utils/utils";
-import { encodePacked, keccak256, parseGwei, toHex } from "viem";
+import { env } from "env";
+import { encodePacked, keccak256, parseAbi, toHex } from "viem";
 import { useAccount, usePublicClient, useWriteContract } from "wagmi";
 
-import { REALMS_BRIDGE_ADDRESS } from "@realms-world/constants";
+import {
+  REALMS_BRIDGE_ADDRESS,
+  STARKNET_MESSAGING,
+} from "@realms-world/constants";
 
 const FUNCTION = "depositTokens";
 const U128_MASK = (1n << 128n) - 1n;
-const LEGACY_FEE_PER_TOKEN_GWEI = 40_000;
 const FEE_BUFFER_BPS = 12_000n;
-// Starknet core's sendMessageToL2 reverts with L1_MSG_FEE_BELOW_MIN below
-// this, so wallets can't estimate gas for the deposit (e.g. 1 Realm on the
-// legacy 40k gwei/token fallback).
-const MIN_MESSAGE_FEE_WEI = parseGwei("50000");
+const STARKNET_CORE_ABI = parseAbi([
+  "function getMinL1MsgFee() view returns (uint256)",
+]);
 
 interface StarknetEstimateMessageFeeResponse {
   result?: {
@@ -23,7 +25,15 @@ interface StarknetEstimateMessageFeeResponse {
   error?: {
     code: number;
     message: string;
+    data?: { revert_error?: unknown };
   };
+}
+
+interface DepositMessage {
+  l1BridgeAddress: `0x${string}`;
+  l2BridgeAddress: bigint;
+  l2BridgeSelector: bigint;
+  payload: bigint[];
 }
 
 interface StarknetGetClassHashAtResponse {
@@ -75,12 +85,7 @@ async function estimateMessageFeeWei({
   l2BridgeAddress,
   l2BridgeSelector,
   payload,
-}: {
-  l1BridgeAddress: `0x${string}`;
-  l2BridgeAddress: bigint;
-  l2BridgeSelector: bigint;
-  payload: bigint[];
-}) {
+}: DepositMessage) {
   if (!env.VITE_PUBLIC_NODE_URL) {
     throw new Error("Missing Starknet RPC URL for message fee estimation");
   }
@@ -112,8 +117,11 @@ async function estimateMessageFeeWei({
 
   const data = (await response.json()) as StarknetEstimateMessageFeeResponse;
   if (data.error) {
+    const revertError = data.error.data?.revert_error;
     throw new Error(
-      `Failed to estimate Starknet message fee: ${data.error.message}`,
+      `Starknet would reject this deposit: ${
+        typeof revertError === "string" ? revertError : data.error.message
+      }`,
     );
   }
   if (!data.result?.overall_fee) {
@@ -126,6 +134,33 @@ async function estimateMessageFeeWei({
 function applyFeeBuffer(feeWei: bigint) {
   const buffered = (feeWei * FEE_BUFFER_BPS + 9_999n) / 10_000n;
   return buffered > 0n ? buffered : 1n;
+}
+
+function readMinMessageFeeWei(
+  publicClient: Pick<PublicClient, "readContract">,
+) {
+  return publicClient.readContract({
+    address: STARKNET_MESSAGING[SUPPORTED_L1_CHAIN_ID] as `0x${string}`,
+    abi: STARKNET_CORE_ABI,
+    functionName: "getMinL1MsgFee",
+  });
+}
+
+/**
+ * The ETH a deposit sends with its message: Starknet's estimate plus a buffer,
+ * raised to the core contract's minimum fee. Rejects when Starknet would revert
+ * the message, since the Realms would then stay locked on Ethereum.
+ */
+export async function quoteDepositMessageFee(
+  publicClient: Pick<PublicClient, "readContract">,
+  message: DepositMessage,
+) {
+  const [estimatedFee, minimumFee] = await Promise.all([
+    estimateMessageFeeWei(message),
+    readMinMessageFeeWei(publicClient),
+  ]);
+  const bufferedFee = applyFeeBuffer(estimatedFee);
+  return bufferedFee > minimumFee ? bufferedFee : minimumFee;
 }
 
 function isUndeployedAccountError(message: string) {
@@ -205,41 +240,23 @@ export function useWriteDepositRealms({
       ] as `0x${string}`;
       const parsedL2Address = BigInt(l2Address);
       const salt = BigInt(Date.now());
-      let value = parseGwei(
-        (LEGACY_FEE_PER_TOKEN_GWEI * tokenIds.length).toString(),
-      );
-
-      try {
-        const [l2BridgeAddress, l2BridgeSelector] =
-          await publicClient.readContract({
-            address: l1BridgeAddress,
-            abi: L1_REALMS_BRIDGE_ABI,
-            functionName: "l2Info",
-          });
-
-        const payload = serializeDepositPayload({
+      const [l2BridgeAddress, l2BridgeSelector] =
+        await publicClient.readContract({
+          address: l1BridgeAddress,
+          abi: L1_REALMS_BRIDGE_ABI,
+          functionName: "l2Info",
+        });
+      const value = await quoteDepositMessageFee(publicClient, {
+        l1BridgeAddress,
+        l2BridgeAddress,
+        l2BridgeSelector,
+        payload: serializeDepositPayload({
           salt,
           ownerL1: l1Address,
           ownerL2: parsedL2Address,
           tokenIds,
-        });
-
-        value = applyFeeBuffer(
-          await estimateMessageFeeWei({
-            l1BridgeAddress,
-            l2BridgeAddress,
-            l2BridgeSelector,
-            payload,
-          }),
-        );
-      } catch (feeEstimateError) {
-        console.warn(
-          "Failed to estimate Starknet L1->L2 message fee, using fallback formula",
-          feeEstimateError,
-        );
-      }
-
-      if (value < MIN_MESSAGE_FEE_WEI) value = MIN_MESSAGE_FEE_WEI;
+        }),
+      });
 
       return await writeContractAsync({
         address: l1BridgeAddress,
