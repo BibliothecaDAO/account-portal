@@ -14,6 +14,13 @@ import {
 const FUNCTION = "depositTokens";
 const U128_MASK = (1n << 128n) - 1n;
 const FEE_BUFFER_BPS = 12_000n;
+
+/**
+ * Starknet caps an L1 handler at 40,000 L1 gas whatever fee is paid. The Realms
+ * handler uses about 20,200 gas plus 2,760 per Realm, so a deposit of 8 Realms
+ * reverts on Starknet.
+ */
+export const MAX_REALMS_PER_L1_DEPOSIT = 7;
 const STARKNET_CORE_ABI = parseAbi([
   "function getMinL1MsgFee() view returns (uint256)",
 ]);
