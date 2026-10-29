@@ -4,3 +4,6 @@ export * from "./decoders/legacy";
 export * from "./decoders/starknet";
 export * from "./felt";
 export * from "./rpc/json-rpc";
+export * from "./store/migrations";
+export * from "./store/store";
+export * from "./stream/processor";

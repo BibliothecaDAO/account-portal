@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { z } from "zod";
 
 import {
@@ -138,12 +139,62 @@ const rpcEnvSchema = z.object({
 
 export type RpcEnv = z.infer<typeof rpcEnvSchema>;
 
+function configurationError(error: z.ZodError): Error {
+  // Report variable names only; values may contain API keys.
+  const fields = error.issues.map((issue) => issue.path.join("."));
+  return new Error(`Invalid RPC indexer configuration: ${fields.join(", ")}`);
+}
+
 export function parseRpcEnv(env: NodeJS.ProcessEnv): RpcEnv {
   const result = rpcEnvSchema.safeParse(env);
-  if (!result.success) {
-    // Report variable names only; values may contain API keys.
-    const fields = result.error.issues.map((issue) => issue.path.join("."));
-    throw new Error(`Invalid RPC indexer configuration: ${fields.join(", ")}`);
-  }
+  if (!result.success) throw configurationError(result.error);
   return result.data;
+}
+
+const workerEnvSchema = rpcEnvSchema.extend({
+  DATABASE_URL: z.string().min(1),
+  RPC_INDEXER_SCHEMA: z.string().min(1),
+  // Individual queries are always correct; enable address lists only after
+  // the probe's addressListParity check passes on this endpoint.
+  STARKNET_QUERY_MODE: z
+    .enum(["address-list", "individual"])
+    .default("individual"),
+  STARKNET_FAST_INTERVAL_MS: z.coerce.number().int().min(5_000).default(30_000),
+  STARKNET_SLOW_INTERVAL_MS: z.coerce
+    .number()
+    .int()
+    .min(5_000)
+    .default(300_000),
+  STARKNET_OVERLAP_BLOCKS: z.coerce.number().int().min(1).default(64),
+  STARKNET_INITIAL_RANGE_BLOCKS: z.coerce.number().int().min(1).default(10_000),
+  STARKNET_MAX_RANGE_BLOCKS: z.coerce.number().int().min(1).default(500_000),
+  STARKNET_CHUNK_SIZE: z.coerce.number().int().min(1).max(1_024).default(1_000),
+  STARKNET_MAX_PAGES: z.coerce.number().int().min(1).default(20),
+});
+
+export type WorkerEnv = z.infer<typeof workerEnvSchema>;
+
+export function parseWorkerEnv(env: NodeJS.ProcessEnv): WorkerEnv {
+  const result = workerEnvSchema.safeParse(env);
+  if (!result.success) throw configurationError(result.error);
+  return result.data;
+}
+
+/** Changes whenever filters, start blocks or decoders change. */
+export const DECODER_VERSION = 1;
+
+export function groupFingerprint(group: StarknetGroupConfig): string {
+  return createHash("sha256")
+    .update(
+      JSON.stringify({
+        decoderVersion: DECODER_VERSION,
+        filters: group.filters.map((filter) => ({
+          id: filter.id,
+          address: filter.address,
+          selectors: filter.selectors,
+          startBlock: filter.startBlock.toString(),
+        })),
+      }),
+    )
+    .digest("hex");
 }

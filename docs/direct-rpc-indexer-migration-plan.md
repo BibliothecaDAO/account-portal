@@ -1,6 +1,6 @@
 # Direct RPC indexer migration plan
 
-Status: proposed implementation plan, 29 October 2026; reviewed and revised the same day (see [Review revision](#review-revision-29-october-2026)). Implementation has started with Phase 0 and Phase 1 in [`packages/rpc-indexer`](../packages/rpc-indexer/README.md). Repository baseline: `1227d40b3918e8e49e5011f892e44c336aeab56a`. Ekubo source reviewed at [`d09e515351db44486845bf0a79b882828f41c67f`](https://github.com/EkuboProtocol/indexer/tree/d09e515351db44486845bf0a79b882828f41c67f), committed 28 October 2026.
+Status: proposed implementation plan, 29 October 2026; reviewed and revised the same day (see [Review revision](#review-revision-29-october-2026)). Phases 0–2 are implemented for Starknet in [`packages/rpc-indexer`](../packages/rpc-indexer/README.md): the probe, decoders and a shadow-deployable worker. Finality guards, reader adapters, parity tools and Ethereum remain. Repository baseline: `1227d40b3918e8e49e5011f892e44c336aeab56a`. Ekubo source reviewed at [`d09e515351db44486845bf0a79b882828f41c67f`](https://github.com/EkuboProtocol/indexer/tree/d09e515351db44486845bf0a79b882828f41c67f), committed 28 October 2026.
 
 Replace the deployed Starknet Apibara workloads with one TypeScript RPC worker, then migrate the Ethereum bridge from HyperIndex to the same package. Keep separate durable checkpoints for workloads with different polling intervals. Rebuild into isolated PostgreSQL schemas and switch application readers individually after comparison. Retain the old indexers during the rollback period.
 
