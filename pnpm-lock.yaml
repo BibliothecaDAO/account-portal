@@ -529,6 +529,46 @@ importers:
         specifier: ^1.6.1
         version: 1.6.1(@types/node@22.19.13)(lightningcss@1.33.0)
 
+  packages/rpc-indexer:
+    dependencies:
+      '@realms-world/bridge':
+        specifier: workspace:*
+        version: link:../bridge
+      '@realms-world/constants':
+        specifier: workspace:*
+        version: link:../constants
+      pg:
+        specifier: ^8.18.0
+        version: 8.19.0
+      zod:
+        specifier: 'catalog:'
+        version: 3.25.76
+    devDependencies:
+      '@electric-sql/pglite':
+        specifier: ^0.3.15
+        version: 0.3.15
+      '@realms-world/eslint-config':
+        specifier: workspace:*
+        version: link:../../tooling/eslint
+      '@types/node':
+        specifier: ^22.19.13
+        version: 22.19.13
+      '@types/pg':
+        specifier: ^8.16.0
+        version: 8.18.0
+      esbuild:
+        specifier: 0.27.3
+        version: 0.27.3
+      starknet:
+        specifier: 'catalog:'
+        version: 9.2.1(typescript@5.9.3)(zod@3.25.76)
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+      vitest:
+        specifier: ^1.6.1
+        version: 1.6.1(@types/node@22.19.13)(lightningcss@1.33.0)
+
   packages/starknet-types-07:
     dependencies:
       '@starknet-io/types-js':
