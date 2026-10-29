@@ -8,7 +8,7 @@ The recommended initial intervals are 30 seconds for all Starknet data (one grou
 
 The implementation should adapt Ekubo's transport and recovery mechanisms, while using storage and projections designed for this repository. A simple `getEvents` loop does not replace the rollback behavior currently supplied by Apibara and HyperIndex.
 
-No worker, schema, reader selection or deployment is applied yet. Source and tests were inspected; Ekubo's test suite was not executed, and Alchemy capabilities and resource consumption have not been measured for the proposed worker.
+The Starknet shadow worker and its isolated schema were deployed on 29 October 2026 (see [Railway shadow deployment](#railway-shadow-deployment-29-october-2026)). Portal readers still use their existing sources. Alchemy mainnet capabilities have been verified; sustained resource consumption and reader parity remain to be measured. Ekubo's source and tests were inspected, but its test suite was not executed.
 
 ## Review revision (29 October 2026)
 
@@ -42,6 +42,24 @@ The probe ran against Alchemy's Starknet `v0_10` endpoint at head 17,100,290.
 | Pagination             | Pages carry a continuation token even when nearly empty: the endpoint bounds blocks scanned per page, so page count limits ranges  |
 
 Consequences: deploy with `STARKNET_QUERY_MODE=address-list` (Starknet baseline about 3.5M CU/month). Backfill ranges grow while a read uses at most a quarter of the page cap and halve on the cap, so the very sparse history (roughly 20 events per million blocks) is read in large ranges. Bridge request decoding still needs a real fixture from older history before the L2 bridge cutover.
+
+## Railway shadow deployment (29 October 2026)
+
+[`Starknet RPC Shadow`](https://railway.com/project/1f3d9330-57e5-4631-8914-d7664cbf3e85/service/a324e410-21c0-41aa-a793-d9c2af134dd6?environmentId=2c428197-5f7e-4268-b587-d40421c7940f) runs in `RW_Indexer/main` from branch `codex/direct-rpc-indexer-plan`, initially at commit `8b36e8236e8fa914b7755eb42869eccb4c02d192`. Deployment `788c637b-f84b-47ca-8068-605a7603a4dc` reported `SUCCESS`. Migration 1 completed at 01:49 UTC, and the worker acquired the writer lock and started the `starknet` stream at 01:49:57 UTC.
+
+The service uses Node 22.18.0 and Railpack, with these commands:
+
+- Build: `pnpm --filter @realms-world/rpc-indexer build` after Railpack's frozen-lockfile install.
+- Pre-deploy: `node --enable-source-maps packages/rpc-indexer/dist/main.mjs migrate`.
+- Start: `node --enable-source-maps packages/rpc-indexer/dist/main.mjs`.
+
+Configuration: mainnet, schema `rpc_indexer_mainnet_v1`, address-list mode, 30-second polling, 64-block overlap, initial range 100,000 blocks, maximum range 2,000,000 blocks, 1,000 events per page and 20 pages per range. There is one replica, zero deployment overlap and a 30-second drain period. The database URL uses the existing Neon database's direct endpoint so the session advisory lock remains effective. Secrets are held in Railway variables.
+
+The service watches the RPC indexer, bridge and constants packages, root package/workspace/lock files and patches. Documentation-only changes outside those packages do not restart it. The service remains attached to the implementation branch until an explicit branch cutover.
+
+Validation before deployment: all 40 RPC indexer tests passed, along with typecheck, lint, formatting and build. A fresh bounded Alchemy probe at head 17,102,956 passed its capability checks using 168 RPC attempts. Multi-address parity matched 20 events over one million blocks; the recent bridge search still found no request event, so historical bridge fixtures remain a cutover requirement. Railway startup inspection confirmed the compiled Node worker runs as PID 1.
+
+Existing Apibara and HyperIndex deployment IDs and their running/stopped states were verified unchanged. The new worker is a shadow: historical backfill, parity checks, restart validation, finality guards and reader adapters still gate portal cutover. To roll back this deployment, stop only `Starknet RPC Shadow` and retain its schema for diagnosis or resume; no portal source change is needed.
 
 ## Scope and current consumers
 
