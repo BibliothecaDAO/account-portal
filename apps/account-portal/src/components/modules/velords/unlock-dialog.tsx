@@ -103,7 +103,7 @@ export function UnlockDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>
+        <Button variant="outline">
           <Unlock className="h-4 w-4" />
           {isLockExpired ? "Withdraw" : "Early Unlock"}
         </Button>

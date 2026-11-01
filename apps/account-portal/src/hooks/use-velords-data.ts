@@ -1,7 +1,7 @@
 import { L2_C1ERC20 } from "@/abi/L2/C1ERC20";
 import { VeLords } from "@/abi/L2/VeLords";
 import { TIME_CONSTANTS } from "@/lib/constants";
-import { getLordsInfo } from "@/lib/getLordsPrice";
+import { getLordsPriceUsd } from "@/lib/getLordsPrice";
 import {
   calculateSharePercent,
   computeTvlUsd,
@@ -33,7 +33,7 @@ export const useVelordsData = () => {
   });
 
   // Get LORDS balance in veLORDS contract
-  const { data: lordsInVelords } = useReadContract({
+  const { data: lordsInVelords, isError: isLordsInVelordsError } = useReadContract({
     abi: L2_C1ERC20,
     functionName: "balance_of",
     address: LORDS[SUPPORTED_L2_CHAIN_ID]?.address as `0x${string}`,
@@ -42,9 +42,9 @@ export const useVelordsData = () => {
   });
 
   // Get LORDS price for TVL calculation
-  const { data: lordsPrice } = useQuery({
+  const lordsPriceQuery = useQuery({
     queryKey: ["lordsPrice"],
-    queryFn: () => getLordsInfo({}),
+    queryFn: () => getLordsPriceUsd({}),
     staleTime: 60000, // Cache for 1 minute
   });
 
@@ -87,8 +87,10 @@ export const useVelordsData = () => {
         }
       : undefined;
 
-  const tvl = computeTvlUsd(lordsInVelords, lordsPrice?.price?.rate);
-  const isTVLLoading = lordsInVelords === undefined || lordsPrice === undefined;
+  const tvl = computeTvlUsd(lordsInVelords, lordsPriceQuery.data);
+  const isTVLLoading =
+    (lordsInVelords === undefined && !isLordsInVelordsError) ||
+    lordsPriceQuery.isPending;
 
   const result = {
     // Supply data
@@ -106,7 +108,6 @@ export const useVelordsData = () => {
     // TVL data
     tvl,
     isTVLLoading,
-    lordsPrice: lordsPrice?.price?.rate,
 
     // User data
     userBalanceRaw,

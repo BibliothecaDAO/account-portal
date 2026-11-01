@@ -14,7 +14,6 @@ const envSchema = z.object({
   VITE_RESERVOIR_API_KEY: z.string().optional(),
   VITE_ALCHEMY_API_KEY: z.string(),
   VITE_DUNE_API_KEY: z.string().optional(),
-  VITE_ETHPLORER_APIKEY: z.string().optional()
 });
 
 const isCiBuild = import.meta.env.CI === true || import.meta.env.CI === "true";

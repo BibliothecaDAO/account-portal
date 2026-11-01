@@ -1,7 +1,6 @@
 import type { ChartConfig } from "@/components/ui/chart";
 import { useMemo, useState } from "react";
 import LordsIcon from "@/components/icons/lords.svg?react";
-import { Card, CardHeader } from "@/components/ui/card";
 import {
   ChartContainer,
   ChartLegend,
@@ -11,6 +10,7 @@ import {
 } from "@/components/ui/chart";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { SectionCard } from "@/components/ui/section-card";
 import { getVelordsSourceLabel } from "@/lib/velords-sources";
 import { Bar, BarChart, CartesianGrid, Line, XAxis, YAxis } from "recharts";
 import { formatUnits } from "viem";
@@ -199,43 +199,40 @@ export function VeLordsRewardsChart({
   };
 
   return (
-    <Card>
-      <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>LORDS rewards per week</div>
-        <div className="flex items-center gap-3">
-          <span className="text-sm font-medium whitespace-nowrap">
-            Time Period:
-          </span>
-          <RadioGroup
-            value={currentSelectedPeriod}
-            onValueChange={handlePeriodChange}
-            className="flex gap-3"
-          >
-            <div className="flex items-center space-x-1">
-              <RadioGroupItem value="3m" id="3m" />
-              <Label htmlFor="3m" className="cursor-pointer py-2 pl-1 text-sm">
-                3m
-              </Label>
-            </div>
-            <div className="flex items-center space-x-1">
-              <RadioGroupItem value="6m" id="6m" />
-              <Label htmlFor="6m" className="cursor-pointer py-2 pl-1 text-sm">
-                6m
-              </Label>
-            </div>
-            <div className="flex items-center space-x-1">
-              <RadioGroupItem value="1y" id="1y" />
-              <Label htmlFor="1y" className="cursor-pointer py-2 pl-1 text-sm">
-                1y
-              </Label>
-            </div>
-          </RadioGroup>
-        </div>
-      </CardHeader>
-
+    <SectionCard
+      title="LORDS rewards per week"
+      contentClassName="px-2 pb-4 sm:px-4"
+      action={
+        <RadioGroup
+          value={currentSelectedPeriod}
+          onValueChange={handlePeriodChange}
+          aria-label="Time period"
+          className="flex gap-3"
+        >
+          <div className="flex items-center space-x-1">
+            <RadioGroupItem value="3m" id="3m" />
+            <Label htmlFor="3m" className="cursor-pointer py-2 pl-1 text-sm">
+              3m
+            </Label>
+          </div>
+          <div className="flex items-center space-x-1">
+            <RadioGroupItem value="6m" id="6m" />
+            <Label htmlFor="6m" className="cursor-pointer py-2 pl-1 text-sm">
+              6m
+            </Label>
+          </div>
+          <div className="flex items-center space-x-1">
+            <RadioGroupItem value="1y" id="1y" />
+            <Label htmlFor="1y" className="cursor-pointer py-2 pl-1 text-sm">
+              1y
+            </Label>
+          </div>
+        </RadioGroup>
+      }
+    >
       <ChartContainer
         config={dynamicChartConfig}
-        className="!aspect-auto h-80 w-full px-2 pb-4 sm:h-96 sm:px-4"
+        className="!aspect-auto h-80 w-full sm:h-96"
       >
         {errorMessage ? (
           <div className="text-destructive p-6 text-sm">{errorMessage}</div>
@@ -314,6 +311,6 @@ export function VeLordsRewardsChart({
           </BarChart>
         )}
       </ChartContainer>
-    </Card>
+    </SectionCard>
   );
 }

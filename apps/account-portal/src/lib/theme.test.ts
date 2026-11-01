@@ -72,6 +72,13 @@ describe("account portal theme", () => {
     expect(offenders).toEqual([]);
   });
 
+  it("never sets an overflow on a tab bar, which computes overflow-y to auto and scrolls it", () => {
+    const offenders = listTsx(srcDir).filter((file) =>
+      /<TabsList[^>]*overflow-/.test(readFileSync(file, "utf8")),
+    );
+    expect(offenders).toEqual([]);
+  });
+
   it("builds the dashboard from shared page primitives", () => {
     expect(indexRoute).toContain("PageContainer");
     expect(indexRoute).toContain("PageHeader");

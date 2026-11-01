@@ -79,7 +79,7 @@ export const trimAddress = (addr?: string): string => {
 /**
  * Compact display for large figures ("17,197,612.5" → "17.2M"). Accepts numbers or
  * preformatted numeric strings (commas, a leading "$" and a trailing "%" are kept).
- * Values under 100k, or anything non-numeric, are returned unchanged.
+ * Values under 10k, or anything non-numeric, are returned unchanged.
  */
 export function formatCompact(value: string | number): string {
   const text = String(value);
@@ -87,7 +87,7 @@ export function formatCompact(value: string | number): string {
   if (!match) return text;
   const [, prefix, digits, suffix] = match;
   const amount = Number(digits?.replaceAll(",", ""));
-  if (!Number.isFinite(amount) || Math.abs(amount) < 100_000) return text;
+  if (!Number.isFinite(amount) || Math.abs(amount) < 10_000) return text;
   return `${prefix}${new Intl.NumberFormat("en-US", {
     notation: "compact",
     maximumFractionDigits: 1,
