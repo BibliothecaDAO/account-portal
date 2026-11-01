@@ -9,7 +9,12 @@ import { fn } from "storybook/test";
 
 import { ClaimsPanel } from "./claims-panel";
 import { DashboardStats, DashboardStatsSkeleton } from "./dashboard-stats";
-import { NoDelegateCard } from "./governance-panel";
+import { DelegateSummaryView } from "../governance/delegate-row";
+import {
+  CurrentDelegatePanel,
+  CurrentDelegateSkeleton,
+  NoDelegateCard,
+} from "./governance-panel";
 import { HomepageSkeleton } from "./homepage-skeleteon";
 import { ProposalListSkeleton } from "./proposal-list-skeleton";
 import { RealmsPreview } from "./realms-preview";
@@ -109,6 +114,33 @@ export const NoDelegate: Story = {
   ),
 };
 
+const currentDelegate = {
+  id: "1",
+  user: "0x01a1b2c3d4e5f60718293a4b5c6d7e8f9012345678901234567890abcdef12",
+  delegatedVotes: "1240",
+  delegateProfile: {
+    statement:
+      "Long-time Realms holder focused on sustainable treasury management and growing Eternum.",
+  },
+};
+
+export const YourDelegate: Story = {
+  render: () => (
+    <div className="max-w-xl">
+      <CurrentDelegatePanel>
+        <DelegateSummaryView delegate={currentDelegate} name="loaf.stark" />
+      </CurrentDelegatePanel>
+    </div>
+  ),
+};
+export const YourDelegateLoading: Story = {
+  render: () => (
+    <div className="max-w-xl">
+      <CurrentDelegateSkeleton />
+    </div>
+  ),
+};
+
 export const Realms: Story = {
   render: () => <RealmsPreview viewState="ready" tokens={realms} status="ready" />,
 };
@@ -141,7 +173,9 @@ function DashboardPage() {
       <DashboardStats {...stats} />
       <div className="grid grid-cols-1 gap-6 @3xl:grid-cols-2">
         <ClaimsPanel {...claims} />
-        <NoDelegateCard />
+        <CurrentDelegatePanel>
+          <DelegateSummaryView delegate={currentDelegate} name="loaf.stark" />
+        </CurrentDelegatePanel>
       </div>
       <SectionCard title="Recent proposals" contentClassName="pt-0">
         <ProposalListSkeleton />

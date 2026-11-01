@@ -428,6 +428,70 @@
     background: var(--accent);
     border-color: var(--realm-border-strong);
   }
+  /* Delegate rows stack in a narrow panel and become comparable columns once they fit. */
+  .delegate-row,
+  .delegate-summary,
+  .delegate-row-head {
+    display: grid;
+    grid-template-columns: 1.5rem minmax(0, 1fr) auto;
+    column-gap: 0.5rem;
+    align-items: center;
+  }
+  .delegate-row,
+  .delegate-row-head {
+    padding: 0.75rem 1rem;
+  }
+  .delegate-row {
+    grid-template-areas:
+      "avatar name votes"
+      "statement statement statement"
+      "interests interests action";
+    row-gap: 0.5rem;
+  }
+  .delegate-row[data-current] {
+    box-shadow: inset 3px 0 0 var(--primary);
+  }
+  .delegate-row-detail {
+    grid-column: 1 / -1;
+    display: grid;
+    gap: 0.5rem;
+    border-top: 1px dashed var(--border);
+    padding-top: 0.5rem;
+  }
+  .delegate-row-detail[hidden] {
+    display: none;
+  }
+  .delegate-summary {
+    grid-template-areas:
+      "avatar name votes"
+      "statement statement statement";
+    row-gap: 0.5rem;
+  }
+  .delegate-row-head {
+    display: none;
+    border-bottom: 1px solid var(--border);
+    color: var(--muted-foreground);
+    font-size: 0.75rem;
+    line-height: 1rem;
+    padding-block: 0.5rem;
+  }
+  @container delegates (min-width: 45rem) {
+    .delegate-row,
+    .delegate-row-head {
+      grid-template-columns:
+        1.5rem minmax(9.375rem, 1fr) 4.5rem minmax(11.875rem, 1.1fr)
+        minmax(0, 1.7fr) 7rem;
+      column-gap: 0.75rem;
+    }
+    .delegate-row-head {
+      display: grid;
+    }
+    .delegate-row {
+      grid-template-areas: "avatar name votes interests statement action";
+      min-height: 3.25rem;
+      padding-block: 0.5rem;
+    }
+  }
   .realm-prose-h1,
   .realm-prose-h2,
   .realm-prose-h3,

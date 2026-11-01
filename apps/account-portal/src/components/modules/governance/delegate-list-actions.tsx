@@ -1,16 +1,52 @@
 import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { useCurrentDelegate } from "@/hooks/governance/use-current-delegate";
 import { useDelegateRealms } from "@/hooks/governance/use-delegate-realms";
-import { useStarkDisplayName } from "@/hooks/use-stark-name";
+import { formatAddress } from "@/utils/utils";
 import { useAccount } from "@starknet-start/react";
 import { Shuffle, TrendingDown } from "lucide-react";
-import { num } from "starknet";
+
+import { toDelegateAddress } from "./delegate-order";
+
+export type DelegateSortMethod = "desc" | "random";
+
+export function DelegateListActionsView({
+  sortMethod,
+  onToggleSort,
+  showDelegateToSelf,
+  onDelegateToSelf,
+}: {
+  sortMethod: DelegateSortMethod;
+  onToggleSort?: () => void;
+  showDelegateToSelf: boolean;
+  onDelegateToSelf?: () => void;
+}) {
+  return (
+    <>
+      <Button variant="outline" onClick={onToggleSort}>
+        {sortMethod === "desc" ? (
+          <>
+            <TrendingDown />
+            Sort: Most votes
+          </>
+        ) : (
+          <>
+            <Shuffle />
+            Sort: Random
+          </>
+        )}
+      </Button>
+      {showDelegateToSelf ? (
+        <Button variant="outline" onClick={onDelegateToSelf}>
+          Delegate to self
+        </Button>
+      ) : null}
+    </>
+  );
+}
 
 export interface DelegateListActionsProps {
-  onSortChange?: (sortMethod: "desc" | "random") => void;
+  onSortChange?: (sortMethod: DelegateSortMethod) => void;
 }
 
 export function DelegateListActions({
@@ -22,11 +58,7 @@ export function DelegateListActions({
   });
   const { data: currentDelegate } = useCurrentDelegate();
 
-  const name = useStarkDisplayName(
-    num.toHex(currentDelegate ?? "") as `0x${string}`,
-  );
-
-  const [sortMethod, setSortMethod] = useState<"desc" | "random">("random");
+  const [sortMethod, setSortMethod] = useState<DelegateSortMethod>("random");
 
   const toggleSortMethod = () => {
     setSortMethod((prevMethod) => {
@@ -39,32 +71,13 @@ export function DelegateListActions({
   };
 
   return (
-    <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
-      {currentDelegate ? (
-        <div className="hidden items-center gap-2 sm:flex">
-          <Label className="realm-label">Delegate</Label>
-          <Badge className="max-w-40 truncate" variant="outline">
-            {name}
-          </Badge>
-        </div>
-      ) : (
-        address && (
-          <Button onClick={() => delegateRealms()}>Delegate to self</Button>
-        )
-      )}
-      <Button variant="outline" onClick={toggleSortMethod}>
-        {sortMethod === "desc" ? (
-          <>
-            <TrendingDown />
-            Desc votes
-          </>
-        ) : (
-          <>
-            <Shuffle />
-            Random
-          </>
-        )}
-      </Button>
-    </div>
+    <DelegateListActionsView
+      sortMethod={sortMethod}
+      onToggleSort={toggleSortMethod}
+      showDelegateToSelf={
+        !!address && toDelegateAddress(currentDelegate) !== formatAddress(address)
+      }
+      onDelegateToSelf={() => void delegateRealms()}
+    />
   );
 }

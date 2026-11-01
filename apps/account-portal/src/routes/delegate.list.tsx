@@ -1,11 +1,11 @@
 import { Suspense, useDeferredValue, useState } from "react";
 import { PageContainer } from "@/components/layout/page-container";
 import { PageHeader } from "@/components/layout/page-header";
-import { DelegateCardSkeleton } from "@/components/modules/governance/delegate-card-skeleton";
 import DelegateList, {
-  DelegateGrid,
+  DelegatePanel,
 } from "@/components/modules/governance/delegate-list";
 import { DelegateListActions } from "@/components/modules/governance/delegate-list-actions";
+import { DelegateRowSkeleton } from "@/components/modules/governance/delegate-row-skeleton";
 import { Input } from "@/components/ui/input";
 import { getDelegatesQueryOptions } from "@/lib/getDelegates";
 import { createFileRoute } from "@tanstack/react-router";
@@ -36,8 +36,8 @@ function RouteComponent() {
         title="Delegates"
         description="Choose who votes with your Realms in the DAO, or delegate to yourself."
       />
-      <div className="bg-card/85 border-border z-10 flex flex-col gap-3 rounded-lg border p-3 backdrop-blur-sm sm:sticky sm:top-(--header-height) sm:flex-row sm:items-center">
-        <div className="relative min-w-0 flex-1">
+      <div className="bg-background sticky top-(--header-height) z-10 flex flex-wrap gap-2 py-2">
+        <div className="relative min-w-0 flex-[1_1_13.75rem]">
           <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
           <Input
             type="text"
@@ -52,11 +52,11 @@ function RouteComponent() {
       </div>
       <Suspense
         fallback={
-          <DelegateGrid>
-            {Array.from({ length: 6 }).map((_, index) => (
-              <DelegateCardSkeleton key={index} />
+          <DelegatePanel isLoading>
+            {Array.from({ length: 8 }).map((_, index) => (
+              <DelegateRowSkeleton key={index} />
             ))}
-          </DelegateGrid>
+          </DelegatePanel>
         }
       >
         <DelegateList

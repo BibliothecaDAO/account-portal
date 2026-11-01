@@ -1,8 +1,6 @@
 import type { Address } from "@starknet-start/react";
 import { Suspense } from "react";
 import { VeLords } from "@/abi/L2/VeLords";
-import { DelegateCard } from "@/components/modules/governance/delegate-card";
-import { DelegateCardSkeleton } from "@/components/modules/governance/delegate-card-skeleton";
 import { Button } from "@/components/ui/button";
 import { SectionCard } from "@/components/ui/section-card";
 import { useCurrentDelegate } from "@/hooks/governance/use-current-delegate";
@@ -35,7 +33,11 @@ import { LORDS, StakingAddresses } from "@realms-world/constants";
 import { ProposalList } from "../governance/proposal-list";
 import { ClaimsPanel } from "./claims-panel";
 import { DashboardStats } from "./dashboard-stats";
-import { NoDelegateCard } from "./governance-panel";
+import {
+  CurrentDelegateCard,
+  CurrentDelegateSkeleton,
+  NoDelegateCard,
+} from "./governance-panel";
 import { ProposalListSkeleton } from "./proposal-list-skeleton";
 import { RealmsPreview } from "./realms-preview";
 
@@ -111,12 +113,12 @@ export function Homepage({ address }: { address: `0x${string}` }) {
     });
 
   const delegateSection = currentDelegateQuery.isLoading ? (
-    <DelegateCardSkeleton />
+    <CurrentDelegateSkeleton />
   ) : !currentDelegate ||
     (currentDelegate.user && BigInt(currentDelegate.user) === 0n) ? (
     <NoDelegateCard />
   ) : (
-    <DelegateCard
+    <CurrentDelegateCard
       delegate={{
         user: currentDelegate.user,
         delegateProfile: currentDelegate.delegateProfile

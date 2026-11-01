@@ -1,9 +1,9 @@
-import { DelegateCardSkeleton } from "@/components/modules/governance/delegate-card-skeleton";
 import { Button } from "@/components/ui/button";
 import { SectionCard } from "@/components/ui/section-card";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { DashboardStatsSkeleton } from "./dashboard-stats";
+import { CurrentDelegateSkeleton } from "./governance-panel";
 import { ProposalListSkeleton } from "./proposal-list-skeleton";
 import { RealmsPreview } from "./realms-preview";
 
@@ -30,7 +30,7 @@ export function HomepageSkeleton() {
           <Skeleton className="h-16 w-full" />
           <Skeleton className="h-16 w-full" />
         </SectionCard>
-        <DelegateCardSkeleton />
+        <CurrentDelegateSkeleton />
       </div>
       <SectionCard title="Recent proposals" contentClassName="pt-0">
         <ProposalListSkeleton />
