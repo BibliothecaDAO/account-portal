@@ -48,8 +48,6 @@ function RouteComponent() {
   return (
     <PageContainer>
       <PageHeader
-        className="mb-0"
-        eyebrow="Governance"
         title="Proposals"
         description="Realms DAO proposals on Snapshot. Vote on open proposals or review past outcomes."
         actions={
@@ -58,17 +56,17 @@ function RouteComponent() {
           </Button>
         }
       />
-      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 items-start gap-6 @3xl:grid-cols-3">
         <SectionCard
           title="All proposals"
-          className="lg:col-span-2"
+          className="@3xl:col-span-2"
           contentClassName="py-0"
         >
           <Suspense fallback={<ProposalListSkeleton />}>
             <ProposalList limit={20} delegateId={currentDelegate?.user} />
           </Suspense>
         </SectionCard>
-        <aside className="lg:sticky lg:top-20">
+        <aside className="@3xl:sticky @3xl:top-20">
           <SectionCard title="View on">
             <SnapshotLink />
           </SectionCard>

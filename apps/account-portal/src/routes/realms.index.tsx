@@ -56,8 +56,6 @@ function RealmsComponent() {
   return (
     <PageContainer>
       <PageHeader
-        className="mb-0"
-        eyebrow="Realms"
         title="Your Realms"
         description="Realms held by your Starknet wallet. Bridge more from Ethereum at any time."
         actions={<RealmsActions />}

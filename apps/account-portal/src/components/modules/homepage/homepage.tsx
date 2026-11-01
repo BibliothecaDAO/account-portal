@@ -153,7 +153,7 @@ export function Homepage({ address }: { address: `0x${string}` }) {
         )}
       />
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 @3xl:grid-cols-2">
         <ClaimsPanel
           realmsClaimable={
             l2RealmsBalance ? formatNumber(Number(formatEther(l2RealmsBalance))) : 0

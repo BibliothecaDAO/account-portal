@@ -59,6 +59,13 @@ const claims = {
 const meta = {
   title: "Dashboard/Sections",
   parameters: { layout: "padded" },
+  decorators: [
+    (Story) => (
+      <div className="@container">
+        <Story />
+      </div>
+    ),
+  ],
 } satisfies Meta;
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -122,8 +129,6 @@ function DashboardPage() {
   return (
     <PageContainer>
       <PageHeader
-        className="mb-0"
-        eyebrow="Account"
         title="Dashboard"
         description="Your Realms, LORDS, rewards and governance across Ethereum and Starknet."
         actions={
@@ -134,7 +139,7 @@ function DashboardPage() {
         }
       />
       <DashboardStats {...stats} />
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 @3xl:grid-cols-2">
         <ClaimsPanel {...claims} />
         <NoDelegateCard />
       </div>
@@ -157,7 +162,7 @@ export const FullPageLoading: Story = {
   parameters: { layout: "fullscreen" },
   render: () => (
     <PageContainer>
-      <PageHeader className="mb-0" eyebrow="Account" title="Dashboard" />
+      <PageHeader title="Dashboard" />
       <HomepageSkeleton />
     </PageContainer>
   ),

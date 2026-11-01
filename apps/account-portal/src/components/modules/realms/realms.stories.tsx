@@ -66,6 +66,13 @@ const claimsProps = {
 const meta = {
   title: "Pages/Realms/Sections",
   parameters: { layout: "padded" },
+  decorators: [
+    (Story) => (
+      <div className="@container">
+        <Story />
+      </div>
+    ),
+  ],
 } satisfies Meta;
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -150,8 +157,6 @@ export const RealmsPage: Story = {
   render: () => (
     <PageContainer>
       <PageHeader
-        className="mb-0"
-        eyebrow="Realms"
         title="Your Realms"
         description="Realms held by your Starknet wallet. Bridge more from Ethereum at any time."
         actions={
@@ -172,8 +177,6 @@ export const ClaimsPage: Story = {
   render: () => (
     <PageContainer>
       <PageHeader
-        className="mb-0"
-        eyebrow="Realms"
         title="Realms claims"
         description="Claim remaining LORDS emissions for Realms held on Starknet and review past claims."
       />

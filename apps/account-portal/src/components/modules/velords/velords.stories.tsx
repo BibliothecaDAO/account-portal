@@ -73,6 +73,13 @@ function Stats({ loading = false }: { loading?: boolean }) {
 const meta = {
   title: "Pages/veLORDS/Sections",
   parameters: { layout: "padded" },
+  decorators: [
+    (Story) => (
+      <div className="@container">
+        <Story />
+      </div>
+    ),
+  ],
 } satisfies Meta;
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -118,8 +125,6 @@ export const FullPage: Story = {
   render: () => (
     <PageContainer>
       <PageHeader
-        className="mb-0"
-        eyebrow="Lordship Protocol"
         title="veLORDS"
         description="Stake LORDS for voting power and a share of weekly protocol rewards."
         actions={
@@ -136,12 +141,12 @@ export const FullPage: Story = {
         }
       />
       <Stats />
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-5">
-        <div className="grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-2 xl:col-span-3">
+      <div className="grid grid-cols-1 gap-6 @5xl:grid-cols-5">
+        <div className="grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-2 @5xl:col-span-3">
           <VelordsSourceBreakdown data={sources} />
           <VelordsLockActivity data={locks} />
         </div>
-        <div className="min-w-0 xl:col-span-2">
+        <div className="min-w-0 @5xl:col-span-2">
           <VelordsPosition {...position} />
         </div>
       </div>

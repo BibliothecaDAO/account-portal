@@ -1,7 +1,13 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import type { ReactNode } from "react";
 import { fn } from "storybook/test";
 
+import * as DelegatesStories from "../modules/governance/delegates.stories";
+import * as ProposalsStories from "../modules/governance/proposals.stories";
+import * as DashboardStories from "../modules/homepage/dashboard.stories";
 import { DashboardStats } from "../modules/homepage/dashboard-stats";
+import * as RealmsStories from "../modules/realms/realms.stories";
+import * as VelordsStories from "../modules/velords/velords.stories";
 import { SectionCard } from "../ui/section-card";
 import { SidebarInset, SidebarProvider } from "../ui/sidebar";
 import { AppSidebar } from "./app-sidebar";
@@ -13,9 +19,11 @@ import { PageHeader } from "./page-header";
 function Shell({
   defaultOpen = true,
   connected = true,
+  children,
 }: {
   defaultOpen?: boolean;
   connected?: boolean;
+  children?: ReactNode;
 }) {
   return (
     <SidebarProvider
@@ -40,22 +48,22 @@ function Shell({
       />
       <SidebarInset>
         <SiteHeader />
-        <PageContainer>
-          <PageHeader
-            className="mb-0"
-            eyebrow="Account"
-            title="Dashboard"
-            description="Your Realms, LORDS, rewards and governance across Ethereum and Starknet."
-          />
-          <DashboardStats
-            realmsL1={3}
-            realmsL2={7}
-            lordsL1="12.4K"
-            lordsL2="48.2K"
-            lordsStaked="124.5K"
-          />
-          <SectionCard title="Recent proposals" description="Page content area." />
-        </PageContainer>
+        {children ?? (
+          <PageContainer>
+            <PageHeader
+              title="Dashboard"
+              description="Your Realms, LORDS, rewards and governance across Ethereum and Starknet."
+            />
+            <DashboardStats
+              realmsL1={3}
+              realmsL2={7}
+              lordsL1="12.4K"
+              lordsL2="48.2K"
+              lordsStaked="124.5K"
+            />
+            <SectionCard title="Recent proposals" description="Page content area." />
+          </PageContainer>
+        )}
       </SidebarInset>
     </SidebarProvider>
   );
@@ -76,3 +84,16 @@ export const Disconnected: Story = { args: { connected: false } };
 export const Mobile: Story = {
   globals: { viewport: { value: "mobile", isRotated: false } },
 };
+
+/** The real width a page gets: its own story, inside the side panel and header. */
+const inShell = (page: { render?: unknown }): Story => ({
+  render: (args) => <Shell {...args}>{(page.render as () => ReactNode)()}</Shell>,
+});
+
+export const DashboardPage = inShell(DashboardStories.FullPage);
+export const RealmsPage = inShell(RealmsStories.RealmsPage);
+export const ClaimsPage = inShell(RealmsStories.ClaimsPage);
+export const VelordsPage = inShell(VelordsStories.FullPage);
+export const DelegatesPage = inShell(DelegatesStories.List);
+export const ProposalsPage = inShell(ProposalsStories.List);
+export const ProposalPage = inShell(ProposalsStories.DetailActive);

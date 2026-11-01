@@ -10,7 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Gavel } from "lucide-react";
 
 const GRID =
-  "grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-5";
+  "grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 @2xl:grid-cols-4 @4xl:grid-cols-5";
 
 export interface RealmsInventoryProps {
   viewState: RealmInventoryViewState;

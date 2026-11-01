@@ -32,7 +32,7 @@ export function DashboardStats({
   return (
     <section
       aria-label="Holdings"
-      className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5"
+      className="grid grid-cols-2 gap-3 sm:gap-4 @4xl:grid-cols-5"
     >
       {stats.map((stat, i) => (
         <MetricCard
@@ -40,7 +40,7 @@ export function DashboardStats({
           label={stat.label}
           value={stat.value}
           icon={stat.icon}
-          className={i === stats.length - 1 ? "col-span-2 lg:col-span-1" : ""}
+          className={i === stats.length - 1 ? "col-span-2 @4xl:col-span-1" : ""}
         />
       ))}
     </section>

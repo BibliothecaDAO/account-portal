@@ -57,8 +57,6 @@ function RouteComponent() {
   return (
     <PageContainer>
       <PageHeader
-        className="mb-0"
-        eyebrow="Governance"
         title="Your Delegate Profile"
         description={
           <>
@@ -71,10 +69,10 @@ function RouteComponent() {
           </>
         }
       />
-      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 items-start gap-6 @3xl:grid-cols-3">
         {!isLoading && (
           <SectionCard
-            className="lg:col-span-2"
+            className="@3xl:col-span-2"
             title="Profile"
             description="Your statement, interests and socials are shown on the delegate list."
           >
@@ -100,7 +98,7 @@ function RouteComponent() {
             />
           </SectionCard>
         )}
-        <aside className="flex flex-col gap-6 lg:sticky lg:top-20">
+        <aside className="flex flex-col gap-6 @3xl:sticky @3xl:top-20">
           <SectionCard title="Account">
             <div className="space-y-3 text-sm">
               <Login />
@@ -116,7 +114,7 @@ function RouteComponent() {
           {delegate && (
             <SectionCard title="Delegation">
               <DelegateStats
-                className="grid grid-cols-2 gap-3 lg:grid-cols-1"
+                className="grid grid-cols-2 gap-3 @3xl:grid-cols-1"
                 delegatedVotes={delegate.delegatedVotes}
                 tokenHolders={delegate.tokenHoldersRepresentedAmount}
               />

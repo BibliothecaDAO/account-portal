@@ -11,7 +11,7 @@ export function HomepageSkeleton() {
   return (
     <div className="flex flex-col gap-6">
       <DashboardStatsSkeleton />
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 @3xl:grid-cols-2">
         <SectionCard
           title="Available claims"
           description="LORDS rewards ready to collect on Starknet."

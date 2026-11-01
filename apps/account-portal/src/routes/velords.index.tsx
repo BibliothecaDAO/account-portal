@@ -240,8 +240,6 @@ function RouteComponent() {
   return (
     <PageContainer>
       <PageHeader
-        className="mb-0"
-        eyebrow="Lordship Protocol"
         title="veLORDS"
         description="Stake LORDS for voting power and a share of weekly protocol rewards."
         actions={
@@ -293,8 +291,8 @@ function RouteComponent() {
         />
       </VelordsStats>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-5">
-        <div className="flex min-w-0 flex-col gap-6 xl:col-span-3">
+      <div className="grid grid-cols-1 gap-6 @5xl:grid-cols-5">
+        <div className="flex min-w-0 flex-col gap-6 @5xl:col-span-3">
           <Suspense fallback={<Skeleton className="h-96 w-full rounded-xl" />}>
             <VeLordsRewardsChart
               selectedPeriod={selectedPeriod}
@@ -360,7 +358,7 @@ function RouteComponent() {
           </Tabs>
         </div>
 
-        <div className="flex min-w-0 flex-col gap-6 xl:col-span-2">
+        <div className="flex min-w-0 flex-col gap-6 @5xl:col-span-2">
           <VelordsPosition
             balance={userBalance}
             sharePercent={userSharePercent ? `${userSharePercent}%` : undefined}

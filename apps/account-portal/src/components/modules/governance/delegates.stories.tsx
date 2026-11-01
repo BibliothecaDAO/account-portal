@@ -72,8 +72,6 @@ function Shell({ children }: { children: React.ReactNode }) {
   return (
     <PageContainer>
       <PageHeader
-        className="mb-0"
-        eyebrow="Governance"
         title="Delegates"
         description="Choose who votes with your Realms in the DAO, or delegate to yourself."
       />

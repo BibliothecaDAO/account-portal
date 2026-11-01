@@ -42,8 +42,6 @@ function IndexComponent() {
   return (
     <PageContainer>
       <PageHeader
-        className="mb-0"
-        eyebrow="Account"
         title="Dashboard"
         description="Your Realms, LORDS, rewards and governance across Ethereum and Starknet."
         actions={

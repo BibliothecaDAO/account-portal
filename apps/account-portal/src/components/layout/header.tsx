@@ -8,7 +8,7 @@ import { Breadcrumbs } from "./breadcrumbs";
 export function SiteHeader({ actions }: { actions?: ReactNode }) {
   return (
     <header className="bg-background/85 border-border sticky top-0 z-20 flex h-(--header-height) shrink-0 items-center gap-2 border-b backdrop-blur-md md:rounded-t-xl">
-      <div className="flex w-full min-w-0 items-center gap-2 px-4">
+      <div className="mx-auto flex w-full max-w-7xl min-w-0 items-center gap-2 px-4 sm:px-6">
         <SidebarTrigger className="-ml-1" />
         <Separator orientation="vertical" className="mx-1 data-[orientation=vertical]:h-4" />
         <Breadcrumbs />

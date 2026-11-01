@@ -124,8 +124,6 @@ export const List: Story = {
   render: () => (
     <PageContainer>
       <PageHeader
-        className="mb-0"
-        eyebrow="Governance"
         title="Proposals"
         description="Realms DAO proposals on Snapshot. Vote on open proposals or review past outcomes."
         actions={
@@ -134,10 +132,10 @@ export const List: Story = {
           </Button>
         }
       />
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 @3xl:grid-cols-3">
         <SectionCard
           title="All proposals"
-          className="lg:col-span-2"
+          className="@3xl:col-span-2"
           contentClassName="py-0"
         >
           <Rows />
@@ -172,8 +170,8 @@ const detailArgs = (p: ProposalRowData) => ({
 export const DetailActive: Story = {
   render: () => (
     <PageContainer>
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <ProposalArticle className="lg:col-span-2" {...detailArgs(proposals.active)} />
+      <div className="grid grid-cols-1 gap-6 @3xl:grid-cols-3">
+        <ProposalArticle className="@3xl:col-span-2" {...detailArgs(proposals.active)} />
         <SectionCard title="Vote" className="h-fit">
           <ProposalVotePanel
             votingPower="12"
@@ -189,8 +187,8 @@ export const DetailActive: Story = {
 export const DetailClosed: Story = {
   render: () => (
     <PageContainer>
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <ProposalArticle className="lg:col-span-2" {...detailArgs(proposals.passed)} />
+      <div className="grid grid-cols-1 gap-6 @3xl:grid-cols-3">
+        <ProposalArticle className="@3xl:col-span-2" {...detailArgs(proposals.passed)} />
         <SectionCard title="Vote" className="h-fit">
           <ProposalVotePanel
             userVote={<ProposalUserVoteBadge choice={1} />}
