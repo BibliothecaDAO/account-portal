@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import type { ReactNode } from "react";
-import { fn } from "storybook/test";
+import { expect, fn, screen, userEvent, within } from "storybook/test";
 
 import * as DelegatesStories from "../modules/governance/delegates.stories";
 import * as ProposalsStories from "../modules/governance/proposals.stories";
@@ -80,6 +80,17 @@ type Story = StoryObj<typeof meta>;
 
 export const Expanded: Story = {};
 export const Collapsed: Story = { args: { defaultOpen: false } };
+export const CollapsedMenuOpen: Story = {
+  args: { defaultOpen: false },
+  play: async ({ canvasElement }) => {
+    await userEvent.click(
+      within(canvasElement).getByRole("button", { name: "Realms" }),
+    );
+    await expect(
+      await screen.findByRole("menuitem", { name: "Bridge" }),
+    ).toBeVisible();
+  },
+};
 export const Disconnected: Story = { args: { connected: false } };
 export const Mobile: Story = {
   globals: { viewport: { value: "mobile", isRotated: false } },

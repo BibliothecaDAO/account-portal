@@ -10,8 +10,10 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
+  SidebarSeparator,
 } from "@/components/ui/sidebar";
 import { Link } from "@tanstack/react-router";
+import { Fragment } from "react";
 
 import { navGroups } from "./nav-config";
 import { NavMain } from "./nav-main";
@@ -44,8 +46,11 @@ export function AppSidebar({
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        {navGroups.map((group) => (
-          <NavMain key={group.label} group={group} />
+        {navGroups.map((group, i) => (
+          <Fragment key={group.label ?? "main"}>
+            {i > 0 ? <SidebarSeparator /> : null}
+            <NavMain group={group} />
+          </Fragment>
         ))}
       </SidebarContent>
       {footer ? <SidebarFooter>{footer}</SidebarFooter> : null}

@@ -177,7 +177,7 @@ export const ClaimsPage: Story = {
   render: () => (
     <PageContainer>
       <PageHeader
-        title="Realms claims"
+        title="Claims"
         description="Claim remaining LORDS emissions for Realms held on Starknet and review past claims."
       />
       <RealmsClaimsView {...claimsProps} />

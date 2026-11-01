@@ -87,8 +87,8 @@ describe("account portal theme", () => {
   });
 
   it("uses the cleaned sidebar destination map", () => {
-    expect(appSidebar).not.toContain('title: "Claims"');
-    expect(appSidebar).toContain("https://market.realms.world");
+    expect(appSidebar).toContain('{ title: "Claims", url: "/realms/claims" }');
+    expect(appSidebar).not.toContain("https://market.realms.world");
     expect(appSidebar).toContain('url: "https://realms.world"');
     expect(appSidebar).toContain('url: "https://blitz.realms.world"');
     expect(appSidebar).toContain('url: "https://docs.realms.world"');
