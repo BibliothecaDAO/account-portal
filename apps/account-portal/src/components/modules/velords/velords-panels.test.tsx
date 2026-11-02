@@ -1,11 +1,15 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
+import type { ClaimRead } from "@/lib/claim-read";
+
+import { VelordsRewardsView } from "./claim-rewards";
 import { VelordsSourceBreakdown } from "./source-breakdown";
 import { StakeLordsView } from "./stake-lords";
 
 vi.mock("./stake-dialog", () => ({ StakeDialog: () => null }));
 vi.mock("./unlock-dialog", () => ({ UnlockDialog: () => null }));
+vi.mock("@/components/icons/lords.svg?react", () => ({ default: () => null }));
 
 const arcDash = (html: string) =>
   /stroke-dasharray="([\d.]+) 100"/.exec(html)?.[1];
@@ -92,5 +96,45 @@ describe("VelordsSourceBreakdown", () => {
     expect(html).toContain(">182.4K<");
     expect(html).toContain(">64.2%<");
     expect(html).toContain(">12<");
+  });
+});
+
+describe("VelordsRewardsView", () => {
+  const render = (claimable: ClaimRead, canClaim = false) =>
+    renderToStaticMarkup(
+      <VelordsRewardsView
+        claimable={claimable}
+        recipient="0xabc"
+        isRecipientValid
+        canClaim={canClaim}
+      />,
+    );
+  const amount = (html: string) => /realm-stat[^>]*>([^<]*)</.exec(html)?.[1];
+  const claimButton = (html: string) =>
+    /<button[^>]*>(?:(?!<\/button>).)*Claim LORDS<\/button>/.exec(html)?.[0];
+
+  it("states 0 when the read returned 0, and offers no live claim", () => {
+    const html = render({ status: "read", amount: 0n });
+    expect(amount(html)).toBe("0");
+    expect(claimButton(html)).toContain('disabled=""');
+  });
+
+  it("does not state a figure for a balance not read yet", () => {
+    const html = render({ status: "unknown" });
+    expect(amount(html)).toBe("—");
+    expect(claimButton(html)).toContain('disabled=""');
+  });
+
+  it("says a failed read could not be read, and offers no claim", () => {
+    const html = render({ status: "failed" }, true);
+    expect(amount(html)).toBe("—");
+    expect(html).toContain("Your claimable LORDS could not be read.");
+    expect(claimButton(html)).toBeUndefined();
+  });
+
+  it("offers the claim for a balance it read", () => {
+    const html = render({ status: "read", amount: 312_400_000_000_000_000_000n }, true);
+    expect(amount(html)).toBe("312.4");
+    expect(claimButton(html)).not.toContain('disabled=""');
   });
 });

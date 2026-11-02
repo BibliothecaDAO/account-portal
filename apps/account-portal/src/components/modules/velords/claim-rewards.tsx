@@ -15,12 +15,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import useVeLordsClaims from "@/hooks/use-velords-claims";
-import { hasClaimable } from "@/lib/claim-read";
-import { formatNumber } from "@/utils/utils";
-import { formatEther } from "viem";
+import type { ClaimRead } from "@/lib/claim-read";
+import { formatClaimRead, hasClaimable } from "@/lib/claim-read";
 
 export interface VelordsRewardsViewProps {
-  claimable?: bigint;
+  claimable: ClaimRead;
   recipient: string;
   onRecipientChange?: (recipient: string) => void;
   isRecipientValid: boolean;
@@ -49,8 +48,7 @@ export function VelordsRewardsView({
           <div className="flex flex-wrap items-center gap-2">
             <LordsIcon className="w-9 shrink-0" />
             <span className="realm-stat text-3xl font-semibold">
-              {claimable !== undefined &&
-                formatNumber(Number(formatEther(claimable)))}
+              {formatClaimRead(claimable)}
             </span>{" "}
             <span className="text-muted-foreground text-sm">LORDS to claim</span>
           </div>
@@ -73,13 +71,19 @@ export function VelordsRewardsView({
               )}
             </CollapsibleContent>
           </Collapsible>
-          <Button
-            onClick={onClaim}
-            className="w-full"
-            disabled={isSubmitting || !canClaim}
-          >
-            {isSubmitting ? "Claiming…" : "Claim LORDS"}
-          </Button>
+          {claimable.status === "failed" ? (
+            <p className="text-muted-foreground text-sm">
+              Your claimable LORDS could not be read.
+            </p>
+          ) : (
+            <Button
+              onClick={onClaim}
+              className="w-full"
+              disabled={isSubmitting || !canClaim}
+            >
+              {isSubmitting ? "Claiming…" : "Claim LORDS"}
+            </Button>
+          )}
         </div>
       </CardContent>
       <CardFooter className="text-muted-foreground flex-col gap-2 text-xs">
@@ -122,7 +126,7 @@ export const VelordsRewards = () => {
 
   return (
     <VelordsRewardsView
-      claimable={lordsClaimable.status === "read" ? lordsClaimable.amount : undefined}
+      claimable={lordsClaimable}
       recipient={recipient}
       onRecipientChange={setRecipient}
       isRecipientValid={isRecipientValid}

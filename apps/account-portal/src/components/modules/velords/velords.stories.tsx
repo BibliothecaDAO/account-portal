@@ -195,7 +195,7 @@ const oldViewLink = createRouter({
 });
 
 const rewardsProps = {
-  claimable: parseEther("312.4"),
+  claimable: { status: "read", amount: parseEther("312.4") } as const,
   recipient: "0x04a1c0f3b2e8d7c6a5b4e3d2c1b0a9f8e7d6c5b4a3f2e1d0c9b8a7f6e5d49c2e",
   isRecipientValid: true,
   canClaim: true,
@@ -357,7 +357,27 @@ export const RewardsPanelEmpty: Story = {
   name: "Rewards · nothing to claim",
   render: () => (
     <Panel>
-      <VelordsRewardsView {...rewardsProps} claimable={0n} canClaim={false} />
+      <VelordsRewardsView
+        {...rewardsProps}
+        claimable={{ status: "read", amount: 0n }}
+        canClaim={false}
+      />
+    </Panel>
+  ),
+};
+export const RewardsPanelUnknown: Story = {
+  name: "Rewards · not read yet",
+  render: () => (
+    <Panel>
+      <VelordsRewardsView {...rewardsProps} claimable={{ status: "unknown" }} canClaim={false} />
+    </Panel>
+  ),
+};
+export const RewardsPanelFailed: Story = {
+  name: "Rewards · read failed",
+  render: () => (
+    <Panel>
+      <VelordsRewardsView {...rewardsProps} claimable={{ status: "failed" }} canClaim={false} />
     </Panel>
   ),
 };

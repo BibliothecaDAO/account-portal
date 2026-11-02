@@ -77,6 +77,14 @@ type Story = StoryObj<typeof meta>;
 
 export const Stats: Story = { render: () => <DashboardStats {...stats} /> };
 export const StatsLoading: Story = { render: () => <DashboardStatsSkeleton /> };
+export const StatsReading: Story = {
+  name: "Stats · LORDS reading",
+  render: () => <DashboardStats {...stats} lordsL1="…" lordsL2="…" lordsStaked="…" />,
+};
+export const StatsUnknown: Story = {
+  name: "Stats · LORDS not read",
+  render: () => <DashboardStats {...stats} lordsL1="—" lordsL2="—" lordsStaked="—" />,
+};
 
 export const Claims: Story = {
   render: () => (
