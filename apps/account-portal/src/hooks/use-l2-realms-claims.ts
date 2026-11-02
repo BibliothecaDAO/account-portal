@@ -26,7 +26,7 @@ export const useL2RealmsClaims = () => {
   const [previousBalance, setPreviousBalance] = useState<bigint | null>(null);
   const [easedBalance, setEasedBalance] = useState<bigint | null>(null);
 
-  const { data: balance, isError } = useReadContract({
+  const { data: balance, isError, isLoading } = useReadContract({
     address: l2RealmsAddress,
     abi: RealmsABI,
     functionName: "get_reward_balance_for",
@@ -94,6 +94,7 @@ export const useL2RealmsClaims = () => {
   const claimable = toClaimRead(
     typeof balance === "bigint" ? (easedBalance ?? balance) : undefined,
     isError,
+    isLoading,
   );
 
   return {

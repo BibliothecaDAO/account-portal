@@ -328,11 +328,11 @@ export const ClaimsNothingToClaim: Story = {
     </div>
   ),
 };
-export const ClaimsUnknown: Story = {
-  name: "Claims · not read yet",
+export const ClaimsReading: Story = {
+  name: "Claims · reading",
   render: () => (
     <div className="flex flex-col gap-6">
-      <RealmsClaimsView {...claimsProps} claimable={{ status: "unknown" }} />
+      <RealmsClaimsView {...claimsProps} claimable={{ status: "reading" }} />
     </div>
   ),
 };

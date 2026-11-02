@@ -365,11 +365,11 @@ export const RewardsPanelEmpty: Story = {
     </Panel>
   ),
 };
-export const RewardsPanelUnknown: Story = {
-  name: "Rewards · not read yet",
+export const RewardsPanelReading: Story = {
+  name: "Rewards · reading",
   render: () => (
     <Panel>
-      <VelordsRewardsView {...rewardsProps} claimable={{ status: "unknown" }} canClaim={false} />
+      <VelordsRewardsView {...rewardsProps} claimable={{ status: "reading" }} canClaim={false} />
     </Panel>
   ),
 };

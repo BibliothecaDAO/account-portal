@@ -5,7 +5,7 @@ import { ClaimRewards } from "./claims";
 
 const mocks = vi.hoisted(() => ({
   address: undefined as string | undefined,
-  read: { data: undefined as unknown, isError: false },
+  read: { data: undefined as unknown, isError: false, isLoading: false },
 }));
 
 vi.mock("@/components/icons/lords.svg?react", () => ({ default: () => null }));
@@ -35,7 +35,7 @@ const claimButton = (html: string) =>
 describe("ClaimRewards", () => {
   beforeEach(() => {
     mocks.address = "0xabc";
-    mocks.read = { data: undefined, isError: false };
+    mocks.read = { data: undefined, isError: false, isLoading: false };
   });
 
   it("does not state 0 before anyone has connected", () => {
@@ -44,7 +44,7 @@ describe("ClaimRewards", () => {
   });
 
   it("states 0 when the balance read returned 0", () => {
-    mocks.read = { data: 0n, isError: false };
+    mocks.read = { data: 0n, isError: false, isLoading: false };
     const html = render();
     expect(claimable(html)).toBe("0");
     expect(claimButton(html)).toContain('disabled=""');
@@ -56,16 +56,23 @@ describe("ClaimRewards", () => {
     expect(claimButton(html)).toContain('disabled=""');
   });
 
+  it("shows a balance still loading as reading, never as 0 or unknown", () => {
+    mocks.read = { data: undefined, isError: false, isLoading: true };
+    const html = render();
+    expect(claimable(html)).toBe("…");
+    expect(claimButton(html)).toContain('disabled=""');
+  });
+
   it("says a failed balance read could not be read, and offers no claim", () => {
-    mocks.read = { data: undefined, isError: true };
+    mocks.read = { data: undefined, isError: true, isLoading: false };
     const html = render();
     expect(claimable(html)).toBe("—");
-    expect(html).toContain("Your claimable LORDS could not be read.");
+    expect(html).toContain("Your claimable LORDS could not be read. Reload the page to try again.");
     expect(claimButton(html)).toBeUndefined();
   });
 
   it("offers the claim for a balance it read", () => {
-    mocks.read = { data: 1_284n * 10n ** 18n, isError: false };
+    mocks.read = { data: 1_284n * 10n ** 18n, isError: false, isLoading: false };
     const html = render();
     expect(claimable(html)).toBe("1,284");
     expect(claimButton(html)).not.toContain('disabled=""');

@@ -125,10 +125,17 @@ describe("VelordsRewardsView", () => {
     expect(claimButton(html)).toContain('disabled=""');
   });
 
+  it("shows a balance still reading as reading, never as 0 or unknown", () => {
+    const html = render({ status: "reading" });
+    expect(amount(html)).toBe("…");
+    expect(html).not.toContain("Nothing to claim");
+    expect(claimButton(html)).toContain('disabled=""');
+  });
+
   it("says a failed read could not be read, and offers no claim", () => {
     const html = render({ status: "failed" }, true);
     expect(amount(html)).toBe("—");
-    expect(html).toContain("Your claimable LORDS could not be read.");
+    expect(html).toContain("Your claimable LORDS could not be read. Reload the page to try again.");
     expect(claimButton(html)).toBeUndefined();
   });
 

@@ -91,7 +91,7 @@ export function RealmsClaimsView({
               connectAction
             ) : claimable.status === "failed" ? (
               <p className="text-muted-foreground text-sm">
-                Your claimable LORDS could not be read.
+                Your claimable LORDS could not be read. Reload the page to try again.
               </p>
             ) : (
               <Button

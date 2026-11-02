@@ -48,13 +48,17 @@ export default function useVeLordsClaims() {
   }, [parsedRecipient, rewardPool]);
 
   // Simulate the claim rewards call to get the potential rewards amount.
-  const { data: simulateData, isError: isSimulateError } = useSimulateTransactions({
+  const {
+    data: simulateData,
+    isError: isSimulateError,
+    isLoading: isSimulateLoading,
+  } = useSimulateTransactions({
     calls: claimCall,
   });
 
   const lordsClaimable = useMemo(
-    () => simulatedClaimRead(simulateData, isSimulateError),
-    [simulateData, isSimulateError],
+    () => simulatedClaimRead(simulateData, isSimulateError, isSimulateLoading),
+    [simulateData, isSimulateError, isSimulateLoading],
   );
 
   // Prepare the function to send the claim rewards transaction.

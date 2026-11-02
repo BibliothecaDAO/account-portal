@@ -68,12 +68,22 @@ describe("RealmsClaimsView", () => {
     expect(claimButton(html)).toContain('disabled=""');
   });
 
+  it("shows a balance still reading as reading, never as 0 or empty", () => {
+    const html = renderToStaticMarkup(
+      <RealmsClaimsView {...claimsProps} claimable={{ status: "reading" }} />,
+    );
+    expect(html).toMatch(/realm-stat truncate[^>]*>…</);
+    expect(html).not.toMatch(/realm-stat truncate[^>]*>(—|0)</);
+    expect(html).not.toContain("Nothing to claim");
+    expect(claimButton(html)).toContain('disabled=""');
+  });
+
   it("says a failed balance read could not be read, and offers no claim", () => {
     const html = renderToStaticMarkup(
       <RealmsClaimsView {...claimsProps} claimable={{ status: "failed" }} />,
     );
     expect(html).toMatch(/realm-stat truncate[^>]*>—</);
-    expect(html).toContain("Your claimable LORDS could not be read.");
+    expect(html).toContain("Your claimable LORDS could not be read. Reload the page to try again.");
     expect(claimButton(html)).toBeUndefined();
   });
 
@@ -149,12 +159,24 @@ describe("ClaimsPanel", () => {
   });
 
   it.each([
+    ["Realms", { realmsClaimable: { status: "reading" } }],
+    ["veLORDS", { realmsClaimable: read(0n), veLordsClaimable: { status: "reading" } }],
+  ] as const)("shows a %s balance still reading as reading, never as 0 or empty", (_, reads) => {
+    const html = renderToStaticMarkup(<ClaimsPanel {...props} {...reads} />);
+    expect(html).toContain(">…<");
+    expect(html).not.toContain(">—<");
+    expect(html.split("Nothing to claim").length - 1).toBe(1);
+    expect(html).not.toContain("No LORDS to collect right now.");
+    expect(html).not.toContain(">Claim<");
+  });
+
+  it.each([
     ["Realms", { realmsClaimable: { status: "failed" } }],
     ["veLORDS", { realmsClaimable: read(0n), veLordsClaimable: { status: "failed" } }],
   ] as const)("says a failed %s read could not be read, and offers no claim", (_, reads) => {
     const html = renderToStaticMarkup(<ClaimsPanel {...props} {...reads} />);
     expect(html).toContain("Could not be read");
-    expect(html).toContain("A claimable balance could not be read.");
+    expect(html).toContain("A claimable balance could not be read. Reload the page to try again.");
     expect(html.split("Nothing to claim").length - 1).toBe(1);
     expect(html).not.toContain("No LORDS to collect right now.");
     expect(html).not.toContain(">Claim<");

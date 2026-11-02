@@ -100,13 +100,13 @@ export const ClaimsEmpty: Story = {
     </div>
   ),
 };
-export const ClaimsUnknown: Story = {
-  name: "Claims · not read yet",
+export const ClaimsReading: Story = {
+  name: "Claims · reading",
   render: () => (
     <div className="max-w-xl">
       <ClaimsPanel
         {...claims}
-        realmsClaimable={{ status: "unknown" }}
+        realmsClaimable={{ status: "reading" }}
         veLordsClaimable={read(0)}
       />
     </div>
@@ -242,8 +242,8 @@ export const FullPageLoading: Story = {
       <div className="grid grid-cols-1 gap-6 @3xl:grid-cols-2">
         <ClaimsPanel
           {...claims}
-          realmsClaimable={{ status: "unknown" }}
-          veLordsClaimable={{ status: "unknown" }}
+          realmsClaimable={{ status: "reading" }}
+          veLordsClaimable={{ status: "reading" }}
         />
         <CurrentDelegateSkeleton />
       </div>

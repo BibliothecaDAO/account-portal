@@ -70,7 +70,7 @@ function panelDescription(realms: ClaimRead, veLords: ClaimRead) {
   const reads = [realms, veLords];
   if (reads.some(hasClaimable)) return "LORDS rewards ready to collect on Starknet.";
   if (reads.some((read) => read.status === "failed")) {
-    return "A claimable balance could not be read.";
+    return "A claimable balance could not be read. Reload the page to try again.";
   }
   if (reads.every((read) => read.status === "read")) {
     return "No LORDS to collect right now.";
