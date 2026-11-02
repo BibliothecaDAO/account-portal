@@ -12,10 +12,11 @@ vi.mock("@tanstack/react-router", () => ({
   Link: ({ children }: { children: React.ReactNode }) => <a>{children}</a>,
 }));
 
+const read = (lords: bigint) => ({ status: "read", amount: lords * 10n ** 18n }) as const;
+
 const claimsProps = {
-  claimable: "1,284",
+  claimable: read(1_284n),
   isConnected: true,
-  canClaim: true,
   pastClaims: [],
   transactionUrl: (hash: string) => `https://explorer.test/${hash}`,
 };
@@ -51,11 +52,29 @@ describe("RealmsClaimsView", () => {
     expect(claimButton(html)).not.toContain('disabled=""');
   });
 
-  it("is not live at 0", () => {
+  it("is not live at a read 0", () => {
     const html = renderToStaticMarkup(
-      <RealmsClaimsView {...claimsProps} claimable={0} canClaim={false} />,
+      <RealmsClaimsView {...claimsProps} claimable={read(0n)} />,
     );
+    expect(html).toMatch(/realm-stat truncate[^>]*>0</);
     expect(claimButton(html)).toContain('disabled=""');
+  });
+
+  it("does not state 0 for a balance not read yet", () => {
+    const html = renderToStaticMarkup(
+      <RealmsClaimsView {...claimsProps} claimable={{ status: "unknown" }} />,
+    );
+    expect(html).toMatch(/realm-stat truncate[^>]*>—</);
+    expect(claimButton(html)).toContain('disabled=""');
+  });
+
+  it("says a failed balance read could not be read, and offers no claim", () => {
+    const html = renderToStaticMarkup(
+      <RealmsClaimsView {...claimsProps} claimable={{ status: "failed" }} />,
+    );
+    expect(html).toMatch(/realm-stat truncate[^>]*>—</);
+    expect(html).toContain("Your claimable LORDS could not be read.");
+    expect(claimButton(html)).toBeUndefined();
   });
 
   it("offers to connect instead of claiming when no wallet is connected", () => {
@@ -63,7 +82,7 @@ describe("RealmsClaimsView", () => {
       <RealmsClaimsView
         {...claimsProps}
         isConnected={false}
-        canClaim={false}
+        claimable={{ status: "unknown" }}
         connectAction={<button>Connect wallet to claim</button>}
       />,
     );
@@ -84,7 +103,7 @@ describe("RealmsClaimsView", () => {
 
   it("lets the history message wrap, so it fits a phone", () => {
     const html = renderToStaticMarkup(
-      <RealmsClaimsView {...claimsProps} isConnected={false} canClaim={false} />,
+      <RealmsClaimsView {...claimsProps} isConnected={false} claimable={{ status: "unknown" }} />,
     );
     expect(html).toMatch(/whitespace-normal[^>]*>Connect your Starknet wallet/);
   });
@@ -98,10 +117,8 @@ describe("RealmsClaimsView", () => {
 
 describe("ClaimsPanel", () => {
   const props = {
-    realmsClaimable: "1,284",
-    veLordsClaimable: "312",
-    canClaimRealms: true,
-    canClaimVeLords: false,
+    realmsClaimable: read(1_284n),
+    veLordsClaimable: read(0n),
   };
 
   it("gives a claimable row its amount in LORDS and its own button", () => {
@@ -110,14 +127,37 @@ describe("ClaimsPanel", () => {
     expect(html).toContain(">Claim<");
   });
 
-  it("says nothing is ready when nothing is", () => {
+  it("says nothing is ready when both reads returned 0", () => {
     const html = renderToStaticMarkup(
-      <ClaimsPanel {...props} canClaimRealms={false} />,
+      <ClaimsPanel {...props} realmsClaimable={read(0n)} />,
     );
     expect(html).toContain("No LORDS to collect right now.");
-    expect(html).toContain("Nothing to claim");
+    expect(html.split("Nothing to claim").length - 1).toBe(2);
     expect(html).not.toContain(">Claim<");
     expect(html).not.toContain("ready to collect");
+  });
+
+  it.each([
+    ["Realms", { realmsClaimable: { status: "unknown" } }],
+    ["veLORDS", { realmsClaimable: read(0n), veLordsClaimable: { status: "unknown" } }],
+  ] as const)("does not call a %s balance not read yet empty", (_, reads) => {
+    const html = renderToStaticMarkup(<ClaimsPanel {...props} {...reads} />);
+    expect(html).toContain(">—<");
+    expect(html.split("Nothing to claim").length - 1).toBe(1);
+    expect(html).not.toContain("No LORDS to collect right now.");
+    expect(html).not.toContain(">Claim<");
+  });
+
+  it.each([
+    ["Realms", { realmsClaimable: { status: "failed" } }],
+    ["veLORDS", { realmsClaimable: read(0n), veLordsClaimable: { status: "failed" } }],
+  ] as const)("says a failed %s read could not be read, and offers no claim", (_, reads) => {
+    const html = renderToStaticMarkup(<ClaimsPanel {...props} {...reads} />);
+    expect(html).toContain("Could not be read");
+    expect(html).toContain("A claimable balance could not be read.");
+    expect(html.split("Nothing to claim").length - 1).toBe(1);
+    expect(html).not.toContain("No LORDS to collect right now.");
+    expect(html).not.toContain(">Claim<");
   });
 
   it("does not let a label clip", () => {

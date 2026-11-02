@@ -87,7 +87,7 @@ export function Homepage({ address }: { address: `0x${string}` }) {
 
   const { lordsClaimable, claimCall } = useVeLordsClaims();
 
-  const { balance: l2RealmsBalance, calls: l2RealmsClaimCall } =
+  const { claimable: l2RealmsClaimable, calls: l2RealmsClaimCall } =
     useL2RealmsClaims();
 
   const { data: ownerLordsLock } = useReadContract({
@@ -162,14 +162,8 @@ export function Homepage({ address }: { address: `0x${string}` }) {
 
       <div className="grid grid-cols-1 gap-6 @3xl:grid-cols-2">
         <ClaimsPanel
-          realmsClaimable={
-            l2RealmsBalance ? formatNumber(Number(formatEther(l2RealmsBalance))) : 0
-          }
-          veLordsClaimable={
-            lordsClaimable ? formatNumber(Number(formatEther(lordsClaimable))) : 0
-          }
-          canClaimRealms={!!l2RealmsBalance && l2RealmsBalance !== 0n}
-          canClaimVeLords={!!lordsClaimable && lordsClaimable !== 0n}
+          realmsClaimable={l2RealmsClaimable}
+          veLordsClaimable={lordsClaimable}
           isClaimingRealms={claimRealmsIsSubmitting}
           isClaimingVeLords={claimVeLordsIsSubmitting}
           onClaimRealms={() =>

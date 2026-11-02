@@ -4,7 +4,6 @@ import { PageContainer } from "@/components/layout/page-container";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { SectionCard } from "@/components/ui/section-card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Gavel } from "lucide-react";
 import { fn } from "storybook/test";
 
@@ -53,11 +52,11 @@ const stats = {
   lordsStaked: "124.5K",
 };
 
+const read = (lords: number) => ({ status: "read", amount: BigInt(lords) * 10n ** 18n }) as const;
+
 const claims = {
-  realmsClaimable: "1,284",
-  veLordsClaimable: "312",
-  canClaimRealms: true,
-  canClaimVeLords: true,
+  realmsClaimable: read(1_284),
+  veLordsClaimable: read(312),
   onClaimRealms: fn(),
   onClaimVeLords: fn(),
 };
@@ -89,12 +88,30 @@ export const Claims: Story = {
 export const ClaimsEmpty: Story = {
   render: () => (
     <div className="max-w-xl">
+      <ClaimsPanel {...claims} realmsClaimable={read(0)} veLordsClaimable={read(0)} />
+    </div>
+  ),
+};
+export const ClaimsUnknown: Story = {
+  name: "Claims · not read yet",
+  render: () => (
+    <div className="max-w-xl">
       <ClaimsPanel
         {...claims}
-        realmsClaimable={0}
-        veLordsClaimable={0}
-        canClaimRealms={false}
-        canClaimVeLords={false}
+        realmsClaimable={{ status: "unknown" }}
+        veLordsClaimable={read(0)}
+      />
+    </div>
+  ),
+};
+export const ClaimsFailed: Story = {
+  name: "Claims · read failed",
+  render: () => (
+    <div className="max-w-xl">
+      <ClaimsPanel
+        {...claims}
+        realmsClaimable={read(0)}
+        veLordsClaimable={{ status: "failed" }}
       />
     </div>
   ),
@@ -217,10 +234,8 @@ export const FullPageLoading: Story = {
       <div className="grid grid-cols-1 gap-6 @3xl:grid-cols-2">
         <ClaimsPanel
           {...claims}
-          realmsClaimable={<Skeleton className="h-6 w-16" />}
-          veLordsClaimable={<Skeleton className="h-6 w-16" />}
-          canClaimRealms={false}
-          canClaimVeLords={false}
+          realmsClaimable={{ status: "unknown" }}
+          veLordsClaimable={{ status: "unknown" }}
         />
         <CurrentDelegateSkeleton />
       </div>

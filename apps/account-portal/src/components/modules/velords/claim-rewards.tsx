@@ -15,6 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import useVeLordsClaims from "@/hooks/use-velords-claims";
+import { hasClaimable } from "@/lib/claim-read";
 import { formatNumber } from "@/utils/utils";
 import { formatEther } from "viem";
 
@@ -121,11 +122,11 @@ export const VelordsRewards = () => {
 
   return (
     <VelordsRewardsView
-      claimable={lordsClaimable}
+      claimable={lordsClaimable.status === "read" ? lordsClaimable.amount : undefined}
       recipient={recipient}
       onRecipientChange={setRecipient}
       isRecipientValid={isRecipientValid}
-      canClaim={isRecipientValid && !!claimCall && lordsClaimable > 0n}
+      canClaim={isRecipientValid && !!claimCall && hasClaimable(lordsClaimable)}
       isSubmitting={claimIsSubmitting}
       onClaim={() => void handleClaimRewards()}
     />

@@ -1,14 +1,13 @@
-import type { ReactNode } from "react";
+import type { ClaimRead } from "@/lib/claim-read";
 import LordsIcon from "@/components/icons/lords.svg?react";
 import { Button } from "@/components/ui/button";
 import { SectionCard } from "@/components/ui/section-card";
+import { formatClaimRead, hasClaimable } from "@/lib/claim-read";
 import { Link } from "@tanstack/react-router";
 
 export interface ClaimsPanelProps {
-  realmsClaimable: ReactNode;
-  veLordsClaimable: ReactNode;
-  canClaimRealms: boolean;
-  canClaimVeLords: boolean;
+  realmsClaimable: ClaimRead;
+  veLordsClaimable: ClaimRead;
   isClaimingRealms?: boolean;
   isClaimingVeLords?: boolean;
   onClaimRealms?: () => void;
@@ -19,16 +18,14 @@ function ClaimRow({
   to,
   title,
   description,
-  amount,
-  canClaim,
+  claimable,
   isClaiming,
   onClaim,
 }: {
   to: "/realms/claims" | "/velords";
   title: string;
   description: string;
-  amount: ReactNode;
-  canClaim: boolean;
+  claimable: ClaimRead;
   isClaiming: boolean;
   onClaim?: () => void;
 }) {
@@ -46,26 +43,45 @@ function ClaimRow({
           <span className="realm-label block">{description}</span>
         </span>
       </Link>
-      {canClaim || isClaiming ? (
+      {hasClaimable(claimable) || isClaiming ? (
         <div className="flex shrink-0 items-center gap-3">
-          <span className="realm-stat text-sm font-semibold">{amount} LORDS</span>
+          <span className="realm-stat text-sm font-semibold">
+            {formatClaimRead(claimable)} LORDS
+          </span>
           <Button size="sm" onClick={onClaim} disabled={isClaiming}>
             {isClaiming ? "Claiming…" : "Claim"}
           </Button>
         </div>
       ) : (
-        <span className="text-muted-foreground text-sm">Nothing to claim</span>
+        <span className="text-muted-foreground text-sm">
+          {claimable.status === "read"
+            ? "Nothing to claim"
+            : claimable.status === "failed"
+              ? "Could not be read"
+              : formatClaimRead(claimable)}
+        </span>
       )}
     </div>
   );
+}
+
+/** "No LORDS" only when both reads returned 0; a read that failed or has not returned is never called empty. */
+function panelDescription(realms: ClaimRead, veLords: ClaimRead) {
+  const reads = [realms, veLords];
+  if (reads.some(hasClaimable)) return "LORDS rewards ready to collect on Starknet.";
+  if (reads.some((read) => read.status === "failed")) {
+    return "A claimable balance could not be read.";
+  }
+  if (reads.every((read) => read.status === "read")) {
+    return "No LORDS to collect right now.";
+  }
+  return "Claimable LORDS rewards on Starknet.";
 }
 
 /** Claimable LORDS rewards: each row links to its page and claims for itself. */
 export function ClaimsPanel({
   realmsClaimable,
   veLordsClaimable,
-  canClaimRealms,
-  canClaimVeLords,
   isClaimingRealms = false,
   isClaimingVeLords = false,
   onClaimRealms,
@@ -74,19 +90,14 @@ export function ClaimsPanel({
   return (
     <SectionCard
       title="Available claims"
-      description={
-        canClaimRealms || canClaimVeLords
-          ? "LORDS rewards ready to collect on Starknet."
-          : "No LORDS to collect right now."
-      }
+      description={panelDescription(realmsClaimable, veLordsClaimable)}
       contentClassName="space-y-2"
     >
       <ClaimRow
         to="/realms/claims"
         title="Realms emissions"
         description="Rewards for Realms held on Starknet"
-        amount={realmsClaimable}
-        canClaim={canClaimRealms}
+        claimable={realmsClaimable}
         isClaiming={isClaimingRealms}
         onClaim={onClaimRealms}
       />
@@ -94,8 +105,7 @@ export function ClaimsPanel({
         to="/velords"
         title="veLORDS rewards"
         description="Staking rewards from your lock"
-        amount={veLordsClaimable}
-        canClaim={canClaimVeLords}
+        claimable={veLordsClaimable}
         isClaiming={isClaimingVeLords}
         onClaim={onClaimVeLords}
       />

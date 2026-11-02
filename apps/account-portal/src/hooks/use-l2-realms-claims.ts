@@ -1,6 +1,7 @@
 import type { BlockNumber, Call } from "starknet";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { RealmsABI } from "@/abi/L2/Realms";
+import { toClaimRead } from "@/lib/claim-read";
 import { SUPPORTED_L2_CHAIN_ID } from "@/utils/utils";
 import {
   useAccount,
@@ -25,7 +26,7 @@ export const useL2RealmsClaims = () => {
   const [previousBalance, setPreviousBalance] = useState<bigint | null>(null);
   const [easedBalance, setEasedBalance] = useState<bigint | null>(null);
 
-  const { data: balance, isFetching } = useReadContract({
+  const { data: balance, isError } = useReadContract({
     address: l2RealmsAddress,
     abi: RealmsABI,
     functionName: "get_reward_balance_for",
@@ -90,10 +91,14 @@ export const useL2RealmsClaims = () => {
     return tx;
   }, [sendAsync, toast, balance]);
 
+  const claimable = toClaimRead(
+    typeof balance === "bigint" ? (easedBalance ?? balance) : undefined,
+    isError,
+  );
+
   return {
-    balance: easedBalance,
+    claimable,
     calls,
-    isFetching,
     isSubmitting,
     claimRewards,
     claimHash,

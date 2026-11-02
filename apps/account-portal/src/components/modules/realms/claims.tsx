@@ -1,4 +1,5 @@
 import { runWithErrorToast } from "@/utils/run-with-error-toast";
+import type { ClaimRead } from "@/lib/claim-read";
 import type { ReactNode } from "react";
 import LordsIcon from "@/components/icons/lords.svg?react";
 import { StarknetWalletButton } from "@/components/layout/starknet-wallet-button";
@@ -13,8 +14,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useL2RealmsClaims } from "@/hooks/use-l2-realms-claims";
+import { formatClaimRead, hasClaimable } from "@/lib/claim-read";
 import { getRealmsLordsClaimsQueryOptions } from "@/lib/getRealmsLordsClaims";
-import { UNKNOWN_VALUE } from "@/lib/velords-utils";
 import { formatNumber, shortenAddress } from "@/utils/utils";
 import { useAccount, useExplorer } from "@starknet-start/react";
 import { useQuery } from "@tanstack/react-query";
@@ -32,9 +33,8 @@ export interface PastRealmsClaim {
 }
 
 export interface RealmsClaimsViewProps {
-  claimable: ReactNode;
+  claimable: ClaimRead;
   isConnected: boolean;
-  canClaim: boolean;
   isSubmitting?: boolean;
   onClaim?: () => void;
   /** Replaces the claim button while no wallet is connected. */
@@ -73,7 +73,6 @@ function TransactionLink({ hash, href }: { hash: string; href: string }) {
 export function RealmsClaimsView({
   claimable,
   isConnected,
-  canClaim,
   isSubmitting = false,
   onClaim,
   connectAction,
@@ -88,16 +87,20 @@ export function RealmsClaimsView({
           title="Claimable LORDS"
           description="Remaining Realms emissions on Starknet."
           footer={
-            isConnected ? (
+            !isConnected ? (
+              connectAction
+            ) : claimable.status === "failed" ? (
+              <p className="text-muted-foreground text-sm">
+                Your claimable LORDS could not be read.
+              </p>
+            ) : (
               <Button
                 onClick={onClaim}
                 className="w-full"
-                disabled={isSubmitting || !canClaim}
+                disabled={isSubmitting || !hasClaimable(claimable)}
               >
                 {isSubmitting ? "Claiming…" : "Claim LORDS"}
               </Button>
-            ) : (
-              connectAction
             )
           }
         >
@@ -106,7 +109,7 @@ export function RealmsClaimsView({
               <LordsIcon className="size-6" />
             </span>
             <span className="realm-stat truncate text-3xl font-semibold">
-              {claimable}
+              {formatClaimRead(claimable)}
             </span>
           </div>
         </SectionCard>
@@ -183,20 +186,13 @@ export const ClaimRewards = () => {
   const pastLordsClaimsQuery = useQuery(
     getRealmsLordsClaimsQueryOptions({ address }),
   );
-  const { balance, isSubmitting, claimRewards } = useL2RealmsClaims();
+  const { claimable, isSubmitting, claimRewards } = useL2RealmsClaims();
   const explorer = useExplorer();
 
   return (
     <RealmsClaimsView
-      claimable={
-        !address
-          ? UNKNOWN_VALUE
-          : balance
-            ? formatNumber(Number(formatEther(balance)))
-            : 0
-      }
+      claimable={claimable}
       isConnected={!!address}
-      canClaim={!!balance && balance !== 0n}
       isSubmitting={isSubmitting}
       onClaim={() => void runWithErrorToast(claimRewards, "Unable to claim rewards")}
       connectAction={
