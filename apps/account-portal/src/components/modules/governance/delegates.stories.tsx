@@ -160,7 +160,7 @@ export const RowOpen: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.click(
-      canvas.getByRole("button", { name: "More about loaf.stark" }),
+      await canvas.findByRole("button", { name: "More about loaf.stark" }),
     );
     await expect(
       canvas.getByRole("button", { name: "Less about loaf.stark" }),

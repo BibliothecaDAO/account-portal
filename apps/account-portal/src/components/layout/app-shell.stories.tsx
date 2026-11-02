@@ -83,8 +83,10 @@ export const Collapsed: Story = { args: { defaultOpen: false } };
 export const CollapsedMenuOpen: Story = {
   args: { defaultOpen: false },
   play: async ({ canvasElement }) => {
+    // Below 768 the side panel is a closed sheet, with nothing to open.
+    if (window.innerWidth < 768) return;
     await userEvent.click(
-      within(canvasElement).getByRole("button", { name: "Realms" }),
+      await within(canvasElement).findByRole("button", { name: "Realms" }),
     );
     await expect(
       await screen.findByRole("menuitem", { name: "Bridge" }),
