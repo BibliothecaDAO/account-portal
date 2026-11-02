@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import {
   Card,
   CardContent,
@@ -26,37 +27,45 @@ function FeatureItem({
   );
 }
 
-export function LoginCard() {
+export function LoginCardView({ action }: { action: ReactNode }) {
   return (
     <Card className="mx-auto mt-6 w-full max-w-md sm:mt-12">
       <CardHeader className="pb-2 text-center">
-        <CardTitle className="text-2xl">Welcome to Realms Portal</CardTitle>
+        <CardTitle className="text-2xl">Connect your wallet</CardTitle>
         <CardDescription>
-          Connect your wallet to access the Realms ecosystem
+          Use a Starknet wallet to manage your Realms, LORDS and votes.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">
         <div className="space-y-3">
           <FeatureItem
-            title="Bridge Assets"
-            description="Transfer assets between Ethereum and StarkNet"
+            title="Bridge Realms"
+            description="Move Realms between Ethereum and Starknet"
           />
           <FeatureItem
-            title="LORDS Claiming"
-            description="Claim and manage your LORDS tokens"
+            title="Claim LORDS"
+            description="Collect Realm emissions and veLORDS rewards"
           />
           <FeatureItem
-            title="veLORDS Staking"
-            description="Stake LORDS to earn rewards and voting power"
+            title="Stake LORDS"
+            description="Lock LORDS for voting power and weekly rewards"
           />
           <FeatureItem
-            title="Governance"
-            description="Participate in shaping the future of Realms"
+            title="Vote"
+            description="Delegate your Realms and vote on DAO proposals"
           />
         </div>
 
-        <StarknetWalletButton className="w-full" variant="reference" />
+        {action}
       </CardContent>
     </Card>
+  );
+}
+
+export function LoginCard() {
+  return (
+    <LoginCardView
+      action={<StarknetWalletButton className="w-full" variant="reference" />}
+    />
   );
 }

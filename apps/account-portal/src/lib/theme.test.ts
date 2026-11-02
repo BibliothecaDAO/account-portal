@@ -79,6 +79,12 @@ describe("account portal theme", () => {
     expect(offenders).toEqual([]);
   });
 
+  it("names what controls animate, so nothing but those can move", () => {
+    for (const control of ["button", "tabs", "switch", "toast"]) {
+      expect(read(`components/ui/${control}.tsx`)).not.toContain("transition-all");
+    }
+  });
+
   it("builds the dashboard from shared page primitives", () => {
     expect(indexRoute).toContain("PageContainer");
     expect(indexRoute).toContain("PageHeader");

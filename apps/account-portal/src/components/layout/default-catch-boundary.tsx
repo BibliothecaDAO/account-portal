@@ -60,7 +60,10 @@ export function ErrorStateView({
       }
     >
       {details ? (
-        <div className="bg-muted/40 border-border text-muted-foreground max-h-64 overflow-auto rounded-md border p-3 text-left text-xs break-words">
+        <div
+          tabIndex={0}
+          className="bg-muted/40 border-border text-muted-foreground max-h-64 overflow-auto rounded-md border p-3 text-left text-xs break-words"
+        >
           {details}
         </div>
       ) : null}
@@ -80,7 +83,7 @@ export function DefaultCatchBoundary({ error }: ErrorComponentProps) {
   return (
     <PageContainer width="narrow" className="flex-1 justify-center">
       <ErrorStateView
-        details={<ErrorComponent error={error} />}
+        details={import.meta.env.DEV ? <ErrorComponent error={error} /> : undefined}
         isRoot={isRoot}
         onRetry={async () => {
           await router.invalidate();

@@ -4,6 +4,7 @@ import { Hourglass } from "lucide-react";
 import { fn } from "storybook/test";
 
 import { ErrorStateView } from "./default-catch-boundary";
+import { LoginCardView } from "./login-card";
 import { NotFoundView } from "./not-found";
 import { PageContainer } from "./page-container";
 import { StatusState } from "./status-state";
@@ -21,6 +22,10 @@ const meta = {
 } satisfies Meta;
 export default meta;
 type Story = StoryObj<typeof meta>;
+
+export const Login: Story = {
+  render: () => <LoginCardView action={<Button className="w-full">Connect wallet</Button>} />,
+};
 
 export const NotFound: Story = {
   render: () => <NotFoundView onBack={fn()} />,
