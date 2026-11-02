@@ -137,7 +137,7 @@ export function DelegateRowView({
             size="sm"
             aria-label={`Delegate to ${label}`}
             onClick={onDelegate}
-            className="min-h-11 @[45rem]/delegates:min-h-8"
+            className="min-h-11 @[40rem]/delegates:min-h-8"
           >
             Delegate
           </Button>

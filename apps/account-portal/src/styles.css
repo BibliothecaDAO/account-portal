@@ -475,6 +475,15 @@
     line-height: 1rem;
     padding-block: 0.5rem;
   }
+  @container delegates (min-width: 40rem) {
+    .delegate-row {
+      grid-template-columns: 1.5rem minmax(0, 1fr) 11.875rem 5.5rem 7rem;
+      column-gap: 0.75rem;
+      grid-template-areas:
+        "avatar name interests votes action"
+        ". statement statement statement action";
+    }
+  }
   @container delegates (min-width: 45rem) {
     .delegate-row,
     .delegate-row-head {

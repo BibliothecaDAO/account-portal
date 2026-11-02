@@ -13,7 +13,7 @@ export function PageHeader({
   actions,
 }: PageHeaderProps) {
   return (
-    <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+    <div className="flex flex-col gap-4 @2xl:flex-row @2xl:items-end @2xl:justify-between">
       <div className="min-w-0 space-y-2">
         <h1 className="realm-page-title">{title}</h1>
         {description ? (
@@ -23,7 +23,7 @@ export function PageHeader({
         ) : null}
       </div>
       {actions ? (
-        <div className="flex flex-wrap items-center gap-2">{actions}</div>
+        <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>
       ) : null}
     </div>
   );
