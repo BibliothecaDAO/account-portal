@@ -55,7 +55,7 @@ describe("NotFoundView", () => {
 });
 
 describe("LoginCardView", () => {
-  it("asks for the wallet plainly and spells Starknet the way it is spelt", () => {
+  it("asks for the wallet plainly and spells Starknet the way it is spelled", () => {
     const html = renderToStaticMarkup(<LoginCardView action={<button />} />);
     expect(html).toContain("Connect your wallet");
     expect(html).toContain(

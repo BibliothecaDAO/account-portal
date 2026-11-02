@@ -75,7 +75,7 @@ Allocate **250,000 LORDS** from the treasury to the Eternum season 2 prize pool.
 
 ## Motivation
 
-- Reward the top realms and guilds
+- Reward the top Realms and guilds
 - Attract new players for the season launch
 
 | Rank | Share |
