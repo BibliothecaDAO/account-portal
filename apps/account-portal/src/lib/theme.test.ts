@@ -28,6 +28,7 @@ describe("account portal theme", () => {
     expect(styles).toContain('url("/brand/im-fell-english-sc-regular.ttf")');
     expect(styles).toContain('url("/brand/fonts/exo-2-variable.ttf")');
     expect(styles).toContain("monaspace-xenon-400.woff2");
+    expect(styles).toContain('url("/brand/fonts/Cinzel-SemiBold.ttf")');
     expect(styles).toContain('--font-title: "IM Fell English SC"');
     expect(styles).not.toContain("fonts.googleapis.com");
   });

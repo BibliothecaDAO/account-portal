@@ -22,7 +22,7 @@ export function DelegatePanel({
     <section
       aria-label="Delegates"
       aria-busy={isLoading || undefined}
-      className="@container/delegates bg-card border-border rounded-lg border"
+      className="deck-values @container/delegates bg-card border-border rounded-lg border"
     >
       <div className="delegate-row-head" aria-hidden="true">
         <span className="[grid-column:1/3]">Delegate</span>

@@ -19,6 +19,12 @@
   font-display: swap;
 }
 @font-face {
+  font-family: "Cinzel";
+  src: url("/brand/fonts/Cinzel-SemiBold.ttf") format("truetype");
+  font-weight: 600;
+  font-display: swap;
+}
+@font-face {
   font-family: "Exo 2";
   src: url("/brand/fonts/exo-2-variable.ttf") format("truetype");
   font-weight: 400 700;
@@ -536,6 +542,32 @@
   .dark .text-destructive {
     color: oklch(0.72 0.16 25);
   }
+}
+
+/*
+ * Deck v3 values for new work on the graphite page: delegate rows and the staking arc.
+ * Unlayered, so a control's font-medium utility cannot outrank the deck's face.
+ */
+.dark .deck-values {
+  --foreground: #f4ebdc;
+  --realm-title: #f4ebdc;
+  --muted-foreground: #b7a78a;
+  --border: #46351c;
+  --input: #b7a78a;
+  --realm-border-strong: #46351c;
+  --primary: #f3d08a;
+}
+.dark .deck-values .realm-label {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+.dark .deck-values .realm-chip,
+.dark .deck-values [data-slot="button"],
+.dark .deck-values .delegate-row-head {
+  font-family: Cinzel, serif;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: none;
 }
 
 /* Slim brass scrollbar, matching the marketplace. */

@@ -38,7 +38,7 @@ function StakedArc({
   description: string;
 }) {
   return (
-    <div className="relative w-full max-w-56 shrink-0" role="img" aria-label={description}>
+    <div className="deck-values relative w-full max-w-56 shrink-0" role="img" aria-label={description}>
       <svg viewBox="0 0 200 108" className="block w-full" aria-hidden="true">
         <path
           d={ARC_PATH}
@@ -117,7 +117,7 @@ export function StakeLordsView({
                   : "Your staked share is not known yet"
               }
             />
-            <dl className="divide-border w-full min-w-0 flex-1 divide-y">
+            <dl className="deck-values divide-border w-full min-w-0 flex-1 divide-y">
               {rows.map((row) => (
                 <div
                   key={row.label}

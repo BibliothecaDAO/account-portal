@@ -98,7 +98,7 @@ export function DelegateRowView({
       <DelegateVotes
         votes={delegate.delegatedVotes}
         unit={
-          <span className="text-muted-foreground ml-1 font-sans text-xs @[45rem]/delegates:hidden">
+          <span className="text-muted-foreground ml-1 font-sans text-sm @[45rem]/delegates:hidden">
             votes
           </span>
         }
@@ -199,7 +199,7 @@ export function DelegateSummaryView({
   name?: string;
 }) {
   return (
-    <div className="delegate-summary">
+    <div className="delegate-summary deck-values">
       <DelegateAvatar
         user={delegate.user}
         label={name || shortenAddress(delegate.user)}
@@ -208,7 +208,7 @@ export function DelegateSummaryView({
       <DelegateVotes
         votes={delegate.delegatedVotes}
         unit={
-          <span className="text-muted-foreground ml-1 font-sans text-xs">
+          <span className="text-muted-foreground ml-1 font-sans text-sm">
             votes
           </span>
         }
