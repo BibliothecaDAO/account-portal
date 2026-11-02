@@ -27,12 +27,12 @@ describe("DefaultCatchBoundary", () => {
   });
 
   it("keeps the code line out of production", () => {
-    vi.stubEnv("DEV", "");
+    vi.stubEnv("DEV", false);
     expect(render()).not.toContain(error.message);
   });
 
   it("keeps it for developers", () => {
-    vi.stubEnv("DEV", "1");
+    vi.stubEnv("DEV", true);
     expect(render()).toContain(error.message);
   });
 });
