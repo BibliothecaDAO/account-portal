@@ -16,17 +16,17 @@ const BridgeTransactionHistorySkeleton: React.FC = () => {
       {[...Array(3)].map((_, index) => (
         <AccordionItem key={index} value={`skeleton-${index}`}>
           <AccordionTrigger className="flex w-full items-center justify-between hover:no-underline">
-            <div className="flex w-full justify-between px-2">
-              <div className="flex flex-col justify-center">
+            <div className="flex w-full min-w-0 justify-between gap-2 px-2">
+              <div className="flex min-w-0 flex-col justify-center">
                 <div className="flex items-center gap-2">
                   <div className="h-4 w-24 animate-pulse rounded bg-muted" />
                 </div>
                 <span className="text-muted-foreground text-sm">
-                  <div className="h-4 w-32 animate-pulse rounded bg-muted" />
+                  <div className="h-4 w-24 max-w-full animate-pulse rounded bg-muted" />
                 </span>
               </div>
-              <div className="flex flex-col items-end justify-end">
-                <div className="flex gap-1">
+              <div className="flex shrink-0 flex-col items-end justify-end">
+                <div className="flex flex-wrap justify-end gap-1">
                   {[...Array(3)].map((_, idx) => (
                     <Badge
                       variant="outline"

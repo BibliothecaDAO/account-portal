@@ -136,6 +136,10 @@ export const BridgeDirectionSwap: Story = {
 const bridgeRealms = realms.slice(0, 5).map((r) => ({
   token_id: r.token_id,
   name: (JSON.parse(r.metadata ?? "{}") as { name?: string }).name,
+  attributes: [
+    { trait_type: "Resource", value: "Wood" },
+    { trait_type: "Resource", value: "Stone" },
+  ],
 }));
 
 function BridgeRealmsTable({
