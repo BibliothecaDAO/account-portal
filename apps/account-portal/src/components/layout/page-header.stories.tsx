@@ -11,11 +11,9 @@ const meta = {
   component: PageHeader,
   parameters: { layout: "fullscreen" },
   args: {
-    eyebrow: "Account",
     title: "Dashboard",
     description:
       "Your Realms, LORDS, rewards and governance across Ethereum and Starknet.",
-    className: "mb-0",
   },
 } satisfies Meta<typeof PageHeader>;
 export default meta;

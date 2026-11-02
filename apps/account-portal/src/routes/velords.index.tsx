@@ -21,16 +21,22 @@ import {
 } from "@/lib/getVeLordsAnalytics";
 import { getVelordsBurnsQueryOptions } from "@/lib/getVeLordsBurns";
 import { calculateTrailingApyPercent } from "@/lib/velords-analytics";
+import {
+  buildVelordsSummary,
+  formatTvlDisplay,
+  knownOrUnknown,
+  parseVelordsView,
+  UNKNOWN_VALUE,
+} from "@/lib/velords-utils";
 import { seo } from "@/utils/seo";
 import { formatNumber } from "@/utils/utils";
-import { useAccount } from "@starknet-start/react";
+import { useAccount, useExplorer } from "@starknet-start/react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Copy, Link2 } from "lucide-react";
 import { formatUnits } from "viem";
 
 type VelordsPeriod = "3m" | "6m" | "1y";
-type VelordsView = "overview" | "sources" | "locks" | "trends";
 
 const VeLordsRewardsChart = lazy(() =>
   import("@/components/modules/velords/rewards-chart").then((mod) => ({
@@ -57,13 +63,6 @@ function parsePeriod(period: unknown): VelordsPeriod {
   return period === "6m" || period === "1y" ? period : "3m";
 }
 
-function parseView(view: unknown): VelordsView {
-  if (view === "sources") return "sources";
-  if (view === "locks") return "locks";
-  if (view === "trends") return "trends";
-  return "overview";
-}
-
 function periodToStartDate(period: VelordsPeriod): Date {
   const now = Date.now();
   const periods: Record<VelordsPeriod, number> = {
@@ -88,7 +87,7 @@ function formatWeiAmount(
 export const Route = createFileRoute("/velords/")({
   validateSearch: (search: Record<string, unknown>) => ({
     period: parsePeriod(search.period),
-    view: parseView(search.view),
+    view: parseVelordsView(search.view),
     source:
       typeof search.source === "string" && search.source.trim().length > 0
         ? search.source
@@ -142,6 +141,7 @@ function RouteComponent() {
     }),
   );
   const { address } = useAccount();
+  const explorer = useExplorer();
   const velordsData = useVelordsData();
 
   const {
@@ -153,12 +153,19 @@ function RouteComponent() {
     userBalance,
     userSharePercent,
     userLocked,
+    isTotalSupplyError,
+    isLordsLockedError,
   } = velordsData;
+  const sourceAddressUrl = (sender: string) => explorer.contract(sender);
 
-  const trailingApy = useMemo(() => {
-    const weekly = rewardsSeriesQuery.data?.weekly ?? [];
+  const trailingApyPercent = useMemo(() => {
+    const weekly = rewardsSeriesQuery.data?.weekly;
+    if (!weekly || totalSupplyRaw === undefined) return undefined;
     const trailingWeeks = weekly.slice(-4).map((row) => row.totalWei);
-    return calculateTrailingApyPercent(trailingWeeks, totalSupplyRaw);
+    return formatNumber(
+      calculateTrailingApyPercent(trailingWeeks, totalSupplyRaw),
+      2,
+    );
   }, [rewardsSeriesQuery.data?.weekly, totalSupplyRaw]);
 
   const estimatedWeeklyRewards = useMemo(() => {
@@ -170,8 +177,21 @@ function RouteComponent() {
     return (latestWeekRewards * Number(userSharePercent)) / 100;
   }, [rewardsSeriesQuery.data?.weekly, userSharePercent]);
 
-  const rewards7d = formatWeiAmount(overviewQuery.data?.rewards7dWei, 2);
-  const rewards30d = formatWeiAmount(overviewQuery.data?.rewards30dWei, 2);
+  const rewards7d = knownOrUnknown(
+    formatWeiAmount(overviewQuery.data?.rewards7dWei),
+    overviewQuery.isLoading,
+  );
+  const rewards30d = knownOrUnknown(
+    formatWeiAmount(overviewQuery.data?.rewards30dWei),
+    overviewQuery.isLoading,
+  );
+  const apyDisplay = knownOrUnknown(
+    trailingApyPercent,
+    !isTotalSupplyError &&
+      !rewardsSeriesQuery.isError &&
+      (rewardsSeriesQuery.isLoading || totalSupplyRaw === undefined),
+  );
+  const tvlDisplay = formatTvlDisplay(tvl, isTVLLoading);
 
   const handleTimePeriodChange = (period: VelordsPeriod) => {
     void navigate({
@@ -186,7 +206,7 @@ function RouteComponent() {
     void navigate({
       search: (prev) => ({
         ...prev,
-        view: parseView(view),
+        view: parseVelordsView(view),
       }),
     });
   };
@@ -205,18 +225,14 @@ function RouteComponent() {
   };
 
   const handleCopySummary = async () => {
-    const summary = [
-      `veLords Dashboard (${selectedPeriod})`,
-      `TVL: ${
-        typeof tvl === "number" && Number.isFinite(tvl)
-          ? `$${tvl.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
-          : "$0"
-      }`,
-      `Locked: ${lordsLocked ?? "0"} LORDS`,
-      `30d Rewards: ${rewards30d ?? "0"} LORDS`,
-      `APY: ${formatNumber(trailingApy, 2)}%`,
-      `Updated: ${new Date().toISOString().slice(0, 10)}`,
-    ].join(" | ");
+    const summary = buildVelordsSummary({
+      period: selectedPeriod,
+      tvl: tvlDisplay,
+      lordsLocked,
+      rewards30d,
+      apyPercent: apyDisplay,
+      date: new Date().toISOString().slice(0, 10),
+    });
 
     try {
       await navigator.clipboard.writeText(summary);
@@ -230,18 +246,9 @@ function RouteComponent() {
     }
   };
 
-  const tvlDisplay =
-    typeof tvl === "number" && Number.isFinite(tvl)
-      ? `$${tvl.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
-      : isTVLLoading
-        ? undefined
-        : "$0";
-
   return (
     <PageContainer>
       <PageHeader
-        className="mb-0"
-        eyebrow="Lordship Protocol"
         title="veLORDS"
         description="Stake LORDS for voting power and a share of weekly protocol rewards."
         actions={
@@ -262,39 +269,42 @@ function RouteComponent() {
         <MetricCard
           compact
           label="Voting power"
-          value={totalSupply ?? <MetricValueSkeleton />}
-          hint={
-            userBalance !== undefined && userSharePercent !== undefined
-              ? `You: ${userBalance} (${userSharePercent}%)`
-              : undefined
-          }
+          value={totalSupply ?? (isTotalSupplyError ? UNKNOWN_VALUE : <MetricValueSkeleton />)}
         />
         <MetricCard
           compact
           label="LORDS locked"
-          value={lordsLocked ?? <MetricValueSkeleton />}
+          value={lordsLocked ?? (isLordsLockedError ? UNKNOWN_VALUE : <MetricValueSkeleton />)}
         />
         <MetricCard compact label="TVL" value={tvlDisplay ?? <MetricValueSkeleton />} />
         <MetricCard
           compact
-          label="Rewards · 7d"
+          label="Rewards · 7d (LORDS)"
           value={rewards7d ?? <MetricValueSkeleton />}
         />
         <MetricCard
           compact
-          label="Rewards · 30d"
+          label="Rewards · 30d (LORDS)"
           value={rewards30d ?? <MetricValueSkeleton />}
         />
         <MetricCard
           compact
           label="Trailing APY · 4w"
-          value={`${formatNumber(trailingApy, 2)}%`}
-          valueClassName="text-trade-up"
+          value={
+            apyDisplay === undefined ? (
+              <MetricValueSkeleton />
+            ) : apyDisplay === UNKNOWN_VALUE ? (
+              apyDisplay
+            ) : (
+              `${apyDisplay}%`
+            )
+          }
+          valueClassName={apyDisplay === UNKNOWN_VALUE ? undefined : "text-trade-up"}
         />
       </VelordsStats>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-5">
-        <div className="flex min-w-0 flex-col gap-6 xl:col-span-3">
+      <div className="grid grid-cols-1 gap-6 @5xl:grid-cols-5">
+        <div className="flex min-w-0 flex-col gap-6 @5xl:col-span-3">
           <Suspense fallback={<Skeleton className="h-96 w-full rounded-xl" />}>
             <VeLordsRewardsChart
               selectedPeriod={selectedPeriod}
@@ -315,35 +325,24 @@ function RouteComponent() {
             onValueChange={handleViewChange}
             className="gap-4"
           >
-            <TabsList className="max-w-full overflow-x-auto">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="sources">Sources</TabsTrigger>
-              <TabsTrigger value="locks">Locks</TabsTrigger>
+            <TabsList>
+              <TabsTrigger value="breakdown">Breakdown</TabsTrigger>
               <TabsTrigger value="trends">Trends</TabsTrigger>
             </TabsList>
-            <TabsContent value="overview">
-              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                <VelordsSourceBreakdown
-                  data={rewardsSeriesQuery.data?.sources ?? []}
-                  isLoading={rewardsSeriesQuery.isLoading}
-                />
-                <VelordsLockActivity
-                  data={lockActivityQuery.data?.weekly ?? []}
-                  isLoading={lockActivityQuery.isLoading}
-                />
+            <TabsContent value="breakdown">
+              <div className="@container">
+                <div className="grid grid-cols-1 gap-6 @3xl:grid-cols-2">
+                  <VelordsSourceBreakdown
+                    data={rewardsSeriesQuery.data?.sources ?? []}
+                    isLoading={rewardsSeriesQuery.isLoading}
+                    addressUrl={sourceAddressUrl}
+                  />
+                  <VelordsLockActivity
+                    data={lockActivityQuery.data?.weekly ?? []}
+                    isLoading={lockActivityQuery.isLoading}
+                  />
+                </div>
               </div>
-            </TabsContent>
-            <TabsContent value="sources">
-              <VelordsSourceBreakdown
-                data={rewardsSeriesQuery.data?.sources ?? []}
-                isLoading={rewardsSeriesQuery.isLoading}
-              />
-            </TabsContent>
-            <TabsContent value="locks">
-              <VelordsLockActivity
-                data={lockActivityQuery.data?.weekly ?? []}
-                isLoading={lockActivityQuery.isLoading}
-              />
             </TabsContent>
             <TabsContent value="trends">
               <Suspense
@@ -360,7 +359,7 @@ function RouteComponent() {
           </Tabs>
         </div>
 
-        <div className="flex min-w-0 flex-col gap-6 xl:col-span-2">
+        <div className="order-first flex min-w-0 flex-col gap-6 @5xl:order-none @5xl:col-span-2">
           <VelordsPosition
             balance={userBalance}
             sharePercent={userSharePercent ? `${userSharePercent}%` : undefined}

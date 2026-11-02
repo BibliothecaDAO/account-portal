@@ -1,15 +1,15 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { PageContainer } from "@/components/layout/page-container";
 import { PageHeader } from "@/components/layout/page-header";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Shuffle } from "lucide-react";
-import { fn } from "storybook/test";
+import { Search } from "lucide-react";
+import { expect, fn, userEvent, within } from "storybook/test";
 
-import type { DelegateCardData } from "./delegate-card";
-import { DelegateCardView } from "./delegate-card";
-import { DelegateCardSkeleton } from "./delegate-card-skeleton";
-import { DelegateGrid, DelegateListEmpty } from "./delegate-list";
+import { DelegateListEmpty, DelegatePanel } from "./delegate-list";
+import { DelegateListActionsView } from "./delegate-list-actions";
+import type { DelegateRowData } from "./delegate-row";
+import { DelegateRowView } from "./delegate-row";
+import { DelegateRowSkeleton } from "./delegate-row-skeleton";
 import { DelegateStats } from "./delegate-stats";
 
 const delegate = (
@@ -17,7 +17,7 @@ const delegate = (
   votes: string,
   interests: string[] = [],
   statement?: string,
-): DelegateCardData => ({
+): DelegateRowData => ({
   id: String(id),
   user: `0x0${id}a1b2c3d4e5f60718293a4b5c6d7e8f9012345678901234567890abcdef12`,
   delegatedVotes: votes,
@@ -25,7 +25,7 @@ const delegate = (
 });
 
 const delegates: {
-  data: DelegateCardData;
+  data: DelegateRowData;
   name?: string;
   current?: boolean;
 }[] = [
@@ -43,7 +43,46 @@ const delegates: {
     data: delegate(2, "860", ["Developer", "Infra"], "Builder on Starknet."),
     name: "credence.stark",
   },
+  {
+    data: delegate(
+      4,
+      "412",
+      ["Treasury", "Eternum", "Gaming"],
+      "Publishes a monthly report on treasury spending and votes against any proposal without a stated budget, a named owner and a date for review.",
+    ),
+    name: "bibliotheca-treasury-council.stark",
+  },
+  {
+    data: delegate(
+      5,
+      "97",
+      ["Blitz"],
+      "Plays Blitz most days. Votes for prize pools paid in LORDS.",
+    ),
+    name: "ironwarden.stark",
+  },
+  {
+    data: delegate(
+      6,
+      "63",
+      ["Art", "Frontier"],
+      "Votes on art direction and on anything that changes Frontier.",
+    ),
+    name: "mapmaker.stark",
+  },
+  {
+    data: delegate(
+      7,
+      "41",
+      ["Infra", "Bridges"],
+      "Runs a Starknet node. Reviews bridge and contract changes.",
+    ),
+  },
   { data: delegate(3, "15") },
+  {
+    data: delegate(8, "5", [], "Votes on every proposal."),
+    name: "quietvote.stark",
+  },
 ];
 
 const meta = {
@@ -53,62 +92,146 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-function Toolbar() {
+function Toolbar({ isDelegatingToSelf = false }: { isDelegatingToSelf?: boolean }) {
   return (
-    <div className="bg-card/85 border-border flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-center">
-      <div className="relative min-w-0 flex-1">
+    <div className="bg-background sticky top-0 z-10 flex flex-wrap gap-2 py-2">
+      <div className="relative min-w-0 flex-[1_1_13.75rem]">
         <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
-        <Input className="pl-9" placeholder="Search delegates..." />
+        <Input
+          className="pl-9"
+          placeholder="Search delegates..."
+          aria-label="Search delegates"
+        />
       </div>
-      <Button variant="outline">
-        <Shuffle />
-        Random
-      </Button>
+      <DelegateListActionsView
+        sortMethod="random"
+        onToggleSort={fn()}
+        showDelegateToSelf
+        isDelegatingToSelf={isDelegatingToSelf}
+        onDelegateToSelf={fn()}
+      />
     </div>
   );
 }
 
-function Shell({ children }: { children: React.ReactNode }) {
+function Shell({
+  children,
+  isDelegatingToSelf,
+}: {
+  children: React.ReactNode;
+  isDelegatingToSelf?: boolean;
+}) {
   return (
     <PageContainer>
       <PageHeader
-        className="mb-0"
-        eyebrow="Governance"
         title="Delegates"
         description="Choose who votes with your Realms in the DAO, or delegate to yourself."
       />
-      <Toolbar />
+      <Toolbar isDelegatingToSelf={isDelegatingToSelf} />
       {children}
     </PageContainer>
+  );
+}
+
+function Rows({ delegatingId }: { delegatingId?: string }) {
+  return (
+    <DelegatePanel>
+      {delegates.map((d) => (
+        <DelegateRowView
+          key={d.data.id}
+          delegate={d.data}
+          name={d.name}
+          isCurrentDelegate={d.current}
+          isDelegating={d.data.id === delegatingId}
+          onDelegate={fn()}
+        />
+      ))}
+    </DelegatePanel>
   );
 }
 
 export const List: Story = {
   render: () => (
     <Shell>
-      <DelegateGrid>
-        {delegates.map((d) => (
-          <DelegateCardView
-            key={d.data.id}
-            delegate={d.data}
-            name={d.name}
-            isCurrentDelegate={d.current}
-            onDelegate={fn()}
-          />
-        ))}
-      </DelegateGrid>
+      <Rows />
     </Shell>
   ),
+  play: async ({ canvasElement }) => {
+    const action = await within(canvasElement).findByRole("button", {
+      name: "Delegate to credence.stark",
+    });
+    const { backgroundColor, fontSize } = getComputedStyle(action);
+    await expect(backgroundColor).toBe("rgba(0, 0, 0, 0)");
+    await expect(fontSize).toBe("12px");
+  },
+};
+
+export const Delegating: Story = {
+  name: "List · delegating",
+  render: () => (
+    <Shell>
+      <Rows delegatingId="2" />
+    </Shell>
+  ),
+  play: async ({ canvasElement }) => {
+    const row = await within(canvasElement).findByRole("button", {
+      name: "Delegate to credence.stark",
+    });
+    await expect(row).toBeDisabled();
+    await expect(row).toHaveTextContent("Delegating…");
+    const more = within(canvasElement).getByRole("button", {
+      name: "More about credence.stark",
+    });
+    await document.fonts.ready;
+    const action = row.getBoundingClientRect();
+    const link = more.getBoundingClientRect();
+    if (action.top < link.bottom && link.top < action.bottom) {
+      await expect(action.left - link.right).toBeGreaterThanOrEqual(8);
+    }
+  },
+};
+
+export const DelegatingToSelf: Story = {
+  name: "List · delegating to self",
+  render: () => (
+    <Shell isDelegatingToSelf>
+      <Rows />
+    </Shell>
+  ),
+  play: async ({ canvasElement }) => {
+    const self = await within(canvasElement).findByRole("button", {
+      name: "Delegating…",
+    });
+    await expect(self).toBeDisabled();
+  },
+};
+
+export const RowOpen: Story = {
+  name: "List · More open",
+  render: () => (
+    <Shell>
+      <Rows />
+    </Shell>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(
+      await canvas.findByRole("button", { name: "More about loaf.stark" }),
+    );
+    await expect(
+      canvas.getByRole("button", { name: "Less about loaf.stark" }),
+    ).toHaveAttribute("aria-expanded", "true");
+  },
 };
 
 export const Loading: Story = {
   render: () => (
     <Shell>
-      <DelegateGrid>
-        {Array.from({ length: 6 }, (_, i) => (
-          <DelegateCardSkeleton key={i} />
+      <DelegatePanel isLoading>
+        {Array.from({ length: 8 }, (_, i) => (
+          <DelegateRowSkeleton key={i} />
         ))}
-      </DelegateGrid>
+      </DelegatePanel>
     </Shell>
   ),
 };

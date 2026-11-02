@@ -11,6 +11,7 @@ import {
   StarknetWalletPickerContext,
   useStarknetWallet,
 } from "@/hooks/use-starknet-wallet";
+import { toast } from "@/hooks/use-toast";
 import { getConnectorIcon, isCartridgeController } from "@/utils/connectWallet";
 import { rescanInjectedWallets } from "@/utils/starknet-wallet-store";
 import { cn } from "@/utils/utils";
@@ -38,6 +39,14 @@ export function StarknetWalletPickerProvider({
   );
 }
 
+export async function connectFromPicker(connect: () => Promise<boolean>) {
+  const connected = await connect();
+  if (connected) {
+    toast({ description: "Wallet connected. Nothing has been signed yet." });
+  }
+  return connected;
+}
+
 function StarknetWalletPickerSheet({
   open,
   onOpenChange,
@@ -55,12 +64,12 @@ function StarknetWalletPickerSheet({
     // trap would fight with, so hand over before connecting.
     if (isCartridgeController(connector)) {
       onOpenChange(false);
-      await connectWallet(connector);
+      await connectFromPicker(() => connectWallet(connector));
       return;
     }
 
     setPendingWalletName(connector.name);
-    const connected = await connectWallet(connector);
+    const connected = await connectFromPicker(() => connectWallet(connector));
     setPendingWalletName(null);
     if (connected) {
       onOpenChange(false);

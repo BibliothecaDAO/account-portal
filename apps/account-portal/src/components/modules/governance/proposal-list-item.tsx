@@ -2,7 +2,7 @@ import type { Proposal } from "@/gql/snapshot/graphql";
 import type { ReactNode } from "react";
 import { Progress } from "@/components/ui/progress";
 import { useStarkDisplayName } from "@/hooks/use-stark-name";
-import { shortenAddress } from "@/utils/utils";
+import { formatNumber, shortenAddress } from "@/utils/utils";
 import { Link } from "@tanstack/react-router";
 import { formatDistanceToNow } from "date-fns";
 import { CheckCircle2, XCircle } from "lucide-react";
@@ -84,15 +84,15 @@ export function ProposalRow({
             {getProposalShortId(proposal.proposal_id)}
           </span>
         </div>
-        <h3 className="realm-card-title group-hover:text-primary line-clamp-2 break-words transition-colors">
+        <h3 className="group-hover:text-primary line-clamp-2 font-sans text-lg leading-6 font-semibold break-words normal-case transition-colors">
           {proposal.metadata?.title ?? `Proposal #${proposal.id}`}
         </h3>
         <div className="text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 text-sm">
           <span className="min-w-0 truncate">
             by {authorName || shortenAddress(proposal.author.id)}
           </span>
-          <span>{proposal.vote_count} voters</span>
-          <span className="realm-stat">{proposal.scores_total} votes</span>
+          <span>{formatNumber(proposal.vote_count, 0)} voters</span>
+          <span>{formatNumber(scoresTotal, 0)} votes</span>
           <span>
             {formatDistanceToNow(proposal.max_end * 1000)}{" "}
             {isActive ? "left" : "ago"}
@@ -104,12 +104,17 @@ export function ProposalRow({
         <div className="shrink-0">{voteAction}</div>
       ) : (
         <div className="flex shrink-0 flex-col gap-2 sm:items-end">
-          <Progress
-            value={progressValue}
-            aria-label={`${Math.round(progressValue)}% voted for`}
-            className="bg-destructive/60 w-full sm:w-32"
-            indicatorColor="bg-success"
-          />
+          <div className="flex w-full items-center gap-2 sm:w-auto">
+            <Progress
+              value={progressValue}
+              aria-label={`${Math.round(progressValue)}% voted for`}
+              className="bg-destructive/60 w-full sm:w-32"
+              indicatorColor="bg-success"
+            />
+            <span className="text-muted-foreground text-sm whitespace-nowrap">
+              {Math.round(progressValue)}% for
+            </span>
+          </div>
           <div className="text-muted-foreground flex min-h-5 items-center text-sm">
             <DelegateVote voteChoice={voteChoice} />
           </div>

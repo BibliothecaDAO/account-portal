@@ -30,7 +30,6 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "../ui/sidebar";
-import { ModeToggle } from "./mode-toggle";
 
 export interface NavUserViewProps {
   address?: string;
@@ -44,7 +43,7 @@ export interface NavUserViewProps {
   onOpenController?: () => void;
 }
 
-/** Sidebar footer: wallet account menu (or connect button) plus theme toggle. */
+/** Sidebar footer: wallet account menu, or a connect button. */
 export function NavUserView({
   address,
   connectorName,
@@ -59,7 +58,7 @@ export function NavUserView({
 
   return (
     <SidebarMenu>
-      <SidebarMenuItem className="flex items-center gap-1 group-data-[collapsible=icon]:flex-col">
+      <SidebarMenuItem>
         {address ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -140,7 +139,6 @@ export function NavUserView({
             </span>
           </SidebarMenuButton>
         )}
-        <ModeToggle />
       </SidebarMenuItem>
     </SidebarMenu>
   );

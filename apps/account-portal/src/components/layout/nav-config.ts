@@ -22,45 +22,32 @@ export interface NavItem {
 }
 
 export interface NavGroup {
-  label: string;
+  label?: string;
   items: NavItem[];
 }
 
 export const navGroups: NavGroup[] = [
   {
-    label: "Overview",
-    items: [{ title: "Dashboard", url: "/", icon: LayoutDashboard }],
-  },
-  {
-    label: "Realms",
     items: [
+      { title: "Dashboard", url: "/", icon: LayoutDashboard },
       {
         title: "Realms",
         url: "/realms",
         icon: Castle,
         items: [
           { title: "Your Realms", url: "/realms" },
-          { title: "Starknet Bridge", url: "/realms/bridge" },
-          { title: "Claim Rewards", url: "/realms/claims" },
-          { title: "Eternum Season Passes", url: "https://market.realms.world" },
+          { title: "Bridge", url: "/realms/bridge" },
+          { title: "Claims", url: "/realms/claims" },
         ],
       },
-    ],
-  },
-  {
-    label: "LORDS",
-    items: [{ title: "veLORDS staking", url: "/velords", icon: Banknote }],
-  },
-  {
-    label: "Governance",
-    items: [
+      { title: "veLORDS", url: "/velords", icon: Banknote },
       {
-        title: "Delegation",
+        title: "Delegates",
         url: "/delegate/list",
         icon: ClipboardPen,
         items: [
-          { title: "Delegate List", url: "/delegate/list" },
-          { title: "Your Profile", url: "/delegate/profile" },
+          { title: "All delegates", url: "/delegate/list" },
+          { title: "Your profile", url: "/delegate/profile" },
         ],
       },
       { title: "Proposals", url: "/proposal/list", icon: Vote },
@@ -87,7 +74,7 @@ export const navGroups: NavGroup[] = [
         icon: BookOpen,
         items: [
           { title: "Realms.World", url: "https://realms.world" },
-          { title: "Eternum", url: "https://blitz.realms.world" },
+          { title: "Blitz", url: "https://blitz.realms.world" },
           { title: "Developer", url: "https://docs.realms.world" },
         ],
       },
@@ -110,17 +97,27 @@ const labels: Record<string, string> = {
   claims: "Claims",
   velords: "veLORDS",
   delegate: "Delegates",
-  list: "List",
   profile: "Profile",
   proposal: "Proposals",
-  "coming-soon": "Coming soon",
 };
 
-/** Breadcrumb trail derived from the pathname. */
+/** Sections with no index route: their crumb links to the section's list page. */
+const sectionUrls: Record<string, string> = {
+  "/delegate": "/delegate/list",
+  "/proposal": "/proposal/list",
+};
+
+/** Breadcrumb trail derived from the pathname. The list page is its section, so it adds no crumb. */
 export function getBreadcrumbs(pathname: string) {
   const parts = pathname.split("/").filter(Boolean);
-  return parts.map((part, i) => ({
-    label: labels[part] ?? (part.length > 12 ? `${part.slice(0, 8)}…` : part),
-    url: `/${parts.slice(0, i + 1).join("/")}`,
-  }));
+  return parts.flatMap((part, i) => {
+    const url = `/${parts.slice(0, i + 1).join("/")}`;
+    if (part === "list" && sectionUrls[`/${parts[i - 1]}`] === url) return [];
+    return [
+      {
+        label: labels[part] ?? (part.length > 12 ? `${part.slice(0, 8)}…` : part),
+        url: sectionUrls[url] ?? url,
+      },
+    ];
+  });
 }

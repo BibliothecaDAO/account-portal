@@ -29,7 +29,7 @@ export function MetricCard({
   return (
     <Card className={cn("h-full min-w-0 gap-0 p-4", className)}>
       <div className="flex min-w-0 items-center justify-between gap-2">
-        <p className="realm-label truncate">{label}</p>
+        <p className="realm-label">{label}</p>
         {icon ? (
           <span className="text-muted-foreground shrink-0 [&_svg]:size-4">
             {icon}

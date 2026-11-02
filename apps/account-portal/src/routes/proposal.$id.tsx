@@ -37,7 +37,7 @@ export const Route = createFileRoute("/proposal/$id")({
   component: RouteComponent,
   loader: async ({ context, params }) => {
     const { id } = params;
-    return context.queryClient.ensureQueryData(getProposalQueryOptions({ id }));
+    await context.queryClient.prefetchQuery(getProposalQueryOptions({ id }));
   },
 });
 
@@ -119,9 +119,9 @@ function RouteComponent() {
           All proposals
         </Link>
       </Button>
-      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 items-start gap-6 @3xl:grid-cols-3">
         <ProposalArticle
-          className="lg:col-span-2"
+          className="@3xl:col-span-2"
           title={proposal.metadata?.title as string}
           shortId={getProposalShortId(proposal.proposal_id)}
           author={
@@ -133,7 +133,7 @@ function RouteComponent() {
           status={getProposalStatus(proposal)}
           body={body}
         />
-        <aside className="lg:sticky lg:top-20">
+        <aside className="@3xl:sticky @3xl:top-20">
           <SectionCard title="Vote">{votePanel}</SectionCard>
         </aside>
       </div>

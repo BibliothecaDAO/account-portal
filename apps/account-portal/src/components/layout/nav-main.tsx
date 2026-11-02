@@ -5,6 +5,13 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarMenu,
@@ -13,6 +20,7 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { ChevronRight } from "lucide-react";
@@ -33,10 +41,12 @@ function NavLink({
 
 export function NavMain({ group }: { group: NavGroup }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const { isMobile, state } = useSidebar();
+  const iconsOnly = state === "collapsed" && !isMobile;
 
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+      {group.label ? <SidebarGroupLabel>{group.label}</SidebarGroupLabel> : null}
       <SidebarMenu>
         {group.items.map((item) => {
           const childActive =
@@ -52,6 +62,30 @@ export function NavMain({ group }: { group: NavGroup }) {
                     <span>{item.title}</span>
                   </NavLink>
                 </SidebarMenuButton>
+              </SidebarMenuItem>
+            );
+          }
+
+          // Sub-items are hidden in icon mode, so a parent opens them in a menu instead.
+          if (iconsOnly) {
+            return (
+              <SidebarMenuItem key={item.title}>
+                <DropdownMenu modal={false}>
+                  <DropdownMenuTrigger asChild>
+                    <SidebarMenuButton tooltip={item.title} isActive={active}>
+                      <item.icon />
+                      <span>{item.title}</span>
+                    </SidebarMenuButton>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent side="right" align="start">
+                    <DropdownMenuLabel>{item.title}</DropdownMenuLabel>
+                    {item.items.map((sub) => (
+                      <DropdownMenuItem key={sub.title} asChild>
+                        <NavLink url={sub.url}>{sub.title}</NavLink>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </SidebarMenuItem>
             );
           }

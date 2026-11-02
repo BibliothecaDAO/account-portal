@@ -1,6 +1,7 @@
 import type { RealmInventoryToken } from "@/lib/realms/get-realm-inventory";
 import { AnimatedMap } from "@/components/icons/AnimatedMap";
 import { Card, CardContent } from "@/components/ui/card";
+import { cn } from "@/utils/utils";
 
 import Media from "./media";
 import RealmResources from "./realm-resources";
@@ -38,9 +39,12 @@ const GridDetails = ({
 export const RealmCard = ({
   token,
   isGrid,
+  borderless = false,
 }: {
   token: RealmInventoryToken;
   isGrid?: boolean;
+  /** For tiles inside a panel, whose edge already frames them. */
+  borderless?: boolean;
 }) => {
   const { metadata, metadata_status: metadataStatus } = token;
   const parsedMetadata = metadata
@@ -49,7 +53,7 @@ export const RealmCard = ({
   const { name, image } = parsedMetadata ?? {};
 
   return (
-    <Card className="relative overflow-hidden">
+    <Card className={cn("relative overflow-hidden", borderless && "border-0")}>
       <div className="relative">
         {image || metadataStatus === "unavailable" ? (
           <Media
@@ -64,7 +68,7 @@ export const RealmCard = ({
           </div>
         )}
         {isGrid && (
-          <span className="bg-foreground text-background absolute right-1 bottom-1 px-1 py-1 text-xs">
+          <span className="bg-background/85 text-foreground absolute right-1 bottom-1 rounded-sm px-1 py-1 text-xs">
             #{Number(token.token_id)}
           </span>
         )}

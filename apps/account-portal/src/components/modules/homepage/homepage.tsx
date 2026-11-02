@@ -1,8 +1,5 @@
 import type { Address } from "@starknet-start/react";
-import { Suspense } from "react";
 import { VeLords } from "@/abi/L2/VeLords";
-import { DelegateCard } from "@/components/modules/governance/delegate-card";
-import { DelegateCardSkeleton } from "@/components/modules/governance/delegate-card-skeleton";
 import { Button } from "@/components/ui/button";
 import { SectionCard } from "@/components/ui/section-card";
 import { useCurrentDelegate } from "@/hooks/governance/use-current-delegate";
@@ -12,6 +9,7 @@ import { getDelegateByIDQueryOptions } from "@/lib/getDelegates";
 import { getL1UsersRealmsQueryOptions } from "@/lib/getL1Realms";
 import { getRealmInventoryQueryOptions } from "@/lib/realms/get-realm-inventory";
 import { getRealmInventoryViewState } from "@/lib/realms/inventory-ui";
+import { knownOrUnknown, UNKNOWN_VALUE } from "@/lib/velords-utils";
 import {
   formatAddress,
   formatNumber,
@@ -23,26 +21,38 @@ import {
   useReadContract,
   useSendTransaction,
 } from "@starknet-start/react";
-import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { num } from "starknet";
-import { formatEther } from "viem";
+import { erc20Abi, formatEther } from "viem";
 import { runWithErrorToast } from "@/utils/run-with-error-toast";
-import { useAccount as useL1Account, useBalance as useL1Balance } from "wagmi";
+import { useAccount as useL1Account, useReadContract as useL1ReadContract } from "wagmi";
 
 import { LORDS, StakingAddresses } from "@realms-world/constants";
 
 import { ProposalList } from "../governance/proposal-list";
 import { ClaimsPanel } from "./claims-panel";
 import { DashboardStats } from "./dashboard-stats";
-import { NoDelegateCard } from "./governance-panel";
+import {
+  CurrentDelegateCard,
+  CurrentDelegateSkeleton,
+  NoDelegateCard,
+} from "./governance-panel";
 import { ProposalListSkeleton } from "./proposal-list-skeleton";
 import { RealmsPreview } from "./realms-preview";
+
+/**
+ * "—" for a failed read, even with an earlier balance cached, "…" while a balance loads and "—" once it has none, so a
+ * read that is missing or failed never shows as 0 or as an earlier figure.
+ */
+function holdingFigure(value: string | undefined, isLoading: boolean, isError: boolean) {
+  return isError ? UNKNOWN_VALUE : (knownOrUnknown(value, isLoading) ?? "…");
+}
 
 export function Homepage({ address }: { address: `0x${string}` }) {
   const { address: l1Address } = useL1Account();
 
-  const l1UsersRealmsQuery = useSuspenseQuery(
+  const l1UsersRealmsQuery = useQuery(
     getL1UsersRealmsQueryOptions({
       address: l1Address,
     }),
@@ -74,22 +84,38 @@ export function Homepage({ address }: { address: `0x${string}` }) {
   );
   const currentDelegate = currentDelegateQuery.data;
 
-  const { data: starknetBalance } = useBalance({
+  const {
+    data: starknetBalance,
+    isLoading: isStarknetBalanceLoading,
+    isError: isStarknetBalanceError,
+  } = useBalance({
     address,
     token: LORDS[SUPPORTED_L2_CHAIN_ID]?.address as Address,
     watch: true,
   });
-  const { data: l1Balance } = useL1Balance({
-    address: l1Address,
-    token: LORDS[SUPPORTED_L1_CHAIN_ID]?.address as Address,
+  const {
+    data: l1Balance,
+    isLoading: isL1BalanceLoading,
+    isError: isL1BalanceError,
+  } = useL1ReadContract({
+    abi: erc20Abi,
+    address: LORDS[SUPPORTED_L1_CHAIN_ID]?.address as `0x${string}`,
+    chainId: Number(SUPPORTED_L1_CHAIN_ID),
+    functionName: "balanceOf",
+    args: l1Address && [l1Address],
+    query: { enabled: !!l1Address },
   });
 
   const { lordsClaimable, claimCall } = useVeLordsClaims();
 
-  const { balance: l2RealmsBalance, calls: l2RealmsClaimCall } =
+  const { claimable: l2RealmsClaimable, calls: l2RealmsClaimCall } =
     useL2RealmsClaims();
 
-  const { data: ownerLordsLock } = useReadContract({
+  const {
+    data: ownerLordsLock,
+    isLoading: isLockLoading,
+    isError: isLockError,
+  } = useReadContract({
     address: StakingAddresses.velords[SUPPORTED_L2_CHAIN_ID] as Address,
     abi: VeLords,
     functionName: "get_lock_for",
@@ -111,12 +137,12 @@ export function Homepage({ address }: { address: `0x${string}` }) {
     });
 
   const delegateSection = currentDelegateQuery.isLoading ? (
-    <DelegateCardSkeleton />
+    <CurrentDelegateSkeleton />
   ) : !currentDelegate ||
     (currentDelegate.user && BigInt(currentDelegate.user) === 0n) ? (
     <NoDelegateCard />
   ) : (
-    <DelegateCard
+    <CurrentDelegateCard
       delegate={{
         user: currentDelegate.user,
         delegateProfile: currentDelegate.delegateProfile
@@ -138,7 +164,13 @@ export function Homepage({ address }: { address: `0x${string}` }) {
   return (
     <div className="flex flex-col gap-6">
       <DashboardStats
-        realmsL1={l1RealmCount}
+        realmsL1={
+          l1UsersRealmsQuery.isLoading
+            ? "…"
+            : l1UsersRealmsQuery.isError || !l1UsersRealms
+              ? "—"
+              : l1RealmCount
+        }
         realmsL2={
           accountInventoryViewState === "loading"
             ? "…"
@@ -146,23 +178,30 @@ export function Homepage({ address }: { address: `0x${string}` }) {
               ? "—"
               : accountTokens.length
         }
-        lordsL1={formatNumber(Number(l1Balance?.formatted ?? 0))}
-        lordsL2={formatNumber(Number(starknetBalance?.formatted ?? 0))}
-        lordsStaked={formatNumber(
-          Number(formatEther(BigInt(ownerLordsLock?.amount ?? 0))),
+        lordsL1={holdingFigure(
+          l1Balance === undefined
+            ? undefined
+            : formatNumber(Number(formatEther(l1Balance))),
+          isL1BalanceLoading,
+          isL1BalanceError,
+        )}
+        lordsL2={holdingFigure(
+          starknetBalance && formatNumber(Number(starknetBalance.formatted)),
+          isStarknetBalanceLoading,
+          isStarknetBalanceError,
+        )}
+        lordsStaked={holdingFigure(
+          ownerLordsLock &&
+            formatNumber(Number(formatEther(BigInt(ownerLordsLock.amount)))),
+          isLockLoading,
+          isLockError,
         )}
       />
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 @3xl:grid-cols-2">
         <ClaimsPanel
-          realmsClaimable={
-            l2RealmsBalance ? formatNumber(Number(formatEther(l2RealmsBalance))) : 0
-          }
-          veLordsClaimable={
-            lordsClaimable ? formatNumber(Number(formatEther(lordsClaimable))) : 0
-          }
-          canClaimRealms={!!l2RealmsBalance && l2RealmsBalance !== 0n}
-          canClaimVeLords={!!lordsClaimable && lordsClaimable !== 0n}
+          realmsClaimable={l2RealmsClaimable}
+          veLordsClaimable={lordsClaimable}
           isClaimingRealms={claimRealmsIsSubmitting}
           isClaimingVeLords={claimVeLordsIsSubmitting}
           onClaimRealms={() =>
@@ -185,9 +224,10 @@ export function Homepage({ address }: { address: `0x${string}` }) {
         }
         contentClassName="pt-0"
       >
-        <Suspense fallback={<ProposalListSkeleton />}>
-          <ProposalList delegateId={currentDelegate?.user} />
-        </Suspense>
+        <ProposalList
+          delegateId={currentDelegate?.user}
+          loading={<ProposalListSkeleton />}
+        />
       </SectionCard>
 
       <RealmsPreview

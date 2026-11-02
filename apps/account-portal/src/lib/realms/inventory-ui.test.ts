@@ -5,6 +5,7 @@ import {
   getRealmRowId,
   parseRealmTokenId,
   retainExistingRealmSelections,
+  formatRealmCount,
 } from "./inventory-ui";
 
 describe("Realm inventory selection", () => {
@@ -53,5 +54,13 @@ describe("Realm inventory route state", () => {
     [{ isPending: false, isError: false, status: "ready" }, "ready"],
   ] as const)("maps query state %o to %s", (input, expected) => {
     expect(getRealmInventoryViewState(input)).toBe(expected);
+  });
+});
+
+describe("formatRealmCount", () => {
+  it("uses the singular for one Realm", () => {
+    expect(formatRealmCount(0)).toBe("0 Realms");
+    expect(formatRealmCount(1)).toBe("1 Realm");
+    expect(formatRealmCount(3)).toBe("3 Realms");
   });
 });

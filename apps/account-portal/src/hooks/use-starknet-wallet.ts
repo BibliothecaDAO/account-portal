@@ -79,7 +79,7 @@ export function useStarknetWallet() {
     } catch (error) {
       if (isUserRejection(error)) {
         toast({
-          title: "Connection cancelled",
+          title: "Connection canceled",
           description: `The ${connector.name} connection request was declined.`,
         });
       } else {

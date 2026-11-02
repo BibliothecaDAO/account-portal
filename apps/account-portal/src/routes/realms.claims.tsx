@@ -11,9 +11,7 @@ function RouteComponent() {
   return (
     <PageContainer>
       <PageHeader
-        className="mb-0"
-        eyebrow="Realms"
-        title="Realms claims"
+        title="Claims"
         description="Claim remaining LORDS emissions for Realms held on Starknet and review past claims."
       />
       <ClaimRewards />

@@ -30,7 +30,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Primary: Story = {
   play: async ({ canvas, userEvent, args }) => {
-    await userEvent.click(canvas.getByRole("button", { name: "Continue" }));
+    await userEvent.click(await canvas.findByRole("button", { name: "Continue" }));
     await expect(args.onClick).toHaveBeenCalledOnce();
   },
 };

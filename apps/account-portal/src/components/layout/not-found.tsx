@@ -35,7 +35,7 @@ export function NotFoundView({
             Go back
           </Button>
           <Button asChild className="w-full sm:w-auto">
-            <Link to="/">Start over</Link>
+            <Link to="/">Back to dashboard</Link>
           </Button>
         </>
       }

@@ -10,7 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Gavel } from "lucide-react";
 
 const GRID =
-  "grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-5";
+  "grid grid-cols-2 gap-3 sm:gap-4 @lg:grid-cols-3 @2xl:grid-cols-4 @4xl:grid-cols-5";
 
 export interface RealmsInventoryProps {
   viewState: RealmInventoryViewState;
@@ -29,14 +29,12 @@ export function RealmsInventory({
   const isReady = viewState === "ready";
 
   return (
-    <SectionCard
-      title="Starknet inventory"
-      description={
-        isReady
-          ? `${tokens.length} Realm${tokens.length === 1 ? "" : "s"} in this wallet`
-          : undefined
-      }
-    >
+    <section aria-label="Starknet inventory" className="flex flex-col gap-3">
+      {isReady ? (
+        <p className="text-muted-foreground text-sm">
+          {tokens.length} Realm{tokens.length === 1 ? "" : "s"} in this wallet
+        </p>
+      ) : null}
       {viewState === "loading" ? (
         <div className={GRID} aria-busy="true">
           {Array.from({ length: 10 }, (_, i) => (
@@ -73,7 +71,7 @@ export function RealmsInventory({
           </Button>
         </div>
       )}
-    </SectionCard>
+    </section>
   );
 }
 

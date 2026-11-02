@@ -12,7 +12,10 @@ font service or its generated font URLs.
   "Monaspace" is a Reserved Font Name, so subset or otherwise modified copies
   must not keep that name.
 
-Both fonts are distributed under the SIL Open Font License 1.1. Keep the respective
+- Cinzel SemiBold, from the Realms brand deck v3 (`realms-branding/output/brand-deck/fonts/`)
+  on 2 November 2026. The file is unchanged. — `cinzel-OFL.txt`
+
+All three fonts are distributed under the SIL Open Font License 1.1. Keep the respective
 license files with the fonts when redistributing them.
 
 SHA-256 checksums:
@@ -20,6 +23,7 @@ SHA-256 checksums:
 - `exo-2-variable.ttf`: `205a448676a2586f9c57c25f3d5c58ca8db7e6cf5edf7506783a010c6fe2bfb5`
 - `monaspace-xenon-400.woff2` (`MonaspaceXenon-Regular.woff2`): `eb34d971e2bf956230ba2e5bd621af7310d4c739057ae7df7b8a38ca95b03cf6`
 - `monaspace-xenon-600.woff2` (`MonaspaceXenon-SemiBold.woff2`): `7772439b105e2eb3d6104f33757fbddd3e4db334f9ff61ffdbf654c0babc3c7c`
+- `Cinzel-SemiBold.ttf`: `5150b3609eeaaa9c6d7e093cb9b16ab8ec2f7110ddf0cbe751887e6f158398af`
 
 ## Static share-card instances
 

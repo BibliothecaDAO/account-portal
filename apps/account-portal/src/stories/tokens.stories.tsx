@@ -125,7 +125,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "Semantic tokens from src/styles.css (shared with the marketplace). Components use these utilities only — no arbitrary colours, radii or shadows.",
+          "Semantic tokens from src/styles.css (shared with the marketplace). Components use these utilities only — no arbitrary colors, radii or shadows.",
       },
     },
   },

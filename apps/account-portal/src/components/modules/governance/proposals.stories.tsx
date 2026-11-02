@@ -3,15 +3,18 @@ import { PageContainer } from "@/components/layout/page-container";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { SectionCard } from "@/components/ui/section-card";
-import { Check, Minus, X } from "lucide-react";
+import { Choice } from "@/types/snapshot";
+import { expect, fn, screen, waitFor } from "storybook/test";
 
 import type { ProposalRowData } from "./proposal-list-item";
 import { ProposalArticle, ProposalVotePanel } from "./proposal-detail";
 import { getProposalShortId, ProposalRow } from "./proposal-list-item";
+import { ProposalListEmpty, ProposalListFailed } from "./proposal-list";
 import { ProposalListSkeleton } from "./proposal-list-skeleton";
 import { ProposalResults } from "./proposal-results";
 import { getProposalStatus, ProposalStatusBadge } from "./proposal-status";
 import { ProposalUserVoteBadge } from "./proposal-user-vote-badge";
+import { ProposalVoteButtons, ProposalVoteDialog } from "./proposal-vote-action";
 import { SnapshotLink } from "./snapshot-link";
 
 const DAY = 24 * 60 * 60;
@@ -64,19 +67,7 @@ const proposals = {
   ),
 };
 
-const fakeVoteAction = (
-  <div className="flex gap-2">
-    <Button size="sm" variant="outline" className="text-success">
-      <Check /> For
-    </Button>
-    <Button size="sm" variant="outline" className="text-destructive">
-      <X /> Against
-    </Button>
-    <Button size="sm" variant="outline">
-      <Minus /> Abstain
-    </Button>
-  </div>
-);
+const voteButtons = <ProposalVoteButtons onChoose={fn()} />;
 
 const body = `## Summary
 
@@ -84,7 +75,7 @@ Allocate **250,000 LORDS** from the treasury to the Eternum season 2 prize pool.
 
 ## Motivation
 
-- Reward the top realms and guilds
+- Reward the top Realms and guilds
 - Attract new players for the season launch
 
 | Rank | Share |
@@ -107,7 +98,7 @@ function Rows() {
       <ProposalRow
         proposal={proposals.active}
         authorName="loaf.stark"
-        voteAction={fakeVoteAction}
+        voteAction={voteButtons}
       />
       <ProposalRow
         proposal={proposals.passed}
@@ -124,28 +115,20 @@ export const List: Story = {
   render: () => (
     <PageContainer>
       <PageHeader
-        className="mb-0"
-        eyebrow="Governance"
         title="Proposals"
         description="Realms DAO proposals on Snapshot. Vote on open proposals or review past outcomes."
         actions={
-          <Button variant="outline" size="sm">
-            Delegates
-          </Button>
+          <>
+            <SnapshotLink />
+            <Button variant="outline" size="sm">
+              Delegates
+            </Button>
+          </>
         }
       />
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <SectionCard
-          title="All proposals"
-          className="lg:col-span-2"
-          contentClassName="py-0"
-        >
-          <Rows />
-        </SectionCard>
-        <SectionCard title="View on">
-          <SnapshotLink />
-        </SectionCard>
-      </div>
+      <SectionCard title="All proposals" contentClassName="py-0">
+        <Rows />
+      </SectionCard>
     </PageContainer>
   ),
 };
@@ -156,6 +139,108 @@ export const ListLoading: Story = {
       <SectionCard title="All proposals" contentClassName="py-0">
         <ProposalListSkeleton rows={5} />
       </SectionCard>
+    </PageContainer>
+  ),
+};
+
+export const ListEmpty: Story = {
+  render: () => (
+    <PageContainer>
+      <SectionCard title="All proposals" contentClassName="py-0">
+        <ProposalListEmpty />
+      </SectionCard>
+    </PageContainer>
+  ),
+};
+
+export const ListFailed: Story = {
+  render: () => (
+    <PageContainer>
+      <SectionCard title="All proposals" contentClassName="py-0">
+        <ProposalListFailed onRetry={fn()} />
+      </SectionCard>
+    </PageContainer>
+  ),
+};
+
+const voteDialogArgs = {
+  open: true,
+  onOpenChange: fn(),
+  proposalTitle: "RIP-42: Fund the Eternum season 2 prize pool",
+  selectedChoice: Choice.Against,
+  onChoiceChange: fn(),
+  reason: "",
+  onReasonChange: fn(),
+  onSubmit: fn(),
+};
+
+export const VoteDialog: Story = {
+  render: () => (
+    <PageContainer>
+      {voteButtons}
+      <ProposalVoteDialog {...voteDialogArgs} />
+    </PageContainer>
+  ),
+  play: async () => {
+    const radios = await screen.findAllByRole("radio");
+    const close = screen.getByRole("button", { name: "Close" });
+    // The dialog scales in, so measure once it has settled.
+    await waitFor(async () => {
+      const content = close.parentElement?.getBoundingClientRect();
+      for (const target of [...radios, close]) {
+        const { width, height } = target.getBoundingClientRect();
+        await expect(Math.min(width, height)).toBeGreaterThanOrEqual(24);
+      }
+      // Each choice keeps its label clear of the next radio and inside the dialog.
+      for (const [index, radio] of radios.entries()) {
+        const label = radio.parentElement?.querySelector("label");
+        const right = label?.getBoundingClientRect().right ?? 0;
+        await expect(right).toBeLessThanOrEqual((content?.right ?? 0) - 24);
+        const next = radios[index + 1]?.getBoundingClientRect();
+        if (next && next.top < radio.getBoundingClientRect().bottom) {
+          await expect(next.left - right).toBeGreaterThanOrEqual(8);
+        }
+      }
+    });
+  },
+};
+
+const renderVoteChoice = (selectedChoice: Choice) => (
+  <PageContainer>
+    {voteButtons}
+    <ProposalVoteDialog {...voteDialogArgs} selectedChoice={selectedChoice} />
+  </PageContainer>
+);
+
+// A chosen radio is one color: its dot and its ring both take the option's own.
+const expectRadioInOneColor = async (name: string) => {
+  const radio = await screen.findByRole("radio", { name, checked: true });
+  const { color, boxShadow } = getComputedStyle(radio);
+  const dot = radio.querySelector("svg");
+  await expect(dot && getComputedStyle(dot).fill).toBe(color);
+  await expect(boxShadow).toContain(color);
+};
+
+export const VoteDialogFor: Story = {
+  render: () => renderVoteChoice(Choice.For),
+  play: () => expectRadioInOneColor("For"),
+};
+
+export const VoteDialogAgainst: Story = {
+  render: () => renderVoteChoice(Choice.Against),
+  play: () => expectRadioInOneColor("Against"),
+};
+
+export const VoteDialogAbstain: Story = {
+  render: () => renderVoteChoice(Choice.Abstain),
+  play: () => expectRadioInOneColor("Abstain"),
+};
+
+export const VoteDialogSubmitting: Story = {
+  render: () => (
+    <PageContainer>
+      {voteButtons}
+      <ProposalVoteDialog {...voteDialogArgs} isSubmitting />
     </PageContainer>
   ),
 };
@@ -172,12 +257,12 @@ const detailArgs = (p: ProposalRowData) => ({
 export const DetailActive: Story = {
   render: () => (
     <PageContainer>
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <ProposalArticle className="lg:col-span-2" {...detailArgs(proposals.active)} />
+      <div className="grid grid-cols-1 gap-6 @3xl:grid-cols-3">
+        <ProposalArticle className="@3xl:col-span-2" {...detailArgs(proposals.active)} />
         <SectionCard title="Vote" className="h-fit">
           <ProposalVotePanel
             votingPower="12"
-            voteAction={fakeVoteAction}
+            voteAction={voteButtons}
             results={<ProposalResults proposal={proposals.active} />}
           />
         </SectionCard>
@@ -189,8 +274,8 @@ export const DetailActive: Story = {
 export const DetailClosed: Story = {
   render: () => (
     <PageContainer>
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <ProposalArticle className="lg:col-span-2" {...detailArgs(proposals.passed)} />
+      <div className="grid grid-cols-1 gap-6 @3xl:grid-cols-3">
+        <ProposalArticle className="@3xl:col-span-2" {...detailArgs(proposals.passed)} />
         <SectionCard title="Vote" className="h-fit">
           <ProposalVotePanel
             userVote={<ProposalUserVoteBadge choice={1} />}

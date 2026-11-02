@@ -9,10 +9,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "@tanstack/react-router";
 import { Gavel, Plus } from "lucide-react";
 
-/** Max realm cards shown on the dashboard before "View all". */
+/** Max Realm cards shown on the dashboard before "View all". */
 export const REALMS_PREVIEW_COUNT = 5;
 
-const GRID = "grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-6";
+const GRID = "grid grid-cols-2 gap-3 sm:gap-4 @lg:grid-cols-3 @4xl:grid-cols-6";
 
 export interface RealmsPreviewProps {
   viewState: RealmInventoryViewState;
@@ -61,7 +61,7 @@ export function RealmsPreview({
       ) : tokens.length > 0 ? (
         <div className={GRID}>
           {tokens.slice(0, REALMS_PREVIEW_COUNT).map((realm) => (
-            <RealmCard key={realm.token_id} token={realm} isGrid />
+            <RealmCard key={realm.token_id} token={realm} isGrid borderless />
           ))}
           {overflow > 0 && (
             <Link

@@ -1,32 +1,73 @@
 import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { useCurrentDelegate } from "@/hooks/governance/use-current-delegate";
 import { useDelegateRealms } from "@/hooks/governance/use-delegate-realms";
-import { useStarkDisplayName } from "@/hooks/use-stark-name";
+import { useStarknetWallet } from "@/hooks/use-starknet-wallet";
+import { formatAddress } from "@/utils/utils";
 import { useAccount } from "@starknet-start/react";
 import { Shuffle, TrendingDown } from "lucide-react";
-import { num } from "starknet";
+
+import { toDelegateAddress } from "./delegate-order";
+import { submitDelegation } from "./submit-delegation";
+
+export type DelegateSortMethod = "desc" | "random";
+
+export function DelegateListActionsView({
+  sortMethod,
+  onToggleSort,
+  showDelegateToSelf,
+  isDelegatingToSelf = false,
+  onDelegateToSelf,
+}: {
+  sortMethod: DelegateSortMethod;
+  onToggleSort?: () => void;
+  showDelegateToSelf: boolean;
+  isDelegatingToSelf?: boolean;
+  onDelegateToSelf?: () => void;
+}) {
+  return (
+    <>
+      <Button variant="outline" onClick={onToggleSort}>
+        {sortMethod === "desc" ? (
+          <>
+            <TrendingDown />
+            Sort: Most votes
+          </>
+        ) : (
+          <>
+            <Shuffle />
+            Sort: Random
+          </>
+        )}
+      </Button>
+      {showDelegateToSelf ? (
+        <Button
+          variant="outline"
+          onClick={onDelegateToSelf}
+          disabled={isDelegatingToSelf}
+        >
+          {isDelegatingToSelf ? "Delegating…" : "Delegate to self"}
+        </Button>
+      ) : null}
+    </>
+  );
+}
 
 export interface DelegateListActionsProps {
-  onSortChange?: (sortMethod: "desc" | "random") => void;
+  onSortChange?: (sortMethod: DelegateSortMethod) => void;
 }
 
 export function DelegateListActions({
   onSortChange,
 }: DelegateListActionsProps) {
   const { address } = useAccount();
-  const { sendAsync: delegateRealms } = useDelegateRealms({
+  const { requestConnect } = useStarknetWallet();
+  const { sendAsync: delegateRealms, isPending } = useDelegateRealms({
     delegatee: address,
   });
   const { data: currentDelegate } = useCurrentDelegate();
 
-  const name = useStarkDisplayName(
-    num.toHex(currentDelegate ?? "") as `0x${string}`,
-  );
-
-  const [sortMethod, setSortMethod] = useState<"desc" | "random">("random");
+  const [sortMethod, setSortMethod] = useState<DelegateSortMethod>("random");
 
   const toggleSortMethod = () => {
     setSortMethod((prevMethod) => {
@@ -39,32 +80,20 @@ export function DelegateListActions({
   };
 
   return (
-    <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
-      {currentDelegate ? (
-        <div className="hidden items-center gap-2 sm:flex">
-          <Label className="realm-label">Delegate</Label>
-          <Badge className="max-w-40 truncate" variant="outline">
-            {name}
-          </Badge>
-        </div>
-      ) : (
-        address && (
-          <Button onClick={() => delegateRealms()}>Delegate to self</Button>
-        )
-      )}
-      <Button variant="outline" onClick={toggleSortMethod}>
-        {sortMethod === "desc" ? (
-          <>
-            <TrendingDown />
-            Desc votes
-          </>
-        ) : (
-          <>
-            <Shuffle />
-            Random
-          </>
-        )}
-      </Button>
-    </div>
+    <DelegateListActionsView
+      sortMethod={sortMethod}
+      onToggleSort={toggleSortMethod}
+      showDelegateToSelf={
+        !!address && toDelegateAddress(currentDelegate) !== formatAddress(address)
+      }
+      isDelegatingToSelf={isPending}
+      onDelegateToSelf={() =>
+        void submitDelegation({
+          isConnected: !!address,
+          requestConnect,
+          send: () => delegateRealms(),
+        })
+      }
+    />
   );
 }

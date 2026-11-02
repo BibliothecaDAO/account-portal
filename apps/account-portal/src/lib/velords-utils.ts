@@ -96,6 +96,73 @@ export function computeTvlUsd(
   return lordsAmount * parsedRate;
 }
 
+/** Staked share of a wallet's staked plus available LORDS, from 0 to 100. */
+export function calculateStakedSharePercent(
+  staked: number,
+  available: number,
+): number {
+  const total = staked + available;
+  if (!Number.isFinite(total) || total <= 0 || staked <= 0) return 0;
+  return Math.min((staked / total) * 100, 100);
+}
+
+/** Whole percent, except that a sliver stays distinct from none and from all. */
+export function formatStakedShare(sharePercent: number): string {
+  if (sharePercent > 0 && sharePercent < 1) return "<1%";
+  if (sharePercent > 99 && sharePercent < 100) return ">99%";
+  return `${Math.round(sharePercent)}%`;
+}
+
+export const UNKNOWN_VALUE = "—";
+
+/** `undefined` while loading, so the caller shows a skeleton; a value that never came is "—", not 0. */
+export function knownOrUnknown(
+  value: string | undefined,
+  isLoading: boolean,
+): string | undefined {
+  return value ?? (isLoading ? undefined : UNKNOWN_VALUE);
+}
+
+export function formatTvlDisplay(
+  tvl: number | undefined,
+  isLoading: boolean,
+): string | undefined {
+  return knownOrUnknown(
+    tvl !== undefined && Number.isFinite(tvl)
+      ? `$${tvl.toLocaleString("en-US", { maximumFractionDigits: 0 })}`
+      : undefined,
+    isLoading,
+  );
+}
+
+/** "Copy summary" text. An unknown figure reads "—" with no unit, never a false number. */
+export function buildVelordsSummary({
+  period,
+  tvl,
+  lordsLocked,
+  rewards30d,
+  apyPercent,
+  date,
+}: {
+  period: string;
+  tvl?: string;
+  lordsLocked?: string;
+  rewards30d?: string;
+  apyPercent?: string;
+  date: string;
+}): string {
+  const withUnit = (value: string | undefined, unit: string) =>
+    value && value !== UNKNOWN_VALUE ? `${value}${unit}` : UNKNOWN_VALUE;
+  return [
+    `veLords Dashboard (${period})`,
+    `TVL: ${tvl ?? UNKNOWN_VALUE}`,
+    `Locked: ${withUnit(lordsLocked, " LORDS")}`,
+    `30d Rewards: ${withUnit(rewards30d, " LORDS")}`,
+    `APY: ${withUnit(apyPercent, "%")}`,
+    `Updated: ${date}`,
+  ].join(" | ");
+}
+
 export function parseOptionalStakeAmount(stakeAmount: string): bigint | undefined {
   const trimmedStakeAmount = stakeAmount.trim();
   if (!trimmedStakeAmount) return undefined;
@@ -108,4 +175,11 @@ export function parseOptionalStakeAmount(stakeAmount: string): bigint | undefine
   }
   if (parsedAmount <= 0n) return undefined;
   return parsedAmount;
+}
+
+export type VelordsView = "breakdown" | "trends";
+
+/** Anything but Trends lands on Breakdown, including the old overview, sources and locks links. */
+export function parseVelordsView(view: unknown): VelordsView {
+  return view === "trends" ? "trends" : "breakdown";
 }

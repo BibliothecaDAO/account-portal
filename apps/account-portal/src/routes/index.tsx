@@ -1,11 +1,9 @@
-import { Suspense } from "react";
 import BridgeIcon from "@/components/icons/bridge.svg?react";
 import { EthereumConnect } from "@/components/layout/ethereum-connect";
 import { LoginCard } from "@/components/layout/login-card";
 import { PageContainer } from "@/components/layout/page-container";
 import { PageHeader } from "@/components/layout/page-header";
 import { Homepage } from "@/components/modules/homepage/homepage";
-import { HomepageSkeleton } from "@/components/modules/homepage/homepage-skeleteon";
 import { Button } from "@/components/ui/button";
 import { getProposalsQueryOptions } from "@/lib/snapshot/getProposals";
 import { SUPPORTED_L2_CHAIN_ID } from "@/utils/utils";
@@ -17,7 +15,7 @@ import { SnapshotSpaceAddresses } from "@realms-world/constants";
 
 export const Route = createFileRoute("/")({
   loader: async ({ context }) => {
-    await context.queryClient.ensureQueryData(
+    await context.queryClient.prefetchQuery(
       getProposalsQueryOptions({
         spaceIds: [SnapshotSpaceAddresses[SUPPORTED_L2_CHAIN_ID] as string],
         limit: 5,
@@ -42,8 +40,6 @@ function IndexComponent() {
   return (
     <PageContainer>
       <PageHeader
-        className="mb-0"
-        eyebrow="Account"
         title="Dashboard"
         description="Your Realms, LORDS, rewards and governance across Ethereum and Starknet."
         actions={
@@ -68,9 +64,7 @@ function IndexComponent() {
           </>
         }
       />
-      <Suspense fallback={<HomepageSkeleton />}>
-        <Homepage address={address} />
-      </Suspense>
+      <Homepage address={address} />
     </PageContainer>
   );
 }

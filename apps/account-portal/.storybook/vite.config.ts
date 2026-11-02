@@ -22,6 +22,11 @@ export default defineConfig({
         find: /^@tanstack\/react-start(\/server)?$/,
         replacement: fileURLToPath(new URL("./mocks/react-start.ts", import.meta.url)),
       },
+      // Server modules import the database client when they load; no story may reach it.
+      {
+        find: /^@realms-world\/db\/client$/,
+        replacement: fileURLToPath(new URL("./mocks/db-client.ts", import.meta.url)),
+      },
     ],
   },
   // Stories never talk to the network; let env.ts fall back to its CI defaults.

@@ -2,7 +2,8 @@
  * Account portal design tokens.
  * Ported from the BibliothecaDAO marketplace (src/app/globals.css) so both apps share one
  * shadcn token system: graphite surfaces, brass primary, IM Fell titles, Exo 2 UI and
- * Monaspace Xenon for machine data. Dark is the default theme (<html class="dark">).
+ * Monaspace Xenon for machine data. The portal is always dark (<html class="dark">): color
+ * roles live in .dark, and what no theme changes lives in :root.
  *
  * Rule: components use semantic utilities only (bg-card, text-muted-foreground,
  * border-border, text-primary, text-trade-up, ...). No arbitrary colour/shadow/radius values.
@@ -16,6 +17,12 @@
 @font-face {
   font-family: "IM Fell English SC";
   src: url("/brand/im-fell-english-sc-regular.ttf") format("truetype");
+  font-display: swap;
+}
+@font-face {
+  font-family: "Cinzel";
+  src: url("/brand/fonts/Cinzel-SemiBold.ttf") format("truetype");
+  font-weight: 600;
   font-display: swap;
 }
 @font-face {
@@ -38,54 +45,11 @@
 }
 
 :root {
-  --background: oklch(0.98 0 0);
-  --foreground: oklch(0.24 0 0);
-  --card: oklch(0.99 0 0);
-  --card-foreground: oklch(0.24 0 0);
-  --popover: oklch(0.99 0 0);
-  --popover-foreground: oklch(0.24 0 0);
-  --primary: oklch(0.43 0.04 41.99);
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.92 0.07 74.37);
-  --secondary-foreground: oklch(0.35 0.07 40.83);
-  --muted: oklch(0.95 0 0);
-  --muted-foreground: oklch(0.5 0 0);
-  --accent: oklch(0.93 0 0);
-  --accent-foreground: oklch(0.24 0 0);
-  --destructive: oklch(0.55 0.2 25);
-  --destructive-foreground: oklch(0.98 0 0);
-  --border: oklch(0.52 0.04 75 / 22%);
-  --input: oklch(0.44 0.03 80 / 35%);
-  --ring: oklch(0.43 0.04 41.99);
-  --chart-1: oklch(0.7 0.15 75);
-  --chart-2: oklch(0.55 0.12 250);
-  --chart-3: oklch(0.7 0.15 140);
-  --chart-4: oklch(0.6 0.1 310);
-  --chart-5: oklch(0.65 0.12 30);
-  --sidebar: oklch(0.99 0 0);
-  --sidebar-foreground: oklch(0.26 0 0);
-  --sidebar-primary: oklch(0.43 0.04 41.99);
-  --sidebar-primary-foreground: oklch(0.99 0 0);
-  --sidebar-accent: oklch(0.95 0 0);
-  --sidebar-accent-foreground: oklch(0.33 0 0);
-  --sidebar-border: oklch(0.52 0.04 75 / 22%);
-  --sidebar-ring: oklch(0.77 0 0);
   --font-sans: "Exo 2", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "IM Fell English SC", Cinzel, serif;
   --font-title: "IM Fell English SC", Cinzel, serif;
   --font-ui: "Exo 2", Rajdhani, sans-serif;
   --font-mono: "Monaspace Xenon", ui-monospace, monospace;
-  --realm-bg-void: #f4f1ea;
-  --realm-surface-iron: #ece7dc;
-  --realm-surface-slate: #e4ded1;
-  --realm-accent-ember: #a8692f;
-  --realm-accent-brass: #8a6a1f;
-  --realm-accent-arcane: #5a659a;
-  --realm-border-etched: oklch(0.52 0.04 75 / 22%);
-  --realm-border-strong: oklch(0.44 0.03 80 / 38%);
-  --realm-text: oklch(0.24 0 0);
-  --realm-text-muted: oklch(0.5 0 0);
-  --realm-title: var(--foreground);
   --radius: 0.5rem;
   --shadow-2xs: none;
   --shadow-xs: none;
@@ -95,28 +59,14 @@
   --shadow-lg: 0 1px 3px 0 oklch(0 0 0 / 0.1);
   --shadow-xl: 0 2px 4px 0 oklch(0 0 0 / 0.12);
   --shadow-2xl: 0 2px 6px 0 oklch(0 0 0 / 0.15);
-  --shadow-glow-sm: 0 0 12px oklch(0.75 0.1 75 / 0.1);
-  --shadow-glow-md: 0 0 20px oklch(0.75 0.15 75 / 0.15);
-  --shadow-float: 0 12px 32px rgba(0, 0, 0, 0.12);
   --tracking-normal: 0;
-  --realm-stat-bg: color-mix(in oklab, var(--background) 72%, transparent);
   --realm-selection: oklch(0.75 0.15 75 / 0.3);
-  --realm-cta: var(--primary);
-  --realm-cta-hover: color-mix(in oklab, var(--primary) 88%, white);
-  --realm-cta-foreground: var(--primary-foreground);
-  --realm-cta-border: transparent;
-  /* Direction and status colours. Light surfaces use darker direction text for contrast. */
-  --trade-up: #0a7d52;
-  --trade-down: #c9213a;
-  --status-success: #0a7d52;
-  --status-warning: #a77a00;
   --success: var(--status-success);
-  --success-foreground: oklch(0.98 0 0);
   --warning: var(--status-warning);
-  --warning-foreground: oklch(0.2 0 0);
 }
 
 .dark {
+  color-scheme: dark;
   --background: #0b0c0f;
   --foreground: #e7e9ed;
   --card: #14161a;
@@ -428,6 +378,79 @@
     background: var(--accent);
     border-color: var(--realm-border-strong);
   }
+  /* Delegate rows stack in a narrow panel and become comparable columns once they fit. */
+  .delegate-row,
+  .delegate-summary,
+  .delegate-row-head {
+    display: grid;
+    grid-template-columns: 1.5rem minmax(0, 1fr) auto;
+    column-gap: 0.5rem;
+    align-items: center;
+  }
+  .delegate-row,
+  .delegate-row-head {
+    padding: 0.75rem 1rem;
+  }
+  .delegate-row {
+    grid-template-areas:
+      "avatar name votes"
+      "statement statement statement"
+      "interests interests action";
+    row-gap: 0.5rem;
+  }
+  .delegate-row[data-current] {
+    box-shadow: inset 3px 0 0 var(--primary);
+  }
+  .delegate-row-detail {
+    grid-column: 1 / -1;
+    display: grid;
+    gap: 0.5rem;
+    border-top: 1px dashed var(--border);
+    padding-top: 0.5rem;
+  }
+  .delegate-row-detail[hidden] {
+    display: none;
+  }
+  .delegate-summary {
+    grid-template-areas:
+      "avatar name votes"
+      "statement statement statement";
+    row-gap: 0.5rem;
+  }
+  .delegate-row-head {
+    display: none;
+    border-bottom: 1px solid var(--border);
+    color: var(--muted-foreground);
+    font-size: 0.75rem;
+    line-height: 1rem;
+    padding-block: 0.5rem;
+  }
+  @container delegates (min-width: 40rem) {
+    .delegate-row {
+      grid-template-columns: 1.5rem minmax(0, 1fr) 11.875rem 5.5rem 7rem;
+      column-gap: 0.75rem;
+      grid-template-areas:
+        "avatar name interests votes action"
+        ". statement statement statement action";
+    }
+  }
+  @container delegates (min-width: 45rem) {
+    .delegate-row,
+    .delegate-row-head {
+      grid-template-columns:
+        1.5rem minmax(9.375rem, 1fr) 4.5rem minmax(11.875rem, 1.1fr)
+        minmax(0, 1.7fr) 7rem;
+      column-gap: 0.75rem;
+    }
+    .delegate-row-head {
+      display: grid;
+    }
+    .delegate-row {
+      grid-template-areas: "avatar name votes interests statement action";
+      min-height: 3.25rem;
+      padding-block: 0.5rem;
+    }
+  }
   .realm-prose-h1,
   .realm-prose-h2,
   .realm-prose-h3,
@@ -463,6 +486,40 @@
   .dark .text-destructive {
     color: oklch(0.72 0.16 25);
   }
+}
+
+/*
+ * Deck v3 values for new work on the graphite page: delegate rows and the staking arc.
+ * Unlayered, so a control's font-medium utility cannot outrank the deck's face.
+ */
+.dark .deck-values {
+  --foreground: #f4ebdc;
+  --realm-title: #f4ebdc;
+  --muted-foreground: #b7a78a;
+  --border: #46351c;
+  --input: #b7a78a;
+  --realm-border-strong: #46351c;
+  --primary: #f3d08a;
+}
+.dark .deck-values .realm-label {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+.dark .deck-values .realm-chip,
+.dark .deck-values [data-slot="button"],
+.dark .deck-values .delegate-row-head {
+  font-family: Cinzel, serif;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: none;
+}
+.dark .deck-values [data-slot="button"][data-variant="outline"] {
+  background: transparent;
+  font-size: 0.75rem;
+  padding-inline: 0.5rem;
+}
+.dark .deck-values [data-slot="button"][data-variant="outline"]:hover:not(:disabled) {
+  background: var(--accent);
 }
 
 /* Slim brass scrollbar, matching the marketplace. */

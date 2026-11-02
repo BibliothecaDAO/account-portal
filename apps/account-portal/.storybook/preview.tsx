@@ -14,7 +14,7 @@ import "../src/styles.css";
 
 import { storybookTheme } from "./theme";
 
-function Theme({ theme, children }: PropsWithChildren<{ theme: string }>) {
+function Theme({ children }: PropsWithChildren) {
   const [client] = useState(
     () =>
       new QueryClient({
@@ -26,8 +26,8 @@ function Theme({ theme, children }: PropsWithChildren<{ theme: string }>) {
   useEffect(() => () => client.clear(), [client]);
   useEffect(() => {
     document.documentElement.lang = "en";
-    document.documentElement.classList.toggle("dark", theme === "dark");
-  }, [theme]);
+    document.documentElement.classList.add("dark");
+  }, []);
   return (
     <QueryClientProvider client={client}>
       <TooltipProvider>
@@ -57,21 +57,6 @@ const withRouter: Decorator = (Story, context) => {
 
 const preview: Preview = {
   tags: ["autodocs"],
-  initialGlobals: { theme: "dark" },
-  globalTypes: {
-    theme: {
-      description: "App theme",
-      toolbar: {
-        title: "Theme",
-        icon: "circlehollow",
-        items: [
-          { value: "dark", title: "Dark · default" },
-          { value: "light", title: "Light" },
-        ],
-        dynamicTitle: true,
-      },
-    },
-  },
   parameters: {
     layout: "padded",
     backgrounds: { disable: true },
@@ -104,7 +89,7 @@ const preview: Preview = {
   decorators: [
     withRouter,
     (Story, context) => (
-      <Theme key={context.id} theme={String(context.globals.theme)}>
+      <Theme key={context.id}>
         <Story />
       </Theme>
     ),

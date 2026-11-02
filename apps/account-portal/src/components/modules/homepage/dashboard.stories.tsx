@@ -9,8 +9,13 @@ import { fn } from "storybook/test";
 
 import { ClaimsPanel } from "./claims-panel";
 import { DashboardStats, DashboardStatsSkeleton } from "./dashboard-stats";
-import { NoDelegateCard } from "./governance-panel";
-import { HomepageSkeleton } from "./homepage-skeleteon";
+import { DelegateSummaryView } from "../governance/delegate-row";
+import { ProposalListEmpty, ProposalListFailed } from "../governance/proposal-list";
+import {
+  CurrentDelegatePanel,
+  CurrentDelegateSkeleton,
+  NoDelegateCard,
+} from "./governance-panel";
 import { ProposalListSkeleton } from "./proposal-list-skeleton";
 import { RealmsPreview } from "./realms-preview";
 
@@ -47,11 +52,11 @@ const stats = {
   lordsStaked: "124.5K",
 };
 
+const read = (lords: number) => ({ status: "read", amount: BigInt(lords) * 10n ** 18n }) as const;
+
 const claims = {
-  realmsClaimable: "1,284",
-  veLordsClaimable: "312",
-  canClaimRealms: true,
-  canClaimVeLords: true,
+  realmsClaimable: read(1_284),
+  veLordsClaimable: read(312),
   onClaimRealms: fn(),
   onClaimVeLords: fn(),
 };
@@ -59,12 +64,27 @@ const claims = {
 const meta = {
   title: "Dashboard/Sections",
   parameters: { layout: "padded" },
+  decorators: [
+    (Story) => (
+      <div className="@container">
+        <Story />
+      </div>
+    ),
+  ],
 } satisfies Meta;
 export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Stats: Story = { render: () => <DashboardStats {...stats} /> };
 export const StatsLoading: Story = { render: () => <DashboardStatsSkeleton /> };
+export const StatsReading: Story = {
+  name: "Stats · LORDS reading",
+  render: () => <DashboardStats {...stats} lordsL1="…" lordsL2="…" lordsStaked="…" />,
+};
+export const StatsUnknown: Story = {
+  name: "Stats · LORDS not read",
+  render: () => <DashboardStats {...stats} lordsL1="—" lordsL2="—" lordsStaked="—" />,
+};
 
 export const Claims: Story = {
   render: () => (
@@ -76,12 +96,30 @@ export const Claims: Story = {
 export const ClaimsEmpty: Story = {
   render: () => (
     <div className="max-w-xl">
+      <ClaimsPanel {...claims} realmsClaimable={read(0)} veLordsClaimable={read(0)} />
+    </div>
+  ),
+};
+export const ClaimsReading: Story = {
+  name: "Claims · reading",
+  render: () => (
+    <div className="max-w-xl">
       <ClaimsPanel
         {...claims}
-        realmsClaimable={0}
-        veLordsClaimable={0}
-        canClaimRealms={false}
-        canClaimVeLords={false}
+        realmsClaimable={{ status: "reading" }}
+        veLordsClaimable={read(0)}
+      />
+    </div>
+  ),
+};
+export const ClaimsFailed: Story = {
+  name: "Claims · read failed",
+  render: () => (
+    <div className="max-w-xl">
+      <ClaimsPanel
+        {...claims}
+        realmsClaimable={read(0)}
+        veLordsClaimable={{ status: "failed" }}
       />
     </div>
   ),
@@ -98,6 +136,33 @@ export const NoDelegate: Story = {
   render: () => (
     <div className="max-w-xl">
       <NoDelegateCard />
+    </div>
+  ),
+};
+
+const currentDelegate = {
+  id: "1",
+  user: "0x01a1b2c3d4e5f60718293a4b5c6d7e8f9012345678901234567890abcdef12",
+  delegatedVotes: "1240",
+  delegateProfile: {
+    statement:
+      "Long-time Realms holder focused on sustainable treasury management and growing Eternum.",
+  },
+};
+
+export const YourDelegate: Story = {
+  render: () => (
+    <div className="max-w-xl">
+      <CurrentDelegatePanel>
+        <DelegateSummaryView delegate={currentDelegate} name="loaf.stark" />
+      </CurrentDelegatePanel>
+    </div>
+  ),
+};
+export const YourDelegateLoading: Story = {
+  render: () => (
+    <div className="max-w-xl">
+      <CurrentDelegateSkeleton />
     </div>
   ),
 };
@@ -122,8 +187,6 @@ function DashboardPage() {
   return (
     <PageContainer>
       <PageHeader
-        className="mb-0"
-        eyebrow="Account"
         title="Dashboard"
         description="Your Realms, LORDS, rewards and governance across Ethereum and Starknet."
         actions={
@@ -134,9 +197,11 @@ function DashboardPage() {
         }
       />
       <DashboardStats {...stats} />
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 @3xl:grid-cols-2">
         <ClaimsPanel {...claims} />
-        <NoDelegateCard />
+        <CurrentDelegatePanel>
+          <DelegateSummaryView delegate={currentDelegate} name="loaf.stark" />
+        </CurrentDelegatePanel>
       </div>
       <SectionCard title="Recent proposals" contentClassName="pt-0">
         <ProposalListSkeleton />
@@ -145,6 +210,21 @@ function DashboardPage() {
     </PageContainer>
   );
 }
+
+export const ProposalsEmpty: Story = {
+  render: () => (
+    <SectionCard title="Recent proposals" contentClassName="pt-0">
+      <ProposalListEmpty />
+    </SectionCard>
+  ),
+};
+export const ProposalsFailed: Story = {
+  render: () => (
+    <SectionCard title="Recent proposals" contentClassName="pt-0">
+      <ProposalListFailed onRetry={fn()} />
+    </SectionCard>
+  ),
+};
 
 export const FullPage: Story = {
   name: "Full page",
@@ -157,8 +237,20 @@ export const FullPageLoading: Story = {
   parameters: { layout: "fullscreen" },
   render: () => (
     <PageContainer>
-      <PageHeader className="mb-0" eyebrow="Account" title="Dashboard" />
-      <HomepageSkeleton />
+      <PageHeader title="Dashboard" />
+      <DashboardStatsSkeleton />
+      <div className="grid grid-cols-1 gap-6 @3xl:grid-cols-2">
+        <ClaimsPanel
+          {...claims}
+          realmsClaimable={{ status: "reading" }}
+          veLordsClaimable={{ status: "reading" }}
+        />
+        <CurrentDelegateSkeleton />
+      </div>
+      <SectionCard title="Recent proposals" contentClassName="pt-0">
+        <ProposalListSkeleton />
+      </SectionCard>
+      <RealmsPreview viewState="loading" tokens={[]} />
     </PageContainer>
   ),
 };

@@ -1,7 +1,9 @@
 import type { BridgeRealm } from "@/types/ark";
 import type { ColumnDef, Table as ReactTable } from "@tanstack/react-table";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -10,8 +12,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { formatRealmCount } from "@/lib/realms/inventory-ui";
 import { flexRender } from "@tanstack/react-table";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, TriangleAlert } from "lucide-react";
 
 import RealmResources from "./realm-resources";
 
@@ -19,15 +22,16 @@ export const columns: ColumnDef<BridgeRealm>[] = [
   {
     id: "select",
     header: ({ table }) => (
-      <Checkbox
-        className="ml-1"
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")
-        }
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-      />
+      <label className="flex size-6 items-center justify-center">
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && "indeterminate")
+          }
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      </label>
     ),
     cell: ({ row }) => (
       <Checkbox
@@ -74,9 +78,38 @@ export const columns: ColumnDef<BridgeRealm>[] = [
 
 interface BridgeTableProps {
   table: ReactTable<BridgeRealm>;
+  status?: "ready" | "loading" | "error";
+  emptyMessage: string;
+  onRetry?: () => void;
 }
 
-export const BridgeTable: React.FC<BridgeTableProps> = ({ table }) => {
+export const BridgeTable: React.FC<BridgeTableProps> = ({
+  table,
+  status = "ready",
+  emptyMessage,
+  onRetry,
+}) => {
+  if (status === "error") {
+    return (
+      <Alert variant="destructive">
+        <TriangleAlert />
+        <AlertTitle>Your Realms could not be loaded</AlertTitle>
+        <AlertDescription>
+          <span>
+            Your on-chain Realms are safe.
+            <Button
+              variant="link"
+              className="h-auto min-h-6 px-1 py-0"
+              onClick={onRetry}
+            >
+              Try again
+            </Button>
+          </span>
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
   return (
     <div className="min-w-0">
       <div className="overflow-hidden rounded-md border">
@@ -100,7 +133,17 @@ export const BridgeTable: React.FC<BridgeTableProps> = ({ table }) => {
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows.length ? (
+            {status === "loading" ? (
+              Array.from({ length: 5 }, (_, rowIndex) => (
+                <TableRow key={rowIndex}>
+                  {columns.map((column, columnIndex) => (
+                    <TableCell key={column.id ?? columnIndex}>
+                      <Skeleton className="h-5 w-full" />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
@@ -126,7 +169,7 @@ export const BridgeTable: React.FC<BridgeTableProps> = ({ table }) => {
                   colSpan={columns.length}
                   className="h-24 text-center"
                 >
-                  No results.
+                  {emptyMessage}
                 </TableCell>
               </TableRow>
             )}
@@ -136,7 +179,7 @@ export const BridgeTable: React.FC<BridgeTableProps> = ({ table }) => {
       <div className="flex items-center justify-end gap-2 py-4">
         <div className="text-muted-foreground flex-1 text-sm">
           {table.getFilteredSelectedRowModel().rows.length} of{" "}
-          {table.getFilteredRowModel().rows.length} row(s) selected.
+          {formatRealmCount(table.getFilteredRowModel().rows.length)} selected
         </div>
         <div className="flex gap-2">
           <Button

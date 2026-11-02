@@ -13,7 +13,7 @@ export interface DashboardStatsProps {
   lordsStaked: ReactNode;
 }
 
-/** Holdings overview: Realms and LORDS on each chain plus staked veLORDS. */
+/** Holdings overview: Realms and LORDS on each chain plus LORDS staked. */
 export function DashboardStats({
   realmsL1,
   realmsL2,
@@ -26,13 +26,13 @@ export function DashboardStats({
     { label: "Realms · Starknet", value: realmsL2, icon: <StarknetIcon /> },
     { label: "LORDS · Ethereum", value: lordsL1, icon: <EthereumIcon /> },
     { label: "LORDS · Starknet", value: lordsL2, icon: <StarknetIcon /> },
-    { label: "Staked veLORDS", value: lordsStaked, icon: <LordsIcon /> },
+    { label: "LORDS staked", value: lordsStaked, icon: <LordsIcon /> },
   ];
 
   return (
     <section
       aria-label="Holdings"
-      className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5"
+      className="grid grid-cols-2 gap-3 sm:gap-4 @4xl:grid-cols-5"
     >
       {stats.map((stat, i) => (
         <MetricCard
@@ -40,7 +40,7 @@ export function DashboardStats({
           label={stat.label}
           value={stat.value}
           icon={stat.icon}
-          className={i === stats.length - 1 ? "col-span-2 lg:col-span-1" : ""}
+          className={i === stats.length - 1 ? "col-span-2 @4xl:col-span-1" : ""}
         />
       ))}
     </section>

@@ -6,13 +6,11 @@ import { NavUser } from "@/components/layout/nav-user";
 import { RouteProgress } from "@/components/layout/route-progress";
 import { WrongNetworkDialog } from "@/components/layout/wrong-network-dialog";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { ThemeProvider } from "@/providers/theme";
 import appCss from "@/styles.css?url";
 import {
   createRootRouteWithContext,
   HeadContent,
   Outlet,
-  ScriptOnce,
   Scripts,
 } from "@tanstack/react-router";
 
@@ -22,7 +20,6 @@ import { StarknetProvider } from "@/providers/starknet";
 import { seo } from "@/utils/seo";
 import { AppKitProvider } from "@/providers/ethereum";
 
-const THEME_STORAGE_KEY = "vite-ui-theme";
 const TanStackRouterDevtools = import.meta.env.DEV
   ? lazy(() =>
       import("@tanstack/react-router-devtools").then((mod) => ({
@@ -101,38 +98,27 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
+    <html lang="en" className="dark">
       <head>
         <HeadContent />
       </head>
       <body>
-        <ScriptOnce>
-          {`(() => {
-            const theme = localStorage.getItem('${THEME_STORAGE_KEY}');
-            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            const shouldUseDark =
-              theme === 'dark' || theme === null || (theme === 'system' && prefersDark);
-            document.documentElement.classList.toggle('dark', shouldUseDark);
-          })();`}
-        </ScriptOnce>
-        <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-          <StarknetProvider>
-            <AppKitProvider queryClient={queryClient}>
-              <SidebarProvider className="[--header-height:calc(--spacing(14))]">
-                <RouteProgress />
-                <AppSidebar footer={<NavUser />} />
-                <SidebarInset>
-                  <SiteHeader />
-                  <div id="main-content" className="main-content flex-1">
-                    <Outlet />
-                  </div>
-                </SidebarInset>
-                <WrongNetworkDialog />
-                <Toaster />
-              </SidebarProvider>
-            </AppKitProvider>
-          </StarknetProvider>
-        </ThemeProvider>
+        <StarknetProvider>
+          <AppKitProvider queryClient={queryClient}>
+            <SidebarProvider className="[--header-height:calc(--spacing(14))]">
+              <RouteProgress />
+              <AppSidebar footer={<NavUser />} />
+              <SidebarInset>
+                <SiteHeader />
+                <div id="main-content" className="main-content flex-1">
+                  <Outlet />
+                </div>
+              </SidebarInset>
+              <WrongNetworkDialog />
+              <Toaster />
+            </SidebarProvider>
+          </AppKitProvider>
+        </StarknetProvider>
         {import.meta.env.DEV && (
           <Suspense fallback={null}>
             {TanStackRouterDevtools && (
