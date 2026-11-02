@@ -103,6 +103,7 @@ const inShell = (page: { render?: unknown }): Story => ({
 
 export const DashboardPage = inShell(DashboardStories.FullPage);
 export const RealmsPage = inShell(RealmsStories.RealmsPage);
+export const BridgePage = inShell(RealmsStories.BridgePage);
 export const ClaimsPage = inShell(RealmsStories.ClaimsPage);
 export const VelordsPage = inShell(VelordsStories.FullPage);
 export const DelegatesPage = inShell(DelegatesStories.List);

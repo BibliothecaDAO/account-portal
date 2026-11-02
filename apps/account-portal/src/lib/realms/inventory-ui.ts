@@ -50,3 +50,7 @@ export function retainExistingRealmSelections(
     ? selection
     : retained;
 }
+
+export function formatRealmCount(count: number): string {
+  return `${count} Realm${count === 1 ? "" : "s"}`;
+}

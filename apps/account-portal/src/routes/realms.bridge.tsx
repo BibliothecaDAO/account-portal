@@ -1,6 +1,6 @@
 import type { BridgeRealm, TokenMetadataAttribute } from "@/types/ark";
 import type { RowSelectionState } from "@tanstack/react-table";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PageContainer } from "@/components/layout/page-container";
 import { PageHeader } from "@/components/layout/page-header";
 import { BridgeDirection } from "@/components/modules/realms/bridge-direction";
@@ -16,11 +16,13 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { SectionCard } from "@/components/ui/section-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useStarknetWallet } from "@/hooks/use-starknet-wallet";
 import { getL1RealmsQueryOptions } from "@/lib/getL1Realms";
 import { getRealmInventoryQueryOptions } from "@/lib/realms/get-realm-inventory";
 import {
+  formatRealmCount,
   getRealmInventoryViewState,
   parseRealmTokenId,
 } from "@/lib/realms/inventory-ui";
@@ -98,7 +100,7 @@ function MobileBridgeBar({
     <div className="bg-background/95 sticky bottom-0 z-10 -mx-4 mt-auto border-t px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6 xl:hidden">
       <Button className="h-11 w-full" onClick={onOpen}>
         {selectedCount
-          ? `Review & bridge ${selectedCount} Realm${selectedCount === 1 ? "" : "s"}`
+          ? `Review & bridge ${formatRealmCount(selectedCount)}`
           : "Open bridge panel & history"}
       </Button>
     </div>
@@ -201,6 +203,8 @@ function RouteComponent() {
   const canShowInventory =
     selectedAsset !== "Starknet" || starknetInventoryReady;
   const bridgeDisabled = selectedAsset === "Starknet" && !canShowInventory;
+  const showTable =
+    canShowInventory && (selectedAsset !== "Ethereum" || !!l1Address);
 
   const bridgePanel = (
     <BridgeSidebar
@@ -261,17 +265,26 @@ function RouteComponent() {
                 onRetry={() => void l2RealmsQuery.refetch()}
               />
             ))}
-          {canShowInventory && (
-            <Suspense
-              fallback={<Skeleton className="h-96 w-full rounded-xl" />}
-            >
-              <BridgeTable table={table} />
-            </Suspense>
+          {showTable && (
+            <BridgeTable
+              table={table}
+              status={
+                selectedAsset !== "Ethereum"
+                  ? "ready"
+                  : l1RealmsQuery.isLoading
+                    ? "loading"
+                    : l1RealmsQuery.isError
+                      ? "error"
+                      : "ready"
+              }
+              emptyMessage={`No Realms in this ${selectedAsset} wallet.`}
+              onRetry={() => void l1RealmsQuery.refetch()}
+            />
           )}
         </div>
         {isDesktop ? (
-          <aside className="bg-card border-border rounded-lg border p-4 xl:sticky xl:top-20">
-            {bridgePanel}
+          <aside className="xl:sticky xl:top-20">
+            <SectionCard title="Bridge">{bridgePanel}</SectionCard>
           </aside>
         ) : null}
       </div>
