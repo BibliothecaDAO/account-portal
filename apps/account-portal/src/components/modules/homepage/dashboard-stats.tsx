@@ -13,7 +13,7 @@ export interface DashboardStatsProps {
   lordsStaked: ReactNode;
 }
 
-/** Holdings overview: Realms and LORDS on each chain plus staked veLORDS. */
+/** Holdings overview: Realms and LORDS on each chain plus LORDS staked. */
 export function DashboardStats({
   realmsL1,
   realmsL2,
@@ -26,7 +26,7 @@ export function DashboardStats({
     { label: "Realms · Starknet", value: realmsL2, icon: <StarknetIcon /> },
     { label: "LORDS · Ethereum", value: lordsL1, icon: <EthereumIcon /> },
     { label: "LORDS · Starknet", value: lordsL2, icon: <StarknetIcon /> },
-    { label: "Staked veLORDS", value: lordsStaked, icon: <LordsIcon /> },
+    { label: "LORDS staked", value: lordsStaked, icon: <LordsIcon /> },
   ];
 
   return (

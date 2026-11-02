@@ -1,6 +1,7 @@
 import { runWithErrorToast } from "@/utils/run-with-error-toast";
 import type { ReactNode } from "react";
 import LordsIcon from "@/components/icons/lords.svg?react";
+import { StarknetWalletButton } from "@/components/layout/starknet-wallet-button";
 import { Button } from "@/components/ui/button";
 import { SectionCard } from "@/components/ui/section-card";
 import {
@@ -32,19 +33,37 @@ export interface PastRealmsClaim {
 export interface RealmsClaimsViewProps {
   claimable: ReactNode;
   isConnected: boolean;
+  canClaim: boolean;
   isSubmitting?: boolean;
   onClaim?: () => void;
+  /** Replaces the claim button while no wallet is connected. */
+  connectAction?: ReactNode;
   pastClaims: PastRealmsClaim[];
+  pastClaimsState?: "ready" | "loading" | "error";
   transactionUrl: (hash: string) => string;
+}
+
+function pastClaimsMessage(
+  state: RealmsClaimsViewProps["pastClaimsState"],
+  isConnected: boolean,
+) {
+  if (state === "loading") return "Loading past claims…";
+  if (state === "error") return "Past claims could not be loaded.";
+  return isConnected
+    ? "No past claims found."
+    : "Connect your Starknet wallet to view past claims.";
 }
 
 /** Presentational Realms LORDS claims page body: claim card, BIP-80 notice and history. */
 export function RealmsClaimsView({
   claimable,
   isConnected,
+  canClaim,
   isSubmitting = false,
   onClaim,
+  connectAction,
   pastClaims,
+  pastClaimsState = "ready",
   transactionUrl,
 }: RealmsClaimsViewProps) {
   return (
@@ -54,13 +73,17 @@ export function RealmsClaimsView({
           title="Claimable LORDS"
           description="Remaining Realms emissions on Starknet."
           footer={
-            <Button
-              onClick={onClaim}
-              className="w-full"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? "Claiming…" : "Claim LORDS"}
-            </Button>
+            isConnected ? (
+              <Button
+                onClick={onClaim}
+                className="w-full"
+                disabled={isSubmitting || !canClaim}
+              >
+                {isSubmitting ? "Claiming…" : "Claim LORDS"}
+              </Button>
+            ) : (
+              connectAction
+            )
           }
         >
           <div className="flex items-center gap-3">
@@ -82,7 +105,7 @@ export function RealmsClaimsView({
               href={BIP_80_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-primary underline-offset-4 hover:underline"
+              className="text-primary underline underline-offset-4"
             >
               BIP-80
             </a>
@@ -92,26 +115,24 @@ export function RealmsClaimsView({
         </SectionCard>
       </div>
 
-      <SectionCard title="Past claims" contentClassName="px-0 sm:px-6">
+      <SectionCard title="Past claims">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Date</TableHead>
               <TableHead className="text-right">Amount (LORDS)</TableHead>
-              <TableHead>Recipient</TableHead>
+              <TableHead className="hidden sm:table-cell">Recipient</TableHead>
               <TableHead>Transaction</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {pastClaims.length === 0 ? (
+            {pastClaimsState !== "ready" || pastClaims.length === 0 ? (
               <TableRow>
                 <TableCell
                   colSpan={4}
                   className="text-muted-foreground py-8 text-center"
                 >
-                  {isConnected
-                    ? "No past claims found."
-                    : "Connect your Starknet wallet to view past claims."}
+                  {pastClaimsMessage(pastClaimsState, isConnected)}
                 </TableCell>
               </TableRow>
             ) : (
@@ -123,13 +144,13 @@ export function RealmsClaimsView({
                   <TableCell className="realm-stat text-right">
                     {formatNumber(Number(formatEther(BigInt(tx.amount))))}
                   </TableCell>
-                  <TableCell className="font-mono text-xs">
+                  <TableCell className="hidden font-mono text-xs sm:table-cell">
                     {shortenAddress(tx.recipient)}
                   </TableCell>
                   <TableCell>
                     <a
                       href={transactionUrl(tx.hash)}
-                      className="text-primary inline-flex items-center gap-1.5 font-mono text-xs underline-offset-4 hover:underline"
+                      className="text-primary inline-flex min-h-6 items-center gap-1.5 font-mono text-xs underline-offset-4 hover:underline"
                       target="_blank"
                       rel="noopener noreferrer"
                     >
@@ -159,9 +180,20 @@ export const ClaimRewards = () => {
     <RealmsClaimsView
       claimable={balance ? formatNumber(Number(formatEther(balance))) : 0}
       isConnected={!!address}
+      canClaim={!!balance && balance !== 0n}
       isSubmitting={isSubmitting}
       onClaim={() => void runWithErrorToast(claimRewards, "Unable to claim rewards")}
+      connectAction={
+        <StarknetWalletButton label="Connect wallet to claim" />
+      }
       pastClaims={pastLordsClaimsQuery.data ?? []}
+      pastClaimsState={
+        pastLordsClaimsQuery.isLoading
+          ? "loading"
+          : pastLordsClaimsQuery.isError
+            ? "error"
+            : "ready"
+      }
       transactionUrl={(hash) => explorer.transaction(hash)}
     />
   );

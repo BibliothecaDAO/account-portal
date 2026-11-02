@@ -58,6 +58,7 @@ const pastClaims = [
 const claimsProps = {
   claimable: "1,284",
   isConnected: true,
+  canClaim: true,
   onClaim: fn(),
   pastClaims,
   transactionUrl: (hash: string) => `https://voyager.online/tx/${hash}`,
@@ -138,8 +139,31 @@ export const ClaimsDisconnected: Story = {
         {...claimsProps}
         claimable={0}
         isConnected={false}
+        canClaim={false}
+        connectAction={<Button className="w-full">Connect wallet to claim</Button>}
         pastClaims={[]}
       />
+    </div>
+  ),
+};
+export const ClaimsNothingToClaim: Story = {
+  render: () => (
+    <div className="flex flex-col gap-6">
+      <RealmsClaimsView {...claimsProps} claimable={0} canClaim={false} />
+    </div>
+  ),
+};
+export const ClaimsHistoryLoading: Story = {
+  render: () => (
+    <div className="flex flex-col gap-6">
+      <RealmsClaimsView {...claimsProps} pastClaims={[]} pastClaimsState="loading" />
+    </div>
+  ),
+};
+export const ClaimsHistoryFailed: Story = {
+  render: () => (
+    <div className="flex flex-col gap-6">
+      <RealmsClaimsView {...claimsProps} pastClaims={[]} pastClaimsState="error" />
     </div>
   ),
 };

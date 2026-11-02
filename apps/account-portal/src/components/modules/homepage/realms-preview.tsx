@@ -61,7 +61,7 @@ export function RealmsPreview({
       ) : tokens.length > 0 ? (
         <div className={GRID}>
           {tokens.slice(0, REALMS_PREVIEW_COUNT).map((realm) => (
-            <RealmCard key={realm.token_id} token={realm} isGrid />
+            <RealmCard key={realm.token_id} token={realm} isGrid borderless />
           ))}
           {overflow > 0 && (
             <Link

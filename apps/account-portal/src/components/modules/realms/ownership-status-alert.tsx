@@ -26,7 +26,7 @@ export function OwnershipStatusAlert({
           {onRetry && (
             <Button
               variant="link"
-              className="h-auto px-1 py-0"
+              className="h-auto min-h-6 px-1 py-0"
               onClick={onRetry}
             >
               Try again
@@ -40,7 +40,7 @@ export function OwnershipStatusAlert({
   if (status === "syncing") {
     return (
       <Alert variant="warning" className={className}>
-        <LoaderCircle className="h-5 w-5 animate-spin" />
+        <LoaderCircle className="h-5 w-5 animate-spin motion-reduce:animate-none" />
         <AlertTitle>Realm inventory is syncing</AlertTitle>
         <AlertDescription>
           Historical ownership is still being indexed. Your Realms will appear
@@ -61,7 +61,7 @@ export function OwnershipStatusAlert({
           {onRetry && (
             <Button
               variant="link"
-              className="h-auto px-1 py-0"
+              className="h-auto min-h-6 px-1 py-0"
               onClick={onRetry}
             >
               Try again
