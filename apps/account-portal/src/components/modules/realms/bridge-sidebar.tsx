@@ -18,6 +18,7 @@ import { Separator } from "@/components/ui/separator";
 import { useBridgeL2Realms } from "@/hooks/bridge/useBridgeL2Realms";
 import {
   isStarknetAccountDeployed,
+  MAX_REALMS_PER_L1_DEPOSIT,
   useWriteDepositRealms,
 } from "@/hooks/bridge/useWriteDepositRealms";
 import useERC721Approval from "@/hooks/token/L1/useERC721Approval";
@@ -91,6 +92,10 @@ const BridgeSidebar: React.FC<BridgeSidebarProps> = ({
     (!!l2AccountDeploymentError ||
       isL2AccountDeploymentLoading ||
       isL2AccountDeployed === false);
+  const exceedsDepositLimit =
+    selectedAsset === "Ethereum" &&
+    selectedRows.length > MAX_REALMS_PER_L1_DEPOSIT;
+  const depositLimitLabel = `Bridge up to ${MAX_REALMS_PER_L1_DEPOSIT} Realms at a time`;
   const showDeployHelp =
     selectedAsset === "Ethereum" && isL2AccountDeployed === false;
 
@@ -163,7 +168,8 @@ const BridgeSidebar: React.FC<BridgeSidebarProps> = ({
               disabled={
                 approveForAllLoading ||
                 isApproveForAllPending ||
-                shouldBlockL1ToL2Bridge
+                shouldBlockL1ToL2Bridge ||
+                exceedsDepositLimit
               }
               className="w-full"
               onClick={onBridge}
@@ -174,9 +180,11 @@ const BridgeSidebar: React.FC<BridgeSidebarProps> = ({
                   ? "Unable to verify Starknet account"
                   : isL2AccountDeployed === false
                     ? "Deploy Starknet account first"
-                    : isApproveForAllPending || approveForAllLoading
-                      ? "Approving"
-                      : `Approve Bridge`}
+                    : exceedsDepositLimit
+                      ? depositLimitLabel
+                      : isApproveForAllPending || approveForAllLoading
+                        ? "Approving"
+                        : `Approve Bridge`}
             </Button>
           ) : (
             <Button
@@ -185,20 +193,23 @@ const BridgeSidebar: React.FC<BridgeSidebarProps> = ({
                 !selectedRows.length ||
                 isDepositPending ||
                 isWithdrawPending ||
-                shouldBlockL1ToL2Bridge
+                shouldBlockL1ToL2Bridge ||
+                exceedsDepositLimit
               }
               className="w-full"
               onClick={onBridge}
             >
               {!selectedRows.length
                 ? "Select Realms"
-                : isL2AccountDeploymentLoading
-                  ? "Checking Starknet account..."
-                  : l2AccountDeploymentError
-                    ? "Unable to verify Starknet account"
-                    : isL2AccountDeployed === false
-                      ? "Deploy Starknet account first"
-                      : `Bridge`}
+                : exceedsDepositLimit
+                  ? depositLimitLabel
+                  : isL2AccountDeploymentLoading
+                    ? "Checking Starknet account..."
+                    : l2AccountDeploymentError
+                      ? "Unable to verify Starknet account"
+                      : isL2AccountDeployed === false
+                        ? "Deploy Starknet account first"
+                        : `Bridge`}
             </Button>
           )}
           {showDeployHelp && (
