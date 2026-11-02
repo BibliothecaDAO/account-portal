@@ -152,7 +152,7 @@ export function Homepage({ address }: { address: `0x${string}` }) {
         realmsL1={
           l1UsersRealmsQuery.isLoading
             ? "…"
-            : l1UsersRealmsQuery.isError
+            : l1UsersRealmsQuery.isError || !l1UsersRealms
               ? "—"
               : l1RealmCount
         }
