@@ -173,7 +173,7 @@ export const BridgeTableReady: Story = {
   name: "Bridge table",
   render: () => <BridgeRealmsTable />,
   play: async ({ canvasElement }) => {
-    const selectAll = within(canvasElement).getByRole("checkbox", {
+    const selectAll = await within(canvasElement).findByRole("checkbox", {
       name: "Select all",
     });
     const target = selectAll.parentElement?.getBoundingClientRect();
