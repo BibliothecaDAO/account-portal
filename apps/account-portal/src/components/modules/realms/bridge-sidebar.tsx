@@ -125,9 +125,17 @@ export function BridgePanelView({
           </>
         ) : null}
         <h2 className="realm-card-title text-balance">
-          {selectedIds.length
-            ? `Bridge ${formatRealmCount(selectedIds.length)} to ${to}`
-            : "Select Realms to bridge"}
+          {selectedIds.length ? (
+            <>
+              Bridge{" "}
+              <span className="font-sans font-semibold">
+                {selectedIds.length}
+              </span>{" "}
+              {selectedIds.length === 1 ? "Realm" : "Realms"} to {to}
+            </>
+          ) : (
+            "Select Realms to bridge"
+          )}
         </h2>
         <div>
           {selectedIds.length ? (

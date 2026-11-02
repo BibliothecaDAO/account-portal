@@ -160,6 +160,8 @@ function RouteComponent() {
     userBalance,
     userSharePercent,
     userLocked,
+    isTotalSupplyError,
+    isLordsLockedError,
   } = velordsData;
   const sourceAddressUrl = (sender: string) => explorer.contract(sender);
 
@@ -192,7 +194,8 @@ function RouteComponent() {
   );
   const apyDisplay = knownOrUnknown(
     trailingApyPercent,
-    !rewardsSeriesQuery.isError &&
+    !isTotalSupplyError &&
+      !rewardsSeriesQuery.isError &&
       (rewardsSeriesQuery.isLoading || totalSupplyRaw === undefined),
   );
   const tvlDisplay = formatTvlDisplay(tvl, isTVLLoading);
@@ -273,12 +276,12 @@ function RouteComponent() {
         <MetricCard
           compact
           label="Voting power"
-          value={totalSupply ?? <MetricValueSkeleton />}
+          value={totalSupply ?? (isTotalSupplyError ? UNKNOWN_VALUE : <MetricValueSkeleton />)}
         />
         <MetricCard
           compact
           label="LORDS locked"
-          value={lordsLocked ?? <MetricValueSkeleton />}
+          value={lordsLocked ?? (isLordsLockedError ? UNKNOWN_VALUE : <MetricValueSkeleton />)}
         />
         <MetricCard compact label="TVL" value={tvlDisplay ?? <MetricValueSkeleton />} />
         <MetricCard

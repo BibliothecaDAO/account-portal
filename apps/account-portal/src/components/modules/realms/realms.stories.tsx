@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { SectionCard } from "@/components/ui/section-card";
 import { getRealmBridgeTableOptions } from "@/routes/-realms.bridge-table";
 import { HandCoins } from "lucide-react";
-import { fn } from "storybook/test";
+import { expect, fn, within } from "storybook/test";
 
 import { getBridgeButtonState } from "./bridge-action";
 import { BridgeDirection } from "./bridge-direction";
@@ -172,6 +172,13 @@ function BridgeRealmsTable({
 export const BridgeTableReady: Story = {
   name: "Bridge table",
   render: () => <BridgeRealmsTable />,
+  play: async ({ canvasElement }) => {
+    const selectAll = within(canvasElement).getByRole("checkbox", {
+      name: "Select all",
+    });
+    const target = selectAll.parentElement?.getBoundingClientRect();
+    await expect(Math.min(target?.width ?? 0, target?.height ?? 0)).toBeGreaterThanOrEqual(24);
+  },
 };
 export const BridgeTableLoading: Story = {
   name: "Bridge table · loading",
@@ -290,7 +297,7 @@ export const ClaimsDisconnected: Story = {
     <div className="flex flex-col gap-6">
       <RealmsClaimsView
         {...claimsProps}
-        claimable={0}
+        claimable="—"
         isConnected={false}
         canClaim={false}
         connectAction={<Button className="w-full">Connect wallet to claim</Button>}

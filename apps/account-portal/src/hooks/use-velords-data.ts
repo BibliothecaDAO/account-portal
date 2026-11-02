@@ -24,7 +24,7 @@ export const useVelordsData = () => {
   const { address: userAddress } = useAccount();
 
   // Get veLORDS total supply
-  const { data: totalSupply } = useReadContract({
+  const { data: totalSupply, isError: isTotalSupplyError } = useReadContract({
     abi: VeLords,
     functionName: "total_supply",
     address: StakingAddresses.velords[SUPPORTED_L2_CHAIN_ID] as `0x${string}`,
@@ -104,6 +104,10 @@ export const useVelordsData = () => {
       lordsLockedRaw !== undefined
         ? formatTokenAmountDisplay(lordsLockedRaw, { maximumFractionDigits: 0 })
         : undefined,
+
+    // A failed read has no value to wait for
+    isTotalSupplyError,
+    isLordsLockedError: isLordsInVelordsError,
 
     // TVL data
     tvl,

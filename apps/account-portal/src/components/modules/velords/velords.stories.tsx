@@ -4,7 +4,11 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { MetricCard } from "@/components/ui/metric-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { computeTvlUsd, formatTvlDisplay } from "@/lib/velords-utils";
+import {
+  computeTvlUsd,
+  formatTvlDisplay,
+  UNKNOWN_VALUE,
+} from "@/lib/velords-utils";
 import { Copy, Link2, Plus, Unlock } from "lucide-react";
 import { parseEther } from "viem";
 import { fn } from "storybook/test";
@@ -76,24 +80,27 @@ const position = {
 
 function Stats({
   loading = false,
+  readFailed = false,
   tvl = "$642,118",
 }: {
   loading?: boolean;
+  readFailed?: boolean;
   tvl?: string;
 }) {
   const v = (value: string) => (loading ? <MetricValueSkeleton /> : value);
+  const read = (value: string) => v(readFailed ? UNKNOWN_VALUE : value);
   return (
     <VelordsStats>
-      <MetricCard compact label="Voting power" value={v("13,600,000")} />
-      <MetricCard compact label="LORDS locked" value={v("21,400,000")} />
+      <MetricCard compact label="Voting power" value={read("13,600,000")} />
+      <MetricCard compact label="LORDS locked" value={read("21,400,000")} />
       <MetricCard compact label="TVL" value={v(tvl)} />
       <MetricCard compact label="Rewards · 7d (LORDS)" value={v("48,210")} />
       <MetricCard compact label="Rewards · 30d (LORDS)" value={v("201,884")} />
       <MetricCard
         compact
         label="Trailing APY · 4w"
-        value={v("18.42%")}
-        valueClassName="text-trade-up"
+        value={read("18.42%")}
+        valueClassName={readFailed ? undefined : "text-trade-up"}
       />
     </VelordsStats>
   );
@@ -171,6 +178,9 @@ type Story = StoryObj<typeof meta>;
 
 export const Metrics: Story = { render: () => <Stats /> };
 export const MetricsLoading: Story = { render: () => <Stats loading /> };
+export const MetricsReadFailed: Story = {
+  render: () => <Stats readFailed tvl={UNKNOWN_VALUE} />,
+};
 
 export const Position: Story = {
   render: () => (

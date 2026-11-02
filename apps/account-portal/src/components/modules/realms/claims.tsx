@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/table";
 import { useL2RealmsClaims } from "@/hooks/use-l2-realms-claims";
 import { getRealmsLordsClaimsQueryOptions } from "@/lib/getRealmsLordsClaims";
+import { UNKNOWN_VALUE } from "@/lib/velords-utils";
 import { formatNumber, shortenAddress } from "@/utils/utils";
 import { useAccount, useExplorer } from "@starknet-start/react";
 import { useQuery } from "@tanstack/react-query";
@@ -178,7 +179,13 @@ export const ClaimRewards = () => {
 
   return (
     <RealmsClaimsView
-      claimable={balance ? formatNumber(Number(formatEther(balance))) : 0}
+      claimable={
+        !address
+          ? UNKNOWN_VALUE
+          : balance
+            ? formatNumber(Number(formatEther(balance)))
+            : 0
+      }
       isConnected={!!address}
       canClaim={!!balance && balance !== 0n}
       isSubmitting={isSubmitting}
