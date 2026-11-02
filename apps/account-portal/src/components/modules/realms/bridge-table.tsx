@@ -22,15 +22,16 @@ export const columns: ColumnDef<BridgeRealm>[] = [
   {
     id: "select",
     header: ({ table }) => (
-      <Checkbox
-        className="ml-1"
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")
-        }
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-      />
+      <label className="flex size-6 items-center justify-center">
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && "indeterminate")
+          }
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      </label>
     ),
     cell: ({ row }) => (
       <Checkbox

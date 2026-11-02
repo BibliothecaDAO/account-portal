@@ -98,13 +98,13 @@ export function ProposalVoteDialog({
           <RadioGroup
             value={selectedChoice?.toString()}
             onValueChange={(value) => onChoiceChange?.(Number(value) as Choice)}
-            className="grid grid-cols-3 gap-2 sm:gap-4"
+            className="grid grid-cols-1 gap-1 sm:grid-cols-3 sm:gap-4"
           >
             <div className="flex items-center space-x-2">
               <RadioGroupItem
                 value={Choice.For.toString()}
                 id="vote-for"
-                className="border-success"
+                className="text-success"
               />
               <Label
                 htmlFor="vote-for"
@@ -118,7 +118,7 @@ export function ProposalVoteDialog({
               <RadioGroupItem
                 value={Choice.Against.toString()}
                 id="vote-against"
-                className="border-destructive"
+                className="text-destructive"
               />
               <Label
                 htmlFor="vote-against"
@@ -132,7 +132,7 @@ export function ProposalVoteDialog({
               <RadioGroupItem
                 value={Choice.Abstain.toString()}
                 id="vote-abstain"
-                className="border-muted-foreground"
+                className="text-muted-foreground"
               />
               <Label
                 htmlFor="vote-abstain"

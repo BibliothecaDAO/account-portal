@@ -90,6 +90,8 @@ export const CollapsedMenuOpen: Story = {
     );
     const bridge = await screen.findByRole("menuitem", { name: "Bridge" });
     await waitFor(() => expect(bridge).toBeVisible());
+    // A modal menu hides the page from screen readers while it keeps focusable controls.
+    await expect(canvasElement).not.toHaveAttribute("aria-hidden");
   },
 };
 export const Disconnected: Story = { args: { connected: false } };

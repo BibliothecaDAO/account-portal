@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { SectionCard } from "@/components/ui/section-card";
 import { Choice } from "@/types/snapshot";
-import { fn } from "storybook/test";
+import { expect, fn, screen, waitFor } from "storybook/test";
 
 import type { ProposalRowData } from "./proposal-list-item";
 import { ProposalArticle, ProposalVotePanel } from "./proposal-detail";
@@ -181,6 +181,28 @@ export const VoteDialog: Story = {
       <ProposalVoteDialog {...voteDialogArgs} />
     </PageContainer>
   ),
+  play: async () => {
+    const radios = await screen.findAllByRole("radio");
+    const close = screen.getByRole("button", { name: "Close" });
+    // The dialog scales in, so measure once it has settled.
+    await waitFor(async () => {
+      const content = close.parentElement?.getBoundingClientRect();
+      for (const target of [...radios, close]) {
+        const { width, height } = target.getBoundingClientRect();
+        await expect(Math.min(width, height)).toBeGreaterThanOrEqual(24);
+      }
+      // Each choice keeps its label clear of the next radio and inside the dialog.
+      for (const [index, radio] of radios.entries()) {
+        const label = radio.parentElement?.querySelector("label");
+        const right = label?.getBoundingClientRect().right ?? 0;
+        await expect(right).toBeLessThanOrEqual((content?.right ?? 0) - 24);
+        const next = radios[index + 1]?.getBoundingClientRect();
+        if (next && next.top < radio.getBoundingClientRect().bottom) {
+          await expect(next.left - right).toBeGreaterThanOrEqual(8);
+        }
+      }
+    });
+  },
 };
 
 export const VoteDialogSubmitting: Story = {

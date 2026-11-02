@@ -70,7 +70,7 @@ export function NavMain({ group }: { group: NavGroup }) {
           if (iconsOnly) {
             return (
               <SidebarMenuItem key={item.title}>
-                <DropdownMenu>
+                <DropdownMenu modal={false}>
                   <DropdownMenuTrigger asChild>
                     <SidebarMenuButton tooltip={item.title} isActive={active}>
                       <item.icon />
