@@ -130,7 +130,7 @@ export function RealmsClaimsView({
               <TableRow>
                 <TableCell
                   colSpan={4}
-                  className="text-muted-foreground py-8 text-center"
+                  className="text-muted-foreground py-8 text-center whitespace-normal"
                 >
                   {pastClaimsMessage(pastClaimsState, isConnected)}
                 </TableCell>

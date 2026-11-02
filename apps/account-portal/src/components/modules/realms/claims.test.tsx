@@ -59,6 +59,13 @@ describe("RealmsClaimsView", () => {
     expect(html).not.toContain("No past claims found.");
   });
 
+  it("lets the history message wrap, so it fits a phone", () => {
+    const html = renderToStaticMarkup(
+      <RealmsClaimsView {...claimsProps} isConnected={false} canClaim={false} />,
+    );
+    expect(html).toMatch(/whitespace-normal[^>]*>Connect your Starknet wallet/);
+  });
+
   it("says a finished, empty history is empty", () => {
     expect(
       renderToStaticMarkup(<RealmsClaimsView {...claimsProps} />),
