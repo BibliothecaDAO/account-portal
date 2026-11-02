@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import type { ReactNode } from "react";
-import { expect, fn, screen, userEvent, within } from "storybook/test";
+import { expect, fn, screen, userEvent, waitFor, within } from "storybook/test";
 
 import * as DelegatesStories from "../modules/governance/delegates.stories";
 import * as ProposalsStories from "../modules/governance/proposals.stories";
@@ -88,9 +88,8 @@ export const CollapsedMenuOpen: Story = {
     await userEvent.click(
       await within(canvasElement).findByRole("button", { name: "Realms" }),
     );
-    await expect(
-      await screen.findByRole("menuitem", { name: "Bridge" }),
-    ).toBeVisible();
+    const bridge = await screen.findByRole("menuitem", { name: "Bridge" });
+    await waitFor(() => expect(bridge).toBeVisible());
   },
 };
 export const Disconnected: Story = { args: { connected: false } };
