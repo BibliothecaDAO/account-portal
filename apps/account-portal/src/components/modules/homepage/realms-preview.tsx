@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "@tanstack/react-router";
 import { Gavel, Plus } from "lucide-react";
 
-/** Max realm cards shown on the dashboard before "View all". */
+/** Max Realm cards shown on the dashboard before "View all". */
 export const REALMS_PREVIEW_COUNT = 5;
 
 const GRID = "grid grid-cols-2 gap-3 sm:gap-4 @lg:grid-cols-3 @4xl:grid-cols-6";
