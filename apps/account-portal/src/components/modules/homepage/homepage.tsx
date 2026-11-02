@@ -9,7 +9,7 @@ import { getDelegateByIDQueryOptions } from "@/lib/getDelegates";
 import { getL1UsersRealmsQueryOptions } from "@/lib/getL1Realms";
 import { getRealmInventoryQueryOptions } from "@/lib/realms/get-realm-inventory";
 import { getRealmInventoryViewState } from "@/lib/realms/inventory-ui";
-import { knownOrUnknown } from "@/lib/velords-utils";
+import { knownOrUnknown, UNKNOWN_VALUE } from "@/lib/velords-utils";
 import {
   formatAddress,
   formatNumber,
@@ -41,9 +41,12 @@ import {
 import { ProposalListSkeleton } from "./proposal-list-skeleton";
 import { RealmsPreview } from "./realms-preview";
 
-/** "…" while a balance loads and "—" once it has none, so a read that is missing or failed never shows as 0. */
-function holdingFigure(value: string | undefined, isLoading: boolean) {
-  return knownOrUnknown(value, isLoading) ?? "…";
+/**
+ * "—" for a failed read, even with an earlier balance cached, "…" while a balance loads and "—" once it has none, so a
+ * read that is missing or failed never shows as 0 or as an earlier figure.
+ */
+function holdingFigure(value: string | undefined, isLoading: boolean, isError: boolean) {
+  return isError ? UNKNOWN_VALUE : (knownOrUnknown(value, isLoading) ?? "…");
 }
 
 export function Homepage({ address }: { address: `0x${string}` }) {
@@ -81,12 +84,20 @@ export function Homepage({ address }: { address: `0x${string}` }) {
   );
   const currentDelegate = currentDelegateQuery.data;
 
-  const { data: starknetBalance, isLoading: isStarknetBalanceLoading } = useBalance({
+  const {
+    data: starknetBalance,
+    isLoading: isStarknetBalanceLoading,
+    isError: isStarknetBalanceError,
+  } = useBalance({
     address,
     token: LORDS[SUPPORTED_L2_CHAIN_ID]?.address as Address,
     watch: true,
   });
-  const { data: l1Balance, isLoading: isL1BalanceLoading } = useL1ReadContract({
+  const {
+    data: l1Balance,
+    isLoading: isL1BalanceLoading,
+    isError: isL1BalanceError,
+  } = useL1ReadContract({
     abi: erc20Abi,
     address: LORDS[SUPPORTED_L1_CHAIN_ID]?.address as `0x${string}`,
     chainId: Number(SUPPORTED_L1_CHAIN_ID),
@@ -100,7 +111,11 @@ export function Homepage({ address }: { address: `0x${string}` }) {
   const { claimable: l2RealmsClaimable, calls: l2RealmsClaimCall } =
     useL2RealmsClaims();
 
-  const { data: ownerLordsLock, isLoading: isLockLoading } = useReadContract({
+  const {
+    data: ownerLordsLock,
+    isLoading: isLockLoading,
+    isError: isLockError,
+  } = useReadContract({
     address: StakingAddresses.velords[SUPPORTED_L2_CHAIN_ID] as Address,
     abi: VeLords,
     functionName: "get_lock_for",
@@ -168,15 +183,18 @@ export function Homepage({ address }: { address: `0x${string}` }) {
             ? undefined
             : formatNumber(Number(formatEther(l1Balance))),
           isL1BalanceLoading,
+          isL1BalanceError,
         )}
         lordsL2={holdingFigure(
           starknetBalance && formatNumber(Number(starknetBalance.formatted)),
           isStarknetBalanceLoading,
+          isStarknetBalanceError,
         )}
         lordsStaked={holdingFigure(
           ownerLordsLock &&
             formatNumber(Number(formatEther(BigInt(ownerLordsLock.amount)))),
           isLockLoading,
+          isLockError,
         )}
       />
 

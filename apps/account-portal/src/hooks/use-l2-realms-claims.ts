@@ -1,5 +1,5 @@
 import type { BlockNumber, Call } from "starknet";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { RealmsABI } from "@/abi/L2/Realms";
 import { toClaimRead } from "@/lib/claim-read";
 import { SUPPORTED_L2_CHAIN_ID } from "@/utils/utils";
@@ -23,9 +23,6 @@ export const useL2RealmsClaims = () => {
     SUPPORTED_L2_CHAIN_ID
   ] as `0x${string}`;
 
-  const [previousBalance, setPreviousBalance] = useState<bigint | null>(null);
-  const [easedBalance, setEasedBalance] = useState<bigint | null>(null);
-
   const { data: balance, isError, isLoading } = useReadContract({
     address: l2RealmsAddress,
     abi: RealmsABI,
@@ -35,33 +32,6 @@ export const useL2RealmsClaims = () => {
     args: l2Address ? [l2Address] : undefined,
     blockIdentifier: BlockTag.PENDING as BlockNumber,
   });
-
-  useEffect(() => {
-    if (typeof balance === "bigint" && balance !== previousBalance) {
-      const start = previousBalance ?? balance;
-      const end = balance;
-      const duration = 1000;
-      const startTime = Date.now();
-
-      const ease = () => {
-        const now = Date.now();
-        const elapsed = now - startTime;
-        const progress = Math.min(elapsed / duration, 1);
-        const scaledProgress = BigInt(Math.round(progress * 1000));
-        const easedValue = start + ((end - start) * scaledProgress) / 1000n;
-
-        setEasedBalance(easedValue);
-
-        if (progress < 1) {
-          requestAnimationFrame(ease);
-        } else {
-          setPreviousBalance(balance);
-        }
-      };
-
-      ease();
-    }
-  }, [balance, previousBalance]);
 
   const { contract } = useContract({
     abi: RealmsABI,
@@ -91,11 +61,7 @@ export const useL2RealmsClaims = () => {
     return tx;
   }, [sendAsync, toast, balance]);
 
-  const claimable = toClaimRead(
-    typeof balance === "bigint" ? (easedBalance ?? balance) : undefined,
-    isError,
-    isLoading,
-  );
+  const claimable = toClaimRead(balance, isError, isLoading);
 
   return {
     claimable,

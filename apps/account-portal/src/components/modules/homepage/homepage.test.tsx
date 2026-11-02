@@ -7,6 +7,7 @@ interface Read {
   data: unknown;
   isLoading: boolean;
   isError: boolean;
+  isPending?: boolean;
 }
 
 const mocks = vi.hoisted(() => ({
@@ -15,6 +16,9 @@ const mocks = vi.hoisted(() => ({
   l1Balance: {} as Read,
   l2Balance: {} as Read,
   lock: {} as Read,
+  inventory: {} as Read,
+  realmsClaim: {} as Read,
+  veLordsClaim: {} as Read,
 }));
 
 vi.mock("@/components/icons/ethereum.svg?react", () => ({ default: () => null }));
@@ -26,29 +30,31 @@ vi.mock("wagmi", () => ({
     query.enabled ? mocks.l1Balance : disabled,
 }));
 vi.mock("@starknet-start/react", () => ({
+  useAccount: () => ({ address: "0xabc" }),
   useBalance: () => mocks.l2Balance,
-  useReadContract: () => mocks.lock,
+  useContract: () => ({ contract: undefined }),
+  useReadContract: ({ functionName }: { functionName: string }) =>
+    functionName === "get_reward_balance_for" ? mocks.realmsClaim : mocks.lock,
   useSendTransaction: () => ({ sendAsync: vi.fn(), isPending: false }),
 }));
+vi.mock("@/hooks/useSimulateTransactions", () => ({
+  useSimulateTransactions: () => mocks.veLordsClaim,
+}));
 vi.mock("@tanstack/react-query", () => ({
-  useQuery: (options?: { l1Realms: true; address?: string }) =>
+  useQuery: (options?: { l1Realms?: true; inventory?: true; address?: string }) =>
     options?.l1Realms
       ? options.address
         ? mocks.l1Realms
         : disabled
-      : { data: undefined, isLoading: false, isPending: false, isError: false },
+      : options?.inventory
+        ? mocks.inventory
+        : { data: undefined, isLoading: false, isPending: false, isError: false },
 }));
 vi.mock("@tanstack/react-router", () => ({
   Link: ({ children }: { children: React.ReactNode }) => <a>{children}</a>,
 }));
 vi.mock("@/hooks/governance/use-current-delegate", () => ({
   useCurrentDelegate: () => ({ data: undefined }),
-}));
-vi.mock("@/hooks/use-l2-realms-claims", () => ({
-  useL2RealmsClaims: () => ({ claimable: { status: "unknown" }, calls: [] }),
-}));
-vi.mock("@/hooks/use-velords-claims", () => ({
-  default: () => ({ lordsClaimable: { status: "unknown" }, claimCall: undefined }),
 }));
 vi.mock("@/lib/getDelegates", () => ({ getDelegateByIDQueryOptions: vi.fn() }));
 vi.mock("@/lib/getL1Realms", () => ({
@@ -58,7 +64,7 @@ vi.mock("@/lib/getL1Realms", () => ({
   }),
 }));
 vi.mock("@/lib/realms/get-realm-inventory", () => ({
-  getRealmInventoryQueryOptions: vi.fn(),
+  getRealmInventoryQueryOptions: () => ({ inventory: true }),
 }));
 vi.mock("../governance/proposal-list", () => ({ ProposalList: () => null }));
 vi.mock("./realms-preview", () => ({ RealmsPreview: () => null }));
@@ -69,6 +75,15 @@ const failed: Read = { data: undefined, isLoading: false, isError: true };
 const loading: Read = { data: undefined, isLoading: true, isError: false };
 // What a query disabled for want of an address returns: not loading, not failed, no data.
 const disabled = vi.hoisted(() => ({ data: undefined, isLoading: false, isError: false }));
+const inventory = (count: number): Read => ({
+  data: { status: "ready", tokens: Array.from({ length: count }, (_, id) => ({ id })) },
+  isLoading: false,
+  isPending: false,
+  isError: false,
+});
+const simulation = (amount: bigint) => [
+  { transaction_trace: { execute_invocation: { result: ["0x1", "0x2", `0x${amount.toString(16)}`, "0x0"] } } },
+];
 const realms = (count: number) =>
   read({
     collections: count
@@ -76,8 +91,9 @@ const realms = (count: number) =>
       : [],
   });
 
+const render = () => renderToStaticMarkup(<Homepage address="0xabc" />);
 const figure = (label: string) => {
-  const html = renderToStaticMarkup(<Homepage address="0xabc" />);
+  const html = render();
   const start = html.indexOf(`>${label}</p>`);
   expect(start).toBeGreaterThan(-1);
   return /realm-stat[^>]*>([^<]*)</.exec(html.slice(start))?.[1];
@@ -111,6 +127,9 @@ describe("Homepage holdings", () => {
     mocks.l1Balance = read(stats[0].some);
     mocks.l2Balance = read(stats[1].some);
     mocks.lock = read(stats[2].some);
+    mocks.inventory = inventory(2);
+    mocks.realmsClaim = read(0n);
+    mocks.veLordsClaim = read(simulation(0n));
   });
 
   describe.each(stats)("$label", ({ label, set, zero, some }) => {
@@ -138,6 +157,18 @@ describe("Homepage holdings", () => {
       set(read(some));
       expect(figure(label)).toBe("12,400.5");
     });
+
+    it.each([
+      ["0", zero],
+      ["12,400.5", some],
+    ] as const)("shows — when a refetch fails after reading %s, and the figure once a read succeeds", (shown, data) => {
+      set(read(data));
+      expect(figure(label)).toBe(shown);
+      set({ data, isLoading: false, isError: true });
+      expect(figure(label)).toBe("—");
+      set(read(data));
+      expect(figure(label)).toBe(shown);
+    });
   });
 
   describe("Realms · Ethereum", () => {
@@ -164,6 +195,93 @@ describe("Homepage holdings", () => {
 
     it("states the count it read", () => {
       expect(figure("Realms · Ethereum")).toBe("3");
+    });
+
+    it.each([0, 3])("shows — when a refetch fails after reading %s", (count) => {
+      mocks.l1Realms = realms(count);
+      expect(figure("Realms · Ethereum")).toBe(String(count));
+      mocks.l1Realms = { ...realms(count), isError: true };
+      expect(figure("Realms · Ethereum")).toBe("—");
+      mocks.l1Realms = realms(count);
+      expect(figure("Realms · Ethereum")).toBe(String(count));
+    });
+  });
+
+  describe("Realms · Starknet", () => {
+    it.each([0, 2])("shows — when a refetch fails after reading %s", (count) => {
+      mocks.inventory = inventory(count);
+      expect(figure("Realms · Starknet")).toBe(String(count));
+      mocks.inventory = { ...inventory(count), isError: true };
+      expect(figure("Realms · Starknet")).toBe("—");
+      mocks.inventory = inventory(count);
+      expect(figure("Realms · Starknet")).toBe(String(count));
+    });
+  });
+});
+
+describe("Homepage claims", () => {
+  /** The text a claim row shows after its title: an amount with Claim, "Nothing to claim", "Could not be read" or a mark. */
+  const row = (html: string, title: string) => {
+    const start = html.indexOf(`>${title}</span>`);
+    expect(start).toBeGreaterThan(-1);
+    const end = html.indexOf("realm-subtle-panel", start);
+    return html.slice(start, end === -1 ? undefined : end);
+  };
+  const claims = [
+    {
+      title: "Realms emissions",
+      set: (r: Read) => (mocks.realmsClaim = r),
+      cached: (amount: bigint) => amount,
+    },
+    {
+      title: "veLORDS rewards",
+      set: (r: Read) => (mocks.veLordsClaim = r),
+      cached: simulation,
+    },
+  ] as const;
+
+  beforeEach(() => {
+    mocks.l1Address = "0x1";
+    mocks.l1Realms = realms(3);
+    mocks.l1Balance = read(stats[0].some);
+    mocks.l2Balance = read(stats[1].some);
+    mocks.lock = read(stats[2].some);
+    mocks.inventory = inventory(2);
+    mocks.realmsClaim = read(0n);
+    mocks.veLordsClaim = read(simulation(0n));
+  });
+
+  describe.each(claims)("$title", ({ title, set, cached }) => {
+    it("says a refetch that fails after reading 0 could not be read, not that nothing is ready", () => {
+      set(read(cached(0n)));
+      expect(row(render(), title)).toContain("Nothing to claim");
+
+      set({ data: cached(0n), isLoading: false, isError: true });
+      const html = render();
+      expect(row(html, title)).toContain("Could not be read");
+      expect(row(html, title)).not.toContain("Nothing to claim");
+      expect(html).toContain("A claimable balance could not be read. Reload the page to try again.");
+      expect(html).not.toContain("No LORDS to collect right now.");
+
+      set(read(cached(0n)));
+      expect(row(render(), title)).toContain("Nothing to claim");
+    });
+
+    it("withdraws Claim when a refetch fails after reading an amount", () => {
+      const amount = 1_284n * 10n ** 18n;
+      set(read(cached(amount)));
+      expect(row(render(), title)).toContain("1,284 LORDS");
+      expect(row(render(), title)).toContain(">Claim<");
+
+      set({ data: cached(amount), isLoading: false, isError: true });
+      const html = render();
+      expect(row(html, title)).toContain("Could not be read");
+      expect(row(html, title)).not.toContain("1,284");
+      expect(row(html, title)).not.toContain(">Claim<");
+      expect(html).toContain("A claimable balance could not be read. Reload the page to try again.");
+
+      set(read(cached(amount)));
+      expect(row(render(), title)).toContain(">Claim<");
     });
   });
 });

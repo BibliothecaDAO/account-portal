@@ -24,8 +24,12 @@ describe("toClaimRead", () => {
     expect(toClaimRead(undefined, true, false)).toEqual({ status: "failed" });
   });
 
-  it("keeps the latest value when a later refetch fails or reloads", () => {
-    expect(toClaimRead(5n, true, false)).toEqual({ status: "read", amount: 5n });
+  it("calls a refetch that fails a failed read, whatever it read before", () => {
+    expect(toClaimRead(0n, true, false)).toEqual({ status: "failed" });
+    expect(toClaimRead(5n, true, false)).toEqual({ status: "failed" });
+  });
+
+  it("keeps the value read while a later refetch reloads", () => {
     expect(toClaimRead(5n, false, true)).toEqual({ status: "read", amount: 5n });
   });
 });
@@ -52,6 +56,13 @@ describe("simulatedClaimRead", () => {
 
   it("calls a failed simulation a failed read, not 0", () => {
     expect(simulatedClaimRead(undefined, true, false)).toEqual({ status: "failed" });
+  });
+
+  it("calls a simulation that fails a failed read, whatever it returned before", () => {
+    expect(simulatedClaimRead(simulation(["0x1", "0x2", "0x0", "0x0"]), true, false)).toEqual({ status: "failed" });
+    expect(simulatedClaimRead(simulation(["0x1", "0x2", "0x10f0cf064dd59200000", "0x0"]), true, false)).toEqual({
+      status: "failed",
+    });
   });
 
   it("calls a simulation with no result, such as a revert, a failed read", () => {

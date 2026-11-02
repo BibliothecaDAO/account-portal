@@ -71,6 +71,23 @@ describe("ClaimRewards", () => {
     expect(claimButton(html)).toBeUndefined();
   });
 
+  it.each([
+    ["0", 0n],
+    ["1,284", 1_284n * 10n ** 18n],
+  ])("says a refetch that fails after reading %s could not be read, and offers no claim", (figure, data) => {
+    mocks.read = { data, isError: false, isLoading: false };
+    expect(claimable(render())).toBe(figure);
+
+    mocks.read = { data, isError: true, isLoading: false };
+    const html = render();
+    expect(claimable(html)).toBe("—");
+    expect(html).toContain("Your claimable LORDS could not be read. Reload the page to try again.");
+    expect(claimButton(html)).toBeUndefined();
+
+    mocks.read = { data, isError: false, isLoading: false };
+    expect(claimable(render())).toBe(figure);
+  });
+
   it("offers the claim for a balance it read", () => {
     mocks.read = { data: 1_284n * 10n ** 18n, isError: false, isLoading: false };
     const html = render();
