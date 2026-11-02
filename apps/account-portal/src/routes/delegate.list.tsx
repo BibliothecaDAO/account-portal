@@ -14,7 +14,7 @@ import { Search } from "lucide-react";
 export const Route = createFileRoute("/delegate/list")({
   component: RouteComponent,
   loader: async ({ context }) => {
-    await context.queryClient.ensureQueryData(
+    await context.queryClient.prefetchQuery(
       getDelegatesQueryOptions({
         limit: 200,
         cursor: 0,

@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import { PageContainer } from "@/components/layout/page-container";
 import { PageHeader } from "@/components/layout/page-header";
 import { ProposalList } from "@/components/modules/governance/proposal-list";
@@ -18,7 +17,7 @@ import { SnapshotSpaceAddresses } from "@realms-world/constants";
 
 export const Route = createFileRoute("/proposal/list")({
   loader: async ({ context }) => {
-    await context.queryClient.ensureQueryData(
+    await context.queryClient.prefetchQuery(
       getProposalsQueryOptions({
         spaceIds: [SnapshotSpaceAddresses[SUPPORTED_L2_CHAIN_ID] as string],
         limit: 20,
@@ -51,27 +50,21 @@ function RouteComponent() {
         title="Proposals"
         description="Realms DAO proposals on Snapshot. Vote on open proposals or review past outcomes."
         actions={
-          <Button asChild variant="outline" size="sm">
-            <Link to="/delegate/list">Delegates</Link>
-          </Button>
+          <>
+            <SnapshotLink />
+            <Button asChild variant="outline" size="sm">
+              <Link to="/delegate/list">Delegates</Link>
+            </Button>
+          </>
         }
       />
-      <div className="grid grid-cols-1 items-start gap-6 @3xl:grid-cols-3">
-        <SectionCard
-          title="All proposals"
-          className="@3xl:col-span-2"
-          contentClassName="py-0"
-        >
-          <Suspense fallback={<ProposalListSkeleton />}>
-            <ProposalList limit={20} delegateId={currentDelegate?.user} />
-          </Suspense>
-        </SectionCard>
-        <aside className="@3xl:sticky @3xl:top-20">
-          <SectionCard title="View on">
-            <SnapshotLink />
-          </SectionCard>
-        </aside>
-      </div>
+      <SectionCard title="All proposals" contentClassName="py-0">
+        <ProposalList
+          limit={20}
+          delegateId={currentDelegate?.user}
+          loading={<ProposalListSkeleton />}
+        />
+      </SectionCard>
     </PageContainer>
   );
 }

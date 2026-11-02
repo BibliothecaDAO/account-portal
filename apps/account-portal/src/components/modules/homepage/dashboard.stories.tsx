@@ -4,18 +4,19 @@ import { PageContainer } from "@/components/layout/page-container";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { SectionCard } from "@/components/ui/section-card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Gavel } from "lucide-react";
 import { fn } from "storybook/test";
 
 import { ClaimsPanel } from "./claims-panel";
 import { DashboardStats, DashboardStatsSkeleton } from "./dashboard-stats";
 import { DelegateSummaryView } from "../governance/delegate-row";
+import { ProposalListEmpty, ProposalListFailed } from "../governance/proposal-list";
 import {
   CurrentDelegatePanel,
   CurrentDelegateSkeleton,
   NoDelegateCard,
 } from "./governance-panel";
-import { HomepageSkeleton } from "./homepage-skeleteon";
 import { ProposalListSkeleton } from "./proposal-list-skeleton";
 import { RealmsPreview } from "./realms-preview";
 
@@ -185,6 +186,21 @@ function DashboardPage() {
   );
 }
 
+export const ProposalsEmpty: Story = {
+  render: () => (
+    <SectionCard title="Recent proposals" contentClassName="pt-0">
+      <ProposalListEmpty />
+    </SectionCard>
+  ),
+};
+export const ProposalsFailed: Story = {
+  render: () => (
+    <SectionCard title="Recent proposals" contentClassName="pt-0">
+      <ProposalListFailed onRetry={fn()} />
+    </SectionCard>
+  ),
+};
+
 export const FullPage: Story = {
   name: "Full page",
   parameters: { layout: "fullscreen" },
@@ -197,7 +213,21 @@ export const FullPageLoading: Story = {
   render: () => (
     <PageContainer>
       <PageHeader title="Dashboard" />
-      <HomepageSkeleton />
+      <DashboardStatsSkeleton />
+      <div className="grid grid-cols-1 gap-6 @3xl:grid-cols-2">
+        <ClaimsPanel
+          {...claims}
+          realmsClaimable={<Skeleton className="h-6 w-16" />}
+          veLordsClaimable={<Skeleton className="h-6 w-16" />}
+          canClaimRealms={false}
+          canClaimVeLords={false}
+        />
+        <CurrentDelegateSkeleton />
+      </div>
+      <SectionCard title="Recent proposals" contentClassName="pt-0">
+        <ProposalListSkeleton />
+      </SectionCard>
+      <RealmsPreview viewState="loading" tokens={[]} />
     </PageContainer>
   ),
 };

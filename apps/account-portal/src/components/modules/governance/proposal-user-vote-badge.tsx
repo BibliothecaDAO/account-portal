@@ -3,12 +3,12 @@ import { CheckCircle2, MinusCircle, XCircle } from "lucide-react";
 
 const choices = {
   1: {
-    label: "Yes",
+    label: "For",
     icon: CheckCircle2,
     className: "border-success text-success",
   },
   2: {
-    label: "No",
+    label: "Against",
     icon: XCircle,
     className: "border-destructive text-destructive",
   },

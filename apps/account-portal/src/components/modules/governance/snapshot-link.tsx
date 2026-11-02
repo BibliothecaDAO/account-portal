@@ -1,4 +1,4 @@
-import SnapshotLogo from "@/components/icons/snapshot.svg?react";
+import { Button } from "@/components/ui/button";
 import { ExternalLink } from "lucide-react";
 
 export const SNAPSHOT_SPACE_URL =
@@ -7,14 +7,11 @@ export const SNAPSHOT_SPACE_URL =
 /** Outbound link to the Realms DAO Snapshot space. */
 export function SnapshotLink() {
   return (
-    <a
-      target="_blank"
-      rel="noopener noreferrer"
-      href={SNAPSHOT_SPACE_URL}
-      className="border-border bg-card hover:border-border-strong hover:bg-muted flex items-center justify-between gap-3 rounded-md border px-3 py-2 transition-colors"
-    >
-      <SnapshotLogo className="[&_#snapshot]:fill-foreground h-8 w-32" />
-      <ExternalLink className="text-muted-foreground size-4" />
-    </a>
+    <Button asChild variant="outline" size="sm">
+      <a target="_blank" rel="noopener noreferrer" href={SNAPSHOT_SPACE_URL}>
+        <ExternalLink />
+        Snapshot
+      </a>
+    </Button>
   );
 }

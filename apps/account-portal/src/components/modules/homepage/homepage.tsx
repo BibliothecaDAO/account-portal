@@ -1,5 +1,4 @@
 import type { Address } from "@starknet-start/react";
-import { Suspense } from "react";
 import { VeLords } from "@/abi/L2/VeLords";
 import { Button } from "@/components/ui/button";
 import { SectionCard } from "@/components/ui/section-card";
@@ -21,7 +20,7 @@ import {
   useReadContract,
   useSendTransaction,
 } from "@starknet-start/react";
-import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { num } from "starknet";
 import { formatEther } from "viem";
@@ -44,7 +43,7 @@ import { RealmsPreview } from "./realms-preview";
 export function Homepage({ address }: { address: `0x${string}` }) {
   const { address: l1Address } = useL1Account();
 
-  const l1UsersRealmsQuery = useSuspenseQuery(
+  const l1UsersRealmsQuery = useQuery(
     getL1UsersRealmsQueryOptions({
       address: l1Address,
     }),
@@ -140,7 +139,13 @@ export function Homepage({ address }: { address: `0x${string}` }) {
   return (
     <div className="flex flex-col gap-6">
       <DashboardStats
-        realmsL1={l1RealmCount}
+        realmsL1={
+          l1UsersRealmsQuery.isLoading
+            ? "…"
+            : l1UsersRealmsQuery.isError
+              ? "—"
+              : l1RealmCount
+        }
         realmsL2={
           accountInventoryViewState === "loading"
             ? "…"
@@ -187,9 +192,10 @@ export function Homepage({ address }: { address: `0x${string}` }) {
         }
         contentClassName="pt-0"
       >
-        <Suspense fallback={<ProposalListSkeleton />}>
-          <ProposalList delegateId={currentDelegate?.user} />
-        </Suspense>
+        <ProposalList
+          delegateId={currentDelegate?.user}
+          loading={<ProposalListSkeleton />}
+        />
       </SectionCard>
 
       <RealmsPreview

@@ -37,7 +37,7 @@ export const Route = createFileRoute("/proposal/$id")({
   component: RouteComponent,
   loader: async ({ context, params }) => {
     const { id } = params;
-    return context.queryClient.ensureQueryData(getProposalQueryOptions({ id }));
+    await context.queryClient.prefetchQuery(getProposalQueryOptions({ id }));
   },
 });
 

@@ -71,11 +71,11 @@ export function ProposalVotePanel({
   return (
     <div className="flex flex-col gap-5">
       {votingPower ? (
-        <div className="bg-muted/40 border-border rounded-md border p-3">
+        <div className="flex items-baseline justify-between gap-3">
           <p className="realm-label">Your voting power</p>
-          <p className="realm-stat mt-1 text-xl font-semibold">
+          <p className="realm-stat text-sm font-semibold">
             {votingPower}{" "}
-            <span className="text-muted-foreground text-sm font-normal">
+            <span className="text-muted-foreground font-sans font-normal">
               Realms
             </span>
           </p>

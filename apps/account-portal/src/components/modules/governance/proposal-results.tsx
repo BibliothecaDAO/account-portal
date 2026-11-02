@@ -10,14 +10,14 @@ type ProposalResultScores = Pick<
 const rows = [
   {
     key: "scores_1",
-    label: "Yes",
+    label: "For",
     icon: CheckCircle2,
     text: "text-success",
     bar: "bg-success",
   },
   {
     key: "scores_2",
-    label: "No",
+    label: "Against",
     icon: XCircle,
     text: "text-destructive",
     bar: "bg-destructive",
@@ -31,7 +31,7 @@ const rows = [
   },
 ] as const;
 
-/** Yes / No / Abstain tallies with a share bar per choice. */
+/** For / Against / Abstain tallies with a share bar per choice. */
 export const ProposalResults = ({
   proposal,
 }: {
