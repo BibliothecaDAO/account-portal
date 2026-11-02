@@ -44,7 +44,7 @@ export function useVoteProposal(proposal: Proposal) {
 
   const vote = useCallback(
     async (reason: string) => {
-      if (!contract || !selectedChoice) return null;
+      if (!contract || selectedChoice === null) return null;
       let pinned: { cid: string; provider: string } | null = null;
       if (reason) pinned = await pinToIPFS({ reason });
 
