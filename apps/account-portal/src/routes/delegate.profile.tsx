@@ -5,6 +5,7 @@ import { DelegateProfileForm } from "@/components/modules/governance/delegate-pr
 import { DelegateStats } from "@/components/modules/governance/delegate-stats";
 import { Login } from "@/components/modules/governance/sign-in-with-starknet";
 import { SectionCard } from "@/components/ui/section-card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useStarkDisplayName } from "@/hooks/use-stark-name";
 import {
   createDelegateProfile,
@@ -70,7 +71,9 @@ function RouteComponent() {
         }
       />
       <div className="grid grid-cols-1 items-start gap-6 @3xl:grid-cols-3">
-        {!isLoading && (
+        {isLoading ? (
+          <Skeleton className="h-96 rounded-xl @3xl:col-span-2" />
+        ) : (
           <SectionCard
             className="@3xl:col-span-2"
             title="Profile"
