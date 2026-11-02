@@ -55,6 +55,20 @@ function pastClaimsMessage(
     : "Connect your Starknet wallet to view past claims.";
 }
 
+function TransactionLink({ hash, href }: { hash: string; href: string }) {
+  return (
+    <a
+      href={href}
+      className="text-primary inline-flex min-h-6 items-center gap-1.5 font-mono text-xs underline-offset-4 hover:underline"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      {shortenAddress(hash)}
+      <ExternalLink className="size-3.5" />
+    </a>
+  );
+}
+
 /** Presentational Realms LORDS claims page body: claim card, BIP-80 notice and history. */
 export function RealmsClaimsView({
   claimable,
@@ -122,8 +136,8 @@ export function RealmsClaimsView({
             <TableRow>
               <TableHead>Date</TableHead>
               <TableHead className="text-right">Amount (LORDS)</TableHead>
-              <TableHead className="hidden sm:table-cell">Recipient</TableHead>
-              <TableHead>Transaction</TableHead>
+              <TableHead className="hidden @2xl:table-cell">Recipient</TableHead>
+              <TableHead className="hidden @lg:table-cell">Transaction</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -141,23 +155,18 @@ export function RealmsClaimsView({
                 <TableRow key={tx.hash}>
                   <TableCell className="realm-stat whitespace-nowrap">
                     {tx.timestamp}
+                    <span className="block @lg:hidden">
+                      <TransactionLink hash={tx.hash} href={transactionUrl(tx.hash)} />
+                    </span>
                   </TableCell>
                   <TableCell className="realm-stat text-right">
                     {formatNumber(Number(formatEther(BigInt(tx.amount))))}
                   </TableCell>
-                  <TableCell className="hidden font-mono text-xs sm:table-cell">
+                  <TableCell className="hidden font-mono text-xs @2xl:table-cell">
                     {shortenAddress(tx.recipient)}
                   </TableCell>
-                  <TableCell>
-                    <a
-                      href={transactionUrl(tx.hash)}
-                      className="text-primary inline-flex min-h-6 items-center gap-1.5 font-mono text-xs underline-offset-4 hover:underline"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      {shortenAddress(tx.hash)}
-                      <ExternalLink className="size-3.5" />
-                    </a>
+                  <TableCell className="hidden @lg:table-cell">
+                    <TransactionLink hash={tx.hash} href={transactionUrl(tx.hash)} />
                   </TableCell>
                 </TableRow>
               ))

@@ -5,8 +5,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useDelegateRealms } from "@/hooks/governance/use-delegate-realms";
 import { useStarkDisplayName } from "@/hooks/use-stark-name";
-import { toast } from "@/hooks/use-toast";
+import { useStarknetWallet } from "@/hooks/use-starknet-wallet";
 import { cn, formatNumber, shortenAddress } from "@/utils/utils";
+import { useAccount } from "@starknet-start/react";
+
+import { submitDelegation } from "./submit-delegation";
 
 export interface DelegateRowData {
   user: string;
@@ -77,11 +80,13 @@ export function DelegateRowView({
   delegate,
   name,
   isCurrentDelegate = false,
+  isDelegating = false,
   onDelegate,
 }: {
   delegate: DelegateRowData;
   name?: string;
   isCurrentDelegate?: boolean;
+  isDelegating?: boolean;
   onDelegate?: () => void;
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -137,9 +142,10 @@ export function DelegateRowView({
             size="sm"
             aria-label={`Delegate to ${label}`}
             onClick={onDelegate}
+            disabled={isDelegating}
             className="min-h-11 @[40rem]/delegates:min-h-8"
           >
-            Delegate
+            {isDelegating ? "Delegating…" : "Delegate"}
           </Button>
         )}
       </div>
@@ -167,16 +173,17 @@ export function DelegateRow({
   delegate: DelegateRowData;
   isCurrentDelegate: boolean;
 }) {
-  const { sendAsync: delegateRealms } = useDelegateRealms({
+  const { address } = useAccount();
+  const { requestConnect } = useStarknetWallet();
+  const { sendAsync: delegateRealms, isPending } = useDelegateRealms({
     delegatee: delegate.user,
   });
-  const handleDelegate = async () => {
-    await delegateRealms();
-    toast({
-      title: "Delegation successful",
-      description: "You have successfully delegated your Realms",
+  const handleDelegate = () =>
+    submitDelegation({
+      isConnected: !!address,
+      requestConnect,
+      send: () => delegateRealms(),
     });
-  };
 
   const name = useStarkDisplayName(delegate.user as `0x${string}`);
 
@@ -185,6 +192,7 @@ export function DelegateRow({
       delegate={delegate}
       name={name}
       isCurrentDelegate={isCurrentDelegate}
+      isDelegating={isPending}
       onDelegate={() => void handleDelegate()}
     />
   );

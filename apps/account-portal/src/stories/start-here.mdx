@@ -5,8 +5,8 @@ import { Meta } from "@storybook/addon-docs/blocks";
 # Account portal component workbench
 
 This Storybook renders the account portal's production components with the app's Tailwind styles
-(`src/styles.css`) and local brand fonts. **Dark is the default theme**; use the toolbar to review light
-and the viewport control for mobile.
+(`src/styles.css`) and local brand fonts. **The portal is always dark**; use the viewport control for
+mobile.
 
 - **Foundations** — colour roles, type hierarchy, radius and elevation (shared with the marketplace).
 - **UI** — shadcn primitives (`src/components/ui`).
@@ -17,7 +17,7 @@ and the viewport control for mobile.
 
 Use semantic utilities only: `bg-card`, `text-muted-foreground`, `border-border`, `text-primary`,
 `text-trade-up`… Never `bg-[#…]`, `text-[color:var(--…)]`, one-off `shadow-[…]` or ad-hoc radii.
-Add new roles to `src/styles.css` (`:root`, `.dark` and `@theme inline`) instead.
+Add new roles to `src/styles.css` (`.dark` and `@theme inline`) instead.
 
 ## Commands
 

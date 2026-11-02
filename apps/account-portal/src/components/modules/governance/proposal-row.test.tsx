@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
+import { ProposalArticle } from "./proposal-detail";
 import { ProposalListEmpty, ProposalListFailed } from "./proposal-list";
 import { ProposalRow } from "./proposal-list-item";
 import { ProposalResults } from "./proposal-results";
@@ -30,6 +31,22 @@ describe("ProposalRow", () => {
     expect(html).toContain("2,290 voters");
     expect(html).toContain("3,030 votes");
     expect(html).toContain("79% for");
+  });
+});
+
+describe("proposal titles", () => {
+  it("sets a title in Exo 2 sentence case in the list, never the uppercase title face", () => {
+    const html = renderToStaticMarkup(<ProposalRow proposal={closed} />);
+
+    expect(html).toMatch(/<h3 class="[^"]*font-sans[^"]*normal-case[^"]*">RIP-41</);
+    expect(html).not.toContain("realm-card-title");
+  });
+
+  it("sets it the same way on the proposal's own page", () => {
+    const html = renderToStaticMarkup(<ProposalArticle title="Fund the bridge audit" />);
+
+    expect(html).toMatch(/<h1 class="[^"]*font-sans[^"]*normal-case[^"]*">Fund the bridge audit</);
+    expect(html).not.toContain("realm-page-title");
   });
 });
 

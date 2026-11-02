@@ -205,6 +205,37 @@ export const VoteDialog: Story = {
   },
 };
 
+const renderVoteChoice = (selectedChoice: Choice) => (
+  <PageContainer>
+    {voteButtons}
+    <ProposalVoteDialog {...voteDialogArgs} selectedChoice={selectedChoice} />
+  </PageContainer>
+);
+
+// A chosen radio is one color: its dot and its ring both take the option's own.
+const expectRadioInOneColor = async (name: string) => {
+  const radio = await screen.findByRole("radio", { name, checked: true });
+  const { color, boxShadow } = getComputedStyle(radio);
+  const dot = radio.querySelector("svg");
+  await expect(dot && getComputedStyle(dot).fill).toBe(color);
+  await expect(boxShadow).toContain(color);
+};
+
+export const VoteDialogFor: Story = {
+  render: () => renderVoteChoice(Choice.For),
+  play: () => expectRadioInOneColor("For"),
+};
+
+export const VoteDialogAgainst: Story = {
+  render: () => renderVoteChoice(Choice.Against),
+  play: () => expectRadioInOneColor("Against"),
+};
+
+export const VoteDialogAbstain: Story = {
+  render: () => renderVoteChoice(Choice.Abstain),
+  play: () => expectRadioInOneColor("Abstain"),
+};
+
 export const VoteDialogSubmitting: Story = {
   render: () => (
     <PageContainer>

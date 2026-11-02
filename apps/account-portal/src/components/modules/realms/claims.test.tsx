@@ -23,6 +23,29 @@ const claimButton = (html: string) =>
   /<button[^>]*>(?:(?!<\/button>).)*Claim LORDS<\/button>/.exec(html)?.[0];
 
 describe("RealmsClaimsView", () => {
+  it("moves the transaction link under the date below 512 px, in the same two columns at any amount", () => {
+    const hash = "0x04a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f";
+    const html = renderToStaticMarkup(
+      <RealmsClaimsView
+        {...claimsProps}
+        pastClaims={[
+          {
+            hash,
+            timestamp: "2025-03-02",
+            amount: `${1_234_567n}${"0".repeat(18)}`,
+            recipient: "0x0123",
+          },
+        ]}
+      />,
+    );
+
+    expect(html).toContain('hidden @2xl:table-cell">Recipient');
+    expect(html).toContain('hidden @lg:table-cell">Transaction');
+    expect(html.split(`href="https://explorer.test/${hash}"`).length - 1).toBe(2);
+    expect(html).toMatch(/2025-03-02<span class="block @lg:hidden"><a href="https:\/\/explorer/);
+    expect(html).toMatch(/hidden @lg:table-cell[^>]*"><a href="https:\/\/explorer/);
+  });
+
   it("is live while there is something to claim", () => {
     const html = renderToStaticMarkup(<RealmsClaimsView {...claimsProps} />);
     expect(claimButton(html)).not.toContain('disabled=""');

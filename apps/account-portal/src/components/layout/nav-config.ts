@@ -99,7 +99,6 @@ const labels: Record<string, string> = {
   delegate: "Delegates",
   profile: "Profile",
   proposal: "Proposals",
-  "coming-soon": "Coming soon",
 };
 
 /** Sections with no index route: their crumb links to the section's list page. */

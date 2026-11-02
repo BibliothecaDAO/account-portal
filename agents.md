@@ -68,6 +68,6 @@ Use this file as the operating guide for keeping this repo healthy, maintainable
 - Prefer concrete guidance tied to paths/commands in this repo.
 
 ## Design Tokens and Storybook
-- Tokens live in `apps/account-portal/src/styles.css` (ported from the marketplace `globals.css`; dark is default via `<html class="dark">`). Use semantic utilities only (`bg-card`, `text-muted-foreground`, `border-border`, `text-primary`, `text-trade-up`, `shadow-float`); never `bg-[#…]`, `text-[color:var(--…)]`, one-off `shadow-[…]`/radii. Add new roles to `:root`, `.dark` and `@theme inline`. `src/lib/theme.test.ts` enforces this.
+- Tokens live in `apps/account-portal/src/styles.css` (ported from the marketplace `globals.css`; always dark via `<html class="dark">`; there is no light theme). Use semantic utilities only (`bg-card`, `text-muted-foreground`, `border-border`, `text-primary`, `text-trade-up`, `shadow-float`); never `bg-[#…]`, `text-[color:var(--…)]`, one-off `shadow-[…]`/radii. Add new color roles to `.dark` and `@theme inline`. `src/lib/theme.test.ts` enforces this.
 - Type classes: `.realm-page-title`, `.realm-card-title`, `.realm-group-title`, `.realm-label`, `.realm-stat` (mono numbers), `.realm-kicker`. Page shell: `PageContainer` + `PageHeader`; sections: `SectionCard`; stats: `MetricCard`.
 - Storybook: `pnpm --filter @realms-world/account-portal storybook` (:6006) and `storybook:build`. It uses `.storybook/vite.config.ts` (no TanStack Start/Nitro plugins). Keep dashboard sections presentational (props in, no wallet hooks) so they have fixture stories.

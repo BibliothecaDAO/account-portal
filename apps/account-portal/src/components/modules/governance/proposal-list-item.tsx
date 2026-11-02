@@ -84,7 +84,7 @@ export function ProposalRow({
             {getProposalShortId(proposal.proposal_id)}
           </span>
         </div>
-        <h3 className="realm-card-title group-hover:text-primary line-clamp-2 break-words transition-colors">
+        <h3 className="group-hover:text-primary line-clamp-2 font-sans text-lg leading-6 font-semibold break-words normal-case transition-colors">
           {proposal.metadata?.title ?? `Proposal #${proposal.id}`}
         </h3>
         <div className="text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 text-sm">

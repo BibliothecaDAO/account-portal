@@ -178,6 +178,9 @@ export const BridgeTableReady: Story = {
     });
     const target = selectAll.parentElement?.getBoundingClientRect();
     await expect(Math.min(target?.width ?? 0, target?.height ?? 0)).toBeGreaterThanOrEqual(24);
+    // One Realm of several is chosen, so Select all reads as partly on.
+    await expect(selectAll).toHaveAttribute("data-state", "indeterminate");
+    await expect(selectAll.querySelector(".lucide-minus")).not.toBeNull();
   },
 };
 export const BridgeTableLoading: Story = {
@@ -289,6 +292,20 @@ export const Claims: Story = {
   render: () => (
     <div className="flex flex-col gap-6">
       <RealmsClaimsView {...claimsProps} />
+    </div>
+  ),
+};
+export const ClaimsLargeAmounts: Story = {
+  name: "Claims · large amounts",
+  render: () => (
+    <div className="flex flex-col gap-6">
+      <RealmsClaimsView
+        {...claimsProps}
+        pastClaims={[
+          { ...pastClaims[0], amount: e18(1_234_567) },
+          { ...pastClaims[1], amount: `${12_345_670}${"0".repeat(16)}` },
+        ]}
+      />
     </div>
   ),
 };

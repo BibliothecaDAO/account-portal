@@ -10,7 +10,6 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ComingSoonIndexRouteImport } from './routes/coming-soon.index'
 import { Route as DelegateListRouteImport } from './routes/delegate.list'
 import { Route as DelegateProfileRouteImport } from './routes/delegate.profile'
 import { Route as ProposalIdRouteImport } from './routes/proposal.$id'
@@ -24,11 +23,6 @@ import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ComingSoonIndexRoute = ComingSoonIndexRouteImport.update({
-  id: '/coming-soon/',
-  path: '/coming-soon/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DelegateListRoute = DelegateListRouteImport.update({
@@ -85,7 +79,6 @@ export interface FileRoutesByFullPath {
   '/proposal/list': typeof ProposalListRoute
   '/realms/bridge': typeof RealmsBridgeRoute
   '/realms/claims': typeof RealmsClaimsRoute
-  '/coming-soon/': typeof ComingSoonIndexRoute
   '/realms/': typeof RealmsIndexRoute
   '/velords/': typeof VelordsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -98,7 +91,6 @@ export interface FileRoutesByTo {
   '/proposal/list': typeof ProposalListRoute
   '/realms/bridge': typeof RealmsBridgeRoute
   '/realms/claims': typeof RealmsClaimsRoute
-  '/coming-soon': typeof ComingSoonIndexRoute
   '/realms': typeof RealmsIndexRoute
   '/velords': typeof VelordsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -112,7 +104,6 @@ export interface FileRoutesById {
   '/proposal/list': typeof ProposalListRoute
   '/realms/bridge': typeof RealmsBridgeRoute
   '/realms/claims': typeof RealmsClaimsRoute
-  '/coming-soon/': typeof ComingSoonIndexRoute
   '/realms/': typeof RealmsIndexRoute
   '/velords/': typeof VelordsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -127,7 +118,6 @@ export interface FileRouteTypes {
     | '/proposal/list'
     | '/realms/bridge'
     | '/realms/claims'
-    | '/coming-soon/'
     | '/realms/'
     | '/velords/'
     | '/api/auth/$'
@@ -140,7 +130,6 @@ export interface FileRouteTypes {
     | '/proposal/list'
     | '/realms/bridge'
     | '/realms/claims'
-    | '/coming-soon'
     | '/realms'
     | '/velords'
     | '/api/auth/$'
@@ -153,7 +142,6 @@ export interface FileRouteTypes {
     | '/proposal/list'
     | '/realms/bridge'
     | '/realms/claims'
-    | '/coming-soon/'
     | '/realms/'
     | '/velords/'
     | '/api/auth/$'
@@ -167,7 +155,6 @@ export interface RootRouteChildren {
   ProposalListRoute: typeof ProposalListRoute
   RealmsBridgeRoute: typeof RealmsBridgeRoute
   RealmsClaimsRoute: typeof RealmsClaimsRoute
-  ComingSoonIndexRoute: typeof ComingSoonIndexRoute
   RealmsIndexRoute: typeof RealmsIndexRoute
   VelordsIndexRoute: typeof VelordsIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
@@ -180,13 +167,6 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/coming-soon/': {
-      id: '/coming-soon/'
-      path: '/coming-soon'
-      fullPath: '/coming-soon/'
-      preLoaderRoute: typeof ComingSoonIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/delegate/list': {
@@ -263,7 +243,6 @@ const rootRouteChildren: RootRouteChildren = {
   ProposalListRoute: ProposalListRoute,
   RealmsBridgeRoute: RealmsBridgeRoute,
   RealmsClaimsRoute: RealmsClaimsRoute,
-  ComingSoonIndexRoute: ComingSoonIndexRoute,
   RealmsIndexRoute: RealmsIndexRoute,
   VelordsIndexRoute: VelordsIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,

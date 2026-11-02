@@ -1,12 +1,22 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
-import { DelegateRowView, DelegateSummaryView } from "./delegate-row";
+import { DelegateListActions } from "./delegate-list-actions";
+import { DelegateRow, DelegateRowView, DelegateSummaryView } from "./delegate-row";
+
+const wallet = vi.hoisted(() => ({ isPending: false }));
 
 vi.mock("@starknet-start/react", () => ({
+  useAccount: () => ({ address: "0x1" }),
   useContract: () => ({ contract: undefined }),
-  useSendTransaction: () => ({}),
+  useSendTransaction: () => ({ isPending: wallet.isPending }),
   useStarkName: () => ({}),
+}));
+vi.mock("@/hooks/use-starknet-wallet", () => ({
+  useStarknetWallet: () => ({ requestConnect: vi.fn() }),
+}));
+vi.mock("@/hooks/governance/use-current-delegate", () => ({
+  useCurrentDelegate: () => ({ data: undefined }),
 }));
 
 const user = `0x0${"3a1b2c3d4e5f60718293a4b5c6d7e8f9012345678901234567890abcdef12"}`;
@@ -61,6 +71,30 @@ describe("DelegateRowView", () => {
 
     expect(html).toContain("+3");
     expect(html).not.toMatch(/<button[^>]*>\+3/);
+  });
+
+  it("shows the send in progress and blocks a second one", () => {
+    const html = renderToStaticMarkup(
+      <DelegateRowView delegate={delegate} name="loaf.stark" isDelegating />,
+    );
+
+    expect(html).toContain("Delegating…");
+    expect(html).toMatch(/<button[^>]*disabled=""[^>]*>Delegating…/);
+  });
+
+  it("shows a send the wallet has in progress, on the row and on Delegate to self", () => {
+    const row = () =>
+      renderToStaticMarkup(<DelegateRow delegate={delegate} isCurrentDelegate={false} />);
+    const self = () => renderToStaticMarkup(<DelegateListActions />);
+
+    expect(row()).not.toContain("Delegating…");
+    expect(self()).toContain("Delegate to self");
+
+    wallet.isPending = true;
+    expect(row()).toContain("Delegating…");
+    expect(self()).toContain("Delegating…");
+    expect(self()).not.toContain("Delegate to self");
+    wallet.isPending = false;
   });
 
   it("offers the action, or says this is your delegate", () => {

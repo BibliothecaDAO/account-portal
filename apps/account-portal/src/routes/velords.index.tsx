@@ -25,6 +25,7 @@ import {
   buildVelordsSummary,
   formatTvlDisplay,
   knownOrUnknown,
+  parseVelordsView,
   UNKNOWN_VALUE,
 } from "@/lib/velords-utils";
 import { seo } from "@/utils/seo";
@@ -36,7 +37,6 @@ import { Copy, Link2 } from "lucide-react";
 import { formatUnits } from "viem";
 
 type VelordsPeriod = "3m" | "6m" | "1y";
-type VelordsView = "overview" | "sources" | "locks" | "trends";
 
 const VeLordsRewardsChart = lazy(() =>
   import("@/components/modules/velords/rewards-chart").then((mod) => ({
@@ -63,13 +63,6 @@ function parsePeriod(period: unknown): VelordsPeriod {
   return period === "6m" || period === "1y" ? period : "3m";
 }
 
-function parseView(view: unknown): VelordsView {
-  if (view === "sources") return "sources";
-  if (view === "locks") return "locks";
-  if (view === "trends") return "trends";
-  return "overview";
-}
-
 function periodToStartDate(period: VelordsPeriod): Date {
   const now = Date.now();
   const periods: Record<VelordsPeriod, number> = {
@@ -94,7 +87,7 @@ function formatWeiAmount(
 export const Route = createFileRoute("/velords/")({
   validateSearch: (search: Record<string, unknown>) => ({
     period: parsePeriod(search.period),
-    view: parseView(search.view),
+    view: parseVelordsView(search.view),
     source:
       typeof search.source === "string" && search.source.trim().length > 0
         ? search.source
@@ -213,7 +206,7 @@ function RouteComponent() {
     void navigate({
       search: (prev) => ({
         ...prev,
-        view: parseView(view),
+        view: parseVelordsView(view),
       }),
     });
   };
@@ -333,12 +326,10 @@ function RouteComponent() {
             className="gap-4"
           >
             <TabsList>
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="sources">Sources</TabsTrigger>
-              <TabsTrigger value="locks">Locks</TabsTrigger>
+              <TabsTrigger value="breakdown">Breakdown</TabsTrigger>
               <TabsTrigger value="trends">Trends</TabsTrigger>
             </TabsList>
-            <TabsContent value="overview">
+            <TabsContent value="breakdown">
               <div className="@container">
                 <div className="grid grid-cols-1 gap-6 @3xl:grid-cols-2">
                   <VelordsSourceBreakdown
@@ -352,19 +343,6 @@ function RouteComponent() {
                   />
                 </div>
               </div>
-            </TabsContent>
-            <TabsContent value="sources">
-              <VelordsSourceBreakdown
-                data={rewardsSeriesQuery.data?.sources ?? []}
-                isLoading={rewardsSeriesQuery.isLoading}
-                addressUrl={sourceAddressUrl}
-              />
-            </TabsContent>
-            <TabsContent value="locks">
-              <VelordsLockActivity
-                data={lockActivityQuery.data?.weekly ?? []}
-                isLoading={lockActivityQuery.isLoading}
-              />
             </TabsContent>
             <TabsContent value="trends">
               <Suspense

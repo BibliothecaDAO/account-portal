@@ -44,7 +44,7 @@ export const Default: Story = {
     </Dialog>
   ),
   play: async ({ canvas, userEvent }) => {
-    await userEvent.click(canvas.getByRole("button", { name: "Switch network" }));
+    await userEvent.click(await canvas.findByRole("button", { name: "Switch network" }));
     await expect(await screen.findByRole("dialog")).toBeVisible();
   },
 };

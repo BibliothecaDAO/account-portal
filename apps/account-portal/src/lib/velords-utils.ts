@@ -176,3 +176,10 @@ export function parseOptionalStakeAmount(stakeAmount: string): bigint | undefine
   if (parsedAmount <= 0n) return undefined;
   return parsedAmount;
 }
+
+export type VelordsView = "breakdown" | "trends";
+
+/** Anything but Trends lands on Breakdown, including the old overview, sources and locks links. */
+export function parseVelordsView(view: unknown): VelordsView {
+  return view === "trends" ? "trends" : "breakdown";
+}

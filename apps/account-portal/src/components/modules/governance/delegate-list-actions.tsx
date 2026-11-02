@@ -2,11 +2,13 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useCurrentDelegate } from "@/hooks/governance/use-current-delegate";
 import { useDelegateRealms } from "@/hooks/governance/use-delegate-realms";
+import { useStarknetWallet } from "@/hooks/use-starknet-wallet";
 import { formatAddress } from "@/utils/utils";
 import { useAccount } from "@starknet-start/react";
 import { Shuffle, TrendingDown } from "lucide-react";
 
 import { toDelegateAddress } from "./delegate-order";
+import { submitDelegation } from "./submit-delegation";
 
 export type DelegateSortMethod = "desc" | "random";
 
@@ -14,11 +16,13 @@ export function DelegateListActionsView({
   sortMethod,
   onToggleSort,
   showDelegateToSelf,
+  isDelegatingToSelf = false,
   onDelegateToSelf,
 }: {
   sortMethod: DelegateSortMethod;
   onToggleSort?: () => void;
   showDelegateToSelf: boolean;
+  isDelegatingToSelf?: boolean;
   onDelegateToSelf?: () => void;
 }) {
   return (
@@ -37,8 +41,12 @@ export function DelegateListActionsView({
         )}
       </Button>
       {showDelegateToSelf ? (
-        <Button variant="outline" onClick={onDelegateToSelf}>
-          Delegate to self
+        <Button
+          variant="outline"
+          onClick={onDelegateToSelf}
+          disabled={isDelegatingToSelf}
+        >
+          {isDelegatingToSelf ? "Delegating…" : "Delegate to self"}
         </Button>
       ) : null}
     </>
@@ -53,7 +61,8 @@ export function DelegateListActions({
   onSortChange,
 }: DelegateListActionsProps) {
   const { address } = useAccount();
-  const { sendAsync: delegateRealms } = useDelegateRealms({
+  const { requestConnect } = useStarknetWallet();
+  const { sendAsync: delegateRealms, isPending } = useDelegateRealms({
     delegatee: address,
   });
   const { data: currentDelegate } = useCurrentDelegate();
@@ -77,7 +86,14 @@ export function DelegateListActions({
       showDelegateToSelf={
         !!address && toDelegateAddress(currentDelegate) !== formatAddress(address)
       }
-      onDelegateToSelf={() => void delegateRealms()}
+      isDelegatingToSelf={isPending}
+      onDelegateToSelf={() =>
+        void submitDelegation({
+          isConnected: !!address,
+          requestConnect,
+          send: () => delegateRealms(),
+        })
+      }
     />
   );
 }

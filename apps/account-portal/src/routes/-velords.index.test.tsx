@@ -12,7 +12,7 @@ vi.mock("@tanstack/react-router", () => ({
     ...options,
     options,
     useNavigate: () => vi.fn(),
-    useSearch: () => ({ period: "3m", view: "overview" }),
+    useSearch: () => ({ period: "3m", view: "breakdown" }),
   }),
   Link: ({ children }: { children: React.ReactNode }) => <a>{children}</a>,
 }));
@@ -61,6 +61,42 @@ function metrics() {
 }
 
 const skeletons = (html: string) => html.split('data-slot="skeleton"').length - 1;
+
+const { validateSearch } = (
+  Route as unknown as {
+    options: {
+      validateSearch: (search: Record<string, unknown>) => { view: string };
+    };
+  }
+).options;
+
+describe("veLORDS views", () => {
+  beforeEach(() => {
+    mocks.velordsData = { isTVLLoading: true };
+  });
+
+  it.each(["overview", "sources", "locks", "breakdown", "nonsense", undefined])(
+    "lands ?view=%s on Breakdown",
+    (view) => {
+      expect(validateSearch({ view }).view).toBe("breakdown");
+    },
+  );
+
+  it("keeps Trends", () => {
+    expect(validateSearch({ view: "trends" }).view).toBe("trends");
+  });
+
+  it("offers Breakdown and Trends, with Breakdown holding sources and locks", () => {
+    const Page = (Route as unknown as { options: { component: React.FC } }).options
+      .component;
+    const html = renderToStaticMarkup(<Page />);
+    const tabs = [...html.matchAll(/role="tab"[^>]*>([^<]+)</g)].map((m) => m[1]);
+
+    expect(tabs).toEqual(["Breakdown", "Trends"]);
+    expect(html).toContain("Reward sources");
+    expect(html).toContain("Lock activity");
+  });
+});
 
 describe("veLORDS metrics", () => {
   beforeEach(() => {

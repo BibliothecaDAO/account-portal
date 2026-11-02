@@ -7,17 +7,28 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   computeTvlUsd,
   formatTvlDisplay,
+  parseVelordsView,
   UNKNOWN_VALUE,
 } from "@/lib/velords-utils";
+import type { VelordsView } from "@/lib/velords-utils";
+import {
+  createMemoryHistory,
+  createRootRoute,
+  createRoute,
+  createRouter,
+  RouterProvider,
+  useRouterState,
+} from "@tanstack/react-router";
 import { Copy, Link2, Plus, Unlock } from "lucide-react";
 import { parseEther } from "viem";
-import { fn } from "storybook/test";
+import { expect, fn } from "storybook/test";
 
 import { VelordsRewardsView } from "./claim-rewards";
 import { VelordsLockActivity } from "./lock-activity";
 import { VeLordsRewardsChart } from "./rewards-chart";
 import { VelordsSourceBreakdown } from "./source-breakdown";
 import { StakeLordsView } from "./stake-lords";
+import { VelordsTrendsPanel } from "./trends-panel";
 import { VelordsPosition } from "./velords-position";
 import { MetricValueSkeleton, VelordsStats } from "./velords-stats";
 
@@ -69,6 +80,11 @@ const locks = [
   { week: "2026-09-07", updates: 52, uniqueWallets: 44 },
   { week: "2026-09-14", updates: 48, uniqueWallets: 40 },
 ];
+
+const rewardsWeekly = locks.map(({ week }, i) => {
+  const totalWei = parseEther(String(30_000 + i * 4_000)).toString();
+  return { week, totalWei, bySender: { [sources[0].sender]: totalWei } };
+});
 
 const position = {
   balance: "84,120",
@@ -138,21 +154,45 @@ function SourcesAndLocks() {
   );
 }
 
-function ViewTabs() {
+function ViewTabs({ defaultView = "breakdown" }: { defaultView?: VelordsView }) {
   return (
-    <Tabs defaultValue="overview" className="gap-4">
+    <Tabs defaultValue={defaultView} className="gap-4">
       <TabsList>
-        <TabsTrigger value="overview">Overview</TabsTrigger>
-        <TabsTrigger value="sources">Sources</TabsTrigger>
-        <TabsTrigger value="locks">Locks</TabsTrigger>
+        <TabsTrigger value="breakdown">Breakdown</TabsTrigger>
         <TabsTrigger value="trends">Trends</TabsTrigger>
       </TabsList>
-      <TabsContent value="overview">
+      <TabsContent value="breakdown">
         <SourcesAndLocks />
+      </TabsContent>
+      <TabsContent value="trends">
+        <VelordsTrendsPanel rewardsWeekly={rewardsWeekly} lockWeekly={locks} />
       </TabsContent>
     </Tabs>
   );
 }
+
+/** The address bar once an old link has opened: this is what Copy link copies. */
+function AddressBar() {
+  const href = useRouterState({ select: (state) => state.location.href });
+  return <output className="realm-stat text-sm">{href}</output>;
+}
+
+const oldViewLink = createRouter({
+  routeTree: (() => {
+    const root = createRootRoute();
+    return root.addChildren([
+      createRoute({
+        getParentRoute: () => root,
+        path: "/velords",
+        validateSearch: (search: Record<string, unknown>) => ({
+          view: parseVelordsView(search.view),
+        }),
+        component: AddressBar,
+      }),
+    ]);
+  })(),
+  history: createMemoryHistory({ initialEntries: ["/velords?view=sources"] }),
+});
 
 const rewardsProps = {
   claimable: parseEther("312.4"),
@@ -180,6 +220,30 @@ export const Metrics: Story = { render: () => <Stats /> };
 export const MetricsLoading: Story = { render: () => <Stats loading /> };
 export const MetricsReadFailed: Story = {
   render: () => <Stats readFailed tvl={UNKNOWN_VALUE} />,
+};
+
+export const TabsBreakdown: Story = {
+  name: "Tabs · Breakdown",
+  render: () => <ViewTabs />,
+  play: async ({ canvas }) => {
+    const tabs = await canvas.findAllByRole("tab");
+    await expect(tabs.map((tab) => tab.textContent)).toEqual(["Breakdown", "Trends"]);
+    await expect(canvas.getByRole("tab", { name: "Breakdown" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+  },
+};
+export const TabsOldLink: Story = {
+  name: "Tabs · old ?view=sources link",
+  render: () => <RouterProvider router={oldViewLink} />,
+  play: async ({ canvas }) => {
+    await expect(await canvas.findByText("/velords?view=breakdown")).toBeInTheDocument();
+  },
+};
+export const TabsTrends: Story = {
+  name: "Tabs · Trends",
+  render: () => <ViewTabs defaultView="trends" />,
 };
 
 export const Position: Story = {

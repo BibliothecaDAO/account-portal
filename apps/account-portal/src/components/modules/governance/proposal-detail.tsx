@@ -35,7 +35,7 @@ export function ProposalArticle({
             <span className="realm-chip text-muted-foreground">{shortId}</span>
           ) : null}
         </div>
-        <h1 className="realm-page-title min-w-0 break-words">{title}</h1>
+        <h1 className="min-w-0 font-sans text-2xl font-semibold break-words normal-case">{title}</h1>
         <div className="text-muted-foreground flex min-w-0 flex-wrap items-center gap-x-2 text-sm">
           {author ? (
             <span className="min-w-0 truncate">Proposed by {author}</span>

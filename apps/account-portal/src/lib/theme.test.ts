@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -42,9 +42,18 @@ describe("account portal theme", () => {
     expect(styles).toContain("@theme inline");
   });
 
-  it("renders dark by default", () => {
-    expect(rootRoute).toContain('className="dark"');
-    expect(rootRoute).toContain('defaultTheme="dark"');
+  it("is always dark, with no theme switch and no light colors", () => {
+    expect(rootRoute).toContain('<html lang="en" className="dark">');
+    expect(rootRoute).not.toMatch(/ThemeProvider|localStorage|classList/);
+    expect(read("components/layout/nav-user.tsx")).not.toContain("ModeToggle");
+    expect(existsSync(resolve(srcDir, "providers/theme.tsx"))).toBe(false);
+    expect(existsSync(resolve(srcDir, "components/layout/mode-toggle.tsx"))).toBe(false);
+
+    const root = /:root \{(.*?)\n\}/s.exec(styles)?.[1];
+    expect(root).toContain("--radius");
+    for (const role of ["--background", "--foreground", "--card", "--primary", "--border"]) {
+      expect(root).not.toContain(`${role}:`);
+    }
   });
 
   it("keeps the shared type hierarchy classes", () => {
@@ -66,11 +75,20 @@ describe("account portal theme", () => {
       .flatMap((file) => {
         const source = readFileSync(file, "utf8");
         const hits = source.match(
-          /\b(?:bg|text|border|shadow|fill|stroke)-\[(?:color:|#|var\(|rgba?\(|oklch\(|0_)[^\]]*\]|\[letter-spacing:[^\]]*\]/g,
+          /\b(?:bg|text|border|shadow|fill|stroke)-\[(?:color:|#|var\(|rgba?\(|oklch\(|0_|inset_)[^\]]*\]|\[letter-spacing:[^\]]*\]/g,
         );
         return hits ? [`${file}: ${hits.join(", ")}`] : [];
       });
     expect(offenders).toEqual([]);
+  });
+
+  it("keeps the delegate action column at 7rem, which the 12 px outline button fits", () => {
+    expect(styles).toContain("11.875rem 5.5rem 7rem;");
+    expect(styles).toContain("minmax(0, 1.7fr) 7rem;");
+  });
+
+  it("tells the browser the portal is dark, so native controls never draw pale", () => {
+    expect(styles).toMatch(/\.dark \{\n {2}color-scheme: dark;/);
   });
 
   it("never sets an overflow on a tab bar, which computes overflow-y to auto and scrolls it", () => {
@@ -93,6 +111,27 @@ describe("account portal theme", () => {
     expect(homepage).toContain("SectionCard");
     expect(velordsIndex).toContain("PageHeader");
     expect(velordsIndex).toContain("MetricCard");
+  });
+
+  it("has no coming-soon page, route or label", () => {
+    expect(existsSync(resolve(srcDir, "routes/coming-soon.index.tsx"))).toBe(false);
+    expect(read("routeTree.gen.ts")).not.toContain("coming-soon");
+    expect(appSidebar).not.toContain("coming-soon");
+    expect(read("components/layout/system.stories.tsx")).not.toContain("ComingSoon");
+  });
+
+  it("has each story's play wait for the router before its first query", () => {
+    const offenders = listTsx(srcDir)
+      .filter((file) => file.endsWith(".stories.tsx"))
+      .flatMap((file) =>
+        readFileSync(file, "utf8")
+          .split(/\bplay: async/)
+          .slice(1)
+          .map((play) => /\b(?:find|get|query)(?:All)?By\w+/.exec(play)?.[0])
+          .filter((query) => query && !query.startsWith("find"))
+          .map((query) => `${file}: ${query}`),
+      );
+    expect(offenders).toEqual([]);
   });
 
   it("points marketplace CTAs at market.realms.world", () => {

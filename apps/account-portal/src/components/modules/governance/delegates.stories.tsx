@@ -92,7 +92,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-function Toolbar() {
+function Toolbar({ isDelegatingToSelf = false }: { isDelegatingToSelf?: boolean }) {
   return (
     <div className="bg-background sticky top-0 z-10 flex flex-wrap gap-2 py-2">
       <div className="relative min-w-0 flex-[1_1_13.75rem]">
@@ -107,26 +107,33 @@ function Toolbar() {
         sortMethod="random"
         onToggleSort={fn()}
         showDelegateToSelf
+        isDelegatingToSelf={isDelegatingToSelf}
         onDelegateToSelf={fn()}
       />
     </div>
   );
 }
 
-function Shell({ children }: { children: React.ReactNode }) {
+function Shell({
+  children,
+  isDelegatingToSelf,
+}: {
+  children: React.ReactNode;
+  isDelegatingToSelf?: boolean;
+}) {
   return (
     <PageContainer>
       <PageHeader
         title="Delegates"
         description="Choose who votes with your Realms in the DAO, or delegate to yourself."
       />
-      <Toolbar />
+      <Toolbar isDelegatingToSelf={isDelegatingToSelf} />
       {children}
     </PageContainer>
   );
 }
 
-function Rows() {
+function Rows({ delegatingId }: { delegatingId?: string }) {
   return (
     <DelegatePanel>
       {delegates.map((d) => (
@@ -135,6 +142,7 @@ function Rows() {
           delegate={d.data}
           name={d.name}
           isCurrentDelegate={d.current}
+          isDelegating={d.data.id === delegatingId}
           onDelegate={fn()}
         />
       ))}
@@ -148,6 +156,54 @@ export const List: Story = {
       <Rows />
     </Shell>
   ),
+  play: async ({ canvasElement }) => {
+    const action = await within(canvasElement).findByRole("button", {
+      name: "Delegate to credence.stark",
+    });
+    const { backgroundColor, fontSize } = getComputedStyle(action);
+    await expect(backgroundColor).toBe("rgba(0, 0, 0, 0)");
+    await expect(fontSize).toBe("12px");
+  },
+};
+
+export const Delegating: Story = {
+  name: "List · delegating",
+  render: () => (
+    <Shell>
+      <Rows delegatingId="2" />
+    </Shell>
+  ),
+  play: async ({ canvasElement }) => {
+    const row = await within(canvasElement).findByRole("button", {
+      name: "Delegate to credence.stark",
+    });
+    await expect(row).toBeDisabled();
+    await expect(row).toHaveTextContent("Delegating…");
+    const more = within(canvasElement).getByRole("button", {
+      name: "More about credence.stark",
+    });
+    await document.fonts.ready;
+    const action = row.getBoundingClientRect();
+    const link = more.getBoundingClientRect();
+    if (action.top < link.bottom && link.top < action.bottom) {
+      await expect(action.left - link.right).toBeGreaterThanOrEqual(8);
+    }
+  },
+};
+
+export const DelegatingToSelf: Story = {
+  name: "List · delegating to self",
+  render: () => (
+    <Shell isDelegatingToSelf>
+      <Rows />
+    </Shell>
+  ),
+  play: async ({ canvasElement }) => {
+    const self = await within(canvasElement).findByRole("button", {
+      name: "Delegating…",
+    });
+    await expect(self).toBeDisabled();
+  },
 };
 
 export const RowOpen: Story = {
