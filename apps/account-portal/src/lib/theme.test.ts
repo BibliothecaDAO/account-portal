@@ -153,12 +153,7 @@ describe("account portal theme", () => {
 // shows in full capitals, by CSS, so the source keeps its case and screen readers read words.
 describe("title and label faces", () => {
   const TITLE_FACE = /--font-(?:title|serif|display)|IM Fell English/;
-  // Cinzel as the first family; as a fallback in another stack it is not the face.
-  const LABEL_FACE = /^[^,]*(?<![-\w])Cinzel(?![-\w])/;
-  const setsCapitalsFace = (value: string) =>
-    TITLE_FACE.test(value) || LABEL_FACE.test(value);
-  // An arbitrary Tailwind class that sets Cinzel: font-[Cinzel], [font-family:Cinzel].
-  const LABEL_CLASS = /(?:font-\[(?:family-name:)?|\[font-family:)['"_]*Cinzel/;
+  const LABEL_FACE = /(?<![-\w])Cinzel(?![-\w])/;
   // Every block with its own declarations, nested blocks left out: @layer, @theme and nested
   // rules included.
   const rules: { selector: string; body: string }[] = [];
@@ -183,6 +178,88 @@ describe("title and label faces", () => {
     }
     start = i + 1;
   }
+
+  // Every custom property's declared values, from every block: a property declared in :root and
+  // again in .dark can take either value.
+  const properties = new Map<string, string[]>();
+  for (const { body } of rules)
+    for (const [, name, value] of body.matchAll(
+      /(?:^|;)\s*(--[\w-]+)\s*:\s*([^;]*)/g,
+    ))
+      properties.set(name, [...(properties.get(name) ?? []), value.trim()]);
+  // The index after the parenthesis that closes the one at `open`, quotes skipped.
+  const closing = (value: string, open: number) => {
+    let depth = 0;
+    let quote = "";
+    for (let i = open; i < value.length; i++) {
+      const c = value[i];
+      if (quote) {
+        if (c === "\\") i++;
+        else if (c === quote) quote = "";
+      } else if (c === '"' || c === "'") quote = c;
+      else if (c === "(") depth++;
+      else if (c === ")" && --depth === 0) return i + 1;
+    }
+    return value.length;
+  };
+  // The value's parts between commas outside parentheses and quotes.
+  const topLevelParts = (value: string) => {
+    const parts: string[] = [];
+    let start = 0;
+    for (let i = 0; i < value.length; i++) {
+      if (value[i] === "(") i = closing(value, i) - 1;
+      else if (value[i] === '"' || value[i] === "'") {
+        const end = value.indexOf(value[i], i + 1);
+        i = end < 0 ? value.length : end;
+      } else if (value[i] === ",") {
+        parts.push(value.slice(start, i).trim());
+        start = i + 1;
+      }
+    }
+    return [...parts, value.slice(start).trim()];
+  };
+  // Every value `value` can compute to: each var() becomes each declared value of its property,
+  // or its fallback when the property is undeclared or in a cycle, or stays as written.
+  const resolveValue = (value: string, seen: string[] = []): string[] => {
+    const at = value.search(/(?<![-\w])var\(/);
+    if (at < 0) return [value];
+    const end = closing(value, at + 3);
+    const [name, ...fallback] = topLevelParts(value.slice(at + 4, end - 1));
+    const declared = seen.includes(name) ? undefined : properties.get(name);
+    const replacements = declared
+      ? declared.flatMap((v) => resolveValue(v, [...seen, name]))
+      : fallback.length
+        ? resolveValue(fallback.join(", "), seen)
+        : [value.slice(at, end)];
+    const rests = resolveValue(value.slice(end), seen);
+    return [
+      ...new Set(
+        replacements.flatMap((r) =>
+          rests.map((rest) => value.slice(0, at) + r + rest),
+        ),
+      ),
+    ];
+  };
+  // A font or font-family value sets a face when its first part names it once resolved: the
+  // first family, or for the font shorthand the size and first family. A later family is a
+  // fallback, so Cinzel in the IM Fell stack is not a use of Cinzel.
+  const setsCapitalsFace = (value: string) =>
+    resolveValue(value).some((v) => {
+      const first = topLevelParts(v)[0];
+      return TITLE_FACE.test(first) || LABEL_FACE.test(first);
+    });
+  // The families markup sets: inline fontFamily styles, and arbitrary Tailwind classes such as
+  // font-[Cinzel], font-[family-name:var(--x)] and [font-family:var(--x)], "_" for a space.
+  const markupFamilies = (line: string) => [
+    ...[...line.matchAll(/fontFamily:\s*(?:(["'`])(.*?)\1|([^,}]+))/g)].map(
+      (m) => m[2] ?? m[3],
+    ),
+    ...[
+      ...line.matchAll(
+        /(?:font-\[(?:family-name:)?|\[font-family:)([^\]\s]+)\]/g,
+      ),
+    ].map((m) => m[1].replaceAll("_", " ")),
+  ];
   const markup = [
     ...listTsx(srcDir),
     ...listTsx(resolve(srcDir, "../.storybook")),
@@ -247,10 +324,7 @@ describe("title and label faces", () => {
         .split("\n")
         .flatMap((line, i) =>
           /var\(--font-(?:title|serif|display)\)/.test(line) ||
-          LABEL_CLASS.test(line) ||
-          [...line.matchAll(/fontFamily:\s*([^,}]+)/g)].some((m) =>
-            setsCapitalsFace(m[1]),
-          )
+          markupFamilies(line).some(setsCapitalsFace)
             ? [`${file}:${i + 1}: ${line.trim()}`]
             : [],
         ),
