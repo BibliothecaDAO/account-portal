@@ -509,6 +509,14 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
+/*
+ * Capitals are wider than Cinzel's small capitals. Chips drop their tracking and a quarter pixel,
+ * so each keeps its width and a delegate's interests keep their line.
+ */
+.dark .deck-values .realm-chip {
+  font-size: 0.671875rem;
+  letter-spacing: 0;
+}
 .dark .deck-values [data-slot="button"][data-variant="outline"] {
   background: transparent;
   font-size: 0.75rem;
