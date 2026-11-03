@@ -507,7 +507,7 @@
   font-family: Cinzel, serif;
   font-weight: 600;
   letter-spacing: 0.04em;
-  text-transform: none;
+  text-transform: uppercase;
 }
 .dark .deck-values [data-slot="button"][data-variant="outline"] {
   background: transparent;

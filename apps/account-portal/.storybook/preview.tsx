@@ -13,8 +13,8 @@ import { expect } from "storybook/test";
 
 import "../src/styles.css";
 
+import { missingCapitals } from "./capitals";
 import { storybookTheme } from "./theme";
-import { titleFaceWithoutCapitals } from "./title-face";
 
 function Theme({ children }: PropsWithChildren) {
   const [client] = useState(
@@ -88,9 +88,9 @@ const preview: Preview = {
       },
     },
   },
-  // Every story, after its play function: no title in IM Fell English SC shows small capitals.
+  // Every story, after its play function: no IM Fell English SC or Cinzel text in small capitals.
   async afterEach() {
-    await expect(titleFaceWithoutCapitals()).toEqual([]);
+    await expect(missingCapitals()).toEqual([]);
   },
   decorators: [
     withRouter,

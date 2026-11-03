@@ -148,11 +148,17 @@ describe("account portal theme", () => {
   });
 });
 
-// IM Fell English SC is a small-caps face: mixed-case text in it shows a capital, then small
-// capitals. Every title set in it shows in full capitals, by CSS, so the source keeps its case
-// and screen readers read words.
-describe("title face", () => {
+// IM Fell English SC, the title face, and Cinzel, the veLORDS panel's label face, are capitals
+// faces: mixed-case text in either shows a capital, then small capitals. Every use of either
+// shows in full capitals, by CSS, so the source keeps its case and screen readers read words.
+describe("title and label faces", () => {
   const TITLE_FACE = /--font-(?:title|serif|display)|IM Fell English/;
+  // Cinzel as the first family; as a fallback in another stack it is not the face.
+  const LABEL_FACE = /^[^,]*(?<![-\w])Cinzel(?![-\w])/;
+  const setsCapitalsFace = (value: string) =>
+    TITLE_FACE.test(value) || LABEL_FACE.test(value);
+  // An arbitrary Tailwind class that sets Cinzel: font-[Cinzel], [font-family:Cinzel].
+  const LABEL_CLASS = /(?:font-\[(?:family-name:)?|\[font-family:)['"_]*Cinzel/;
   // Every block with its own declarations, nested blocks left out: @layer, @theme and nested
   // rules included.
   const rules: { selector: string; body: string }[] = [];
@@ -191,7 +197,7 @@ describe("title face", () => {
       ];
       if (
         selector.startsWith("@font-face") ||
-        !fonts.some((m) => TITLE_FACE.test(m[1]))
+        !fonts.some((m) => setsCapitalsFace(m[1]))
       )
         continue;
       found.push(selector);
@@ -204,16 +210,23 @@ describe("title face", () => {
         ".realm-page-title",
         ".realm-card-title",
         expect.stringContaining(".realm-prose-h1"),
+        expect.stringContaining(".deck-values .realm-chip"),
       ]),
     );
     expect(missing).toEqual([]);
   });
 
   it("has no Tailwind font utility, which would set the face without its capitals", () => {
-    const themeKeys = rules.filter(
-      ({ selector, body }) =>
-        selector.startsWith("@theme") &&
-        /(?:^|;)\s*--font-(?:title|serif|display)\s*:/.test(body),
+    const themeKeys = rules.flatMap(({ selector, body }) =>
+      selector.startsWith("@theme")
+        ? [...body.matchAll(/(?:^|;)\s*(--font-[\w-]+)\s*:\s*([^;]+)/g)]
+            .filter(
+              ([, key, value]) =>
+                /^--font-(?:title|serif|display)$/.test(key) ||
+                setsCapitalsFace(value),
+            )
+            .map(([, key]) => `${selector} ${key}`)
+        : [],
     );
     const classes = markup.flatMap((file) =>
       readFileSync(file, "utf8")
@@ -224,7 +237,7 @@ describe("title face", () => {
             : [],
         ),
     );
-    expect(themeKeys.map(({ selector }) => selector)).toEqual([]);
+    expect(themeKeys).toEqual([]);
     expect(classes).toEqual([]);
   });
 
@@ -234,8 +247,9 @@ describe("title face", () => {
         .split("\n")
         .flatMap((line, i) =>
           /var\(--font-(?:title|serif|display)\)/.test(line) ||
+          LABEL_CLASS.test(line) ||
           [...line.matchAll(/fontFamily:\s*([^,}]+)/g)].some((m) =>
-            TITLE_FACE.test(m[1]),
+            setsCapitalsFace(m[1]),
           )
             ? [`${file}:${i + 1}: ${line.trim()}`]
             : [],
