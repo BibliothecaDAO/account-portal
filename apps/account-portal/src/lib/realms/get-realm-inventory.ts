@@ -3,10 +3,10 @@ import type { RealmOwnershipInventoryStatus } from "@realms-world/db";
 import { RealmMetadataABI } from "@/abi/L2/RealmMetadata";
 import { hydrateRealmMetadata } from "@/lib/realms/inventory-metadata";
 import { readRealmMetadata } from "@/lib/realms/metadata";
+import { starknetRpcUrl } from "@/utils/starknet-rpc";
 import { SUPPORTED_L2_CHAIN_ID } from "@/utils/utils";
 import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
-import { env } from "env";
 import { Contract, RpcProvider } from "starknet";
 import { z } from "zod";
 
@@ -46,12 +46,7 @@ export const REALM_INVENTORY_REFETCH_INTERVAL_MS = 15_000;
 async function populateMissingMetadata(
   tokens: Awaited<ReturnType<typeof getRealmOwnershipInventory>>["tokens"],
 ) {
-  const nodeUrl =
-    env.VITE_PUBLIC_NODE_URL ??
-    (env.VITE_PUBLIC_CHAIN === "sepolia"
-      ? "https://api.cartridge.gg/x/starknet/sepolia"
-      : "https://api.cartridge.gg/x/starknet/mainnet");
-  const provider = new RpcProvider({ nodeUrl });
+  const provider = new RpcProvider({ nodeUrl: starknetRpcUrl });
   const contract = new Contract({
     abi: RealmMetadataABI,
     address: CollectionAddresses.realms[SUPPORTED_L2_CHAIN_ID] as string,

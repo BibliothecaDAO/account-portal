@@ -3,6 +3,7 @@ import type { BetterAuthPlugin } from "better-auth";
 //import { mainnet, sepolia } from "@wagmi/core/chains";
 import { APIError, createAuthEndpoint } from "better-auth/api";
 import { setSessionCookie } from "better-auth/cookies";
+import { RpcProvider, verifyMessageInStarknet } from "starknet";
 // Zod
 import { z } from "zod";
 
@@ -10,7 +11,8 @@ import { eq, user as userTable } from "@realms-world/db";
 import { db } from "@realms-world/db/client";
 // SIWE deps
 import { SiwsTypedData } from "@realms-world/siws";
-import { RpcProvider, verifyMessageInStarknet } from "starknet";
+
+import { getStarknetRpcUrl } from "../starknet-rpc";
 
 const size = 256;
 let index = size;
@@ -66,10 +68,7 @@ function isEquivalentHost(a?: string, b?: string) {
 }
 
 function getRpcNodeUrl(chainId: "SN_MAIN" | "SN_SEPOLIA") {
-  if (chainId === "SN_MAIN") {
-    return "https://api.cartridge.gg/x/starknet/mainnet";
-  }
-  return "https://api.cartridge.gg/x/starknet/sepolia";
+  return getStarknetRpcUrl(chainId === "SN_MAIN" ? "mainnet" : "sepolia");
 }
 
 export const siws = (options: SIWSPluginOptions) =>
@@ -142,17 +141,22 @@ export const siws = (options: SIWSPluginOptions) =>
             }
 
             if (
-              siwsMessage.message.address.toLowerCase() !== address.toLowerCase()
+              siwsMessage.message.address.toLowerCase() !==
+              address.toLowerCase()
             ) {
               throw new APIError("UNAUTHORIZED", {
                 message: "Unauthorized: Address mismatch",
               });
             }
 
-            const requestHost = getHostname(ctx.request?.headers.get("host")) ?? "localhost";
+            const requestHost =
+              getHostname(ctx.request?.headers.get("host")) ?? "localhost";
             const configuredHost = getHostname(options.domain);
             const signedHost = getHostname(siwsMessage.domain.name);
-            const matchesRequestHost = isEquivalentHost(signedHost, requestHost);
+            const matchesRequestHost = isEquivalentHost(
+              signedHost,
+              requestHost,
+            );
             const matchesConfiguredHost = isEquivalentHost(
               signedHost,
               configuredHost,
@@ -184,7 +188,9 @@ export const siws = (options: SIWSPluginOptions) =>
 
             const isValid = await verifyMessageInStarknet(
               provider,
-              siwsMessage as unknown as Parameters<typeof verifyMessageInStarknet>[1],
+              siwsMessage as unknown as Parameters<
+                typeof verifyMessageInStarknet
+              >[1],
               signature,
               address,
             );
