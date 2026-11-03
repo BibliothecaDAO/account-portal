@@ -3,8 +3,9 @@ import React from "react";
 import { StarknetAutoReconnect } from "@/components/layout/starknet-auto-reconnect";
 import { StarknetWalletPickerProvider } from "@/components/layout/starknet-wallet-picker";
 import { cartridgeControllerWallet } from "@/utils/cartridge-controller";
-import { starknetWalletStore } from "@/utils/starknet-wallet-store";
 import { expectedStarknetChain } from "@/utils/starknet-chain";
+import { getStarknetRpcUrl } from "@/utils/starknet-rpc";
+import { starknetWalletStore } from "@/utils/starknet-wallet-store";
 import { mainnet, sepolia } from "@starknet-start/chains";
 import { voyager } from "@starknet-start/explorers";
 import { jsonRpcProvider } from "@starknet-start/providers";
@@ -19,10 +20,10 @@ const provider = jsonRpcProvider({
   rpc: (chain: Chain) => {
     switch (chain) {
       case mainnet:
-        return { nodeUrl: "https://api.cartridge.gg/x/starknet/mainnet" };
+        return { nodeUrl: getStarknetRpcUrl("mainnet") };
       case sepolia:
       default:
-        return { nodeUrl: "https://api.cartridge.gg/x/starknet/sepolia" };
+        return { nodeUrl: getStarknetRpcUrl("sepolia") };
     }
   },
 });

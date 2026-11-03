@@ -1,6 +1,6 @@
 import { useCallback } from "react";
-import { env } from "env";
 import { StarknetBridgeRealms as L1_REALMS_BRIDGE_ABI } from "@/abi/L1/StarknetBridgeRealms";
+import { starknetRpcUrl } from "@/utils/starknet-rpc";
 import { SUPPORTED_L1_CHAIN_ID } from "@/utils/utils";
 import { encodePacked, keccak256, parseGwei, toHex } from "viem";
 import { useAccount, usePublicClient, useWriteContract } from "wagmi";
@@ -81,11 +81,7 @@ async function estimateMessageFeeWei({
   l2BridgeSelector: bigint;
   payload: bigint[];
 }) {
-  if (!env.VITE_PUBLIC_NODE_URL) {
-    throw new Error("Missing Starknet RPC URL for message fee estimation");
-  }
-
-  const response = await fetch(env.VITE_PUBLIC_NODE_URL, {
+  const response = await fetch(starknetRpcUrl, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
@@ -138,11 +134,7 @@ function isUndeployedAccountError(message: string) {
 }
 
 export async function isStarknetAccountDeployed(address: string) {
-  if (!env.VITE_PUBLIC_NODE_URL) {
-    throw new Error("Missing Starknet RPC URL for account deployment check");
-  }
-
-  const response = await fetch(env.VITE_PUBLIC_NODE_URL, {
+  const response = await fetch(starknetRpcUrl, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({

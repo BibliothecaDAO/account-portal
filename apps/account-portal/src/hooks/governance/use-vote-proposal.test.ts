@@ -2,7 +2,11 @@ import type { Proposal } from "@/gql/graphql";
 import { Choice } from "@/types/snapshot";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { getChoiceEnum, useVoteProposal } from "./use-vote-proposal";
+import {
+  getChoiceEnum,
+  getVoteStrategies,
+  useVoteProposal,
+} from "./use-vote-proposal";
 
 const mocks = vi.hoisted(() => ({
   selectedChoice: null as number | null,
@@ -29,6 +33,7 @@ vi.mock("../use-ipfs-pin", () => ({
 
 const proposal = {
   proposal_id: 7,
+  strategies_indices: [1],
   space: { id: "0xspace", authenticators: ["0xauth"] },
 } as unknown as Proposal;
 
@@ -52,6 +57,24 @@ describe("useVoteProposal", () => {
       "authenticate_vote",
       expect.arrayContaining([getChoiceEnum(choice)]),
     );
+  });
+
+  it("votes with the proposal's strategy indices, not a fixed index 0", async () => {
+    mocks.selectedChoice = Choice.For;
+
+    await useVoteProposal(proposal).vote("");
+
+    expect(mocks.populate).toHaveBeenCalledWith(
+      "authenticate_vote",
+      expect.arrayContaining([[{ index: 1, params: [] }]]),
+    );
+  });
+
+  it("maps every strategy index to an entry with no user params", () => {
+    expect(getVoteStrategies({ strategies_indices: [1, 3] })).toEqual([
+      { index: 1, params: [] },
+      { index: 3, params: [] },
+    ]);
   });
 
   it("sends nothing when no choice is selected", async () => {
