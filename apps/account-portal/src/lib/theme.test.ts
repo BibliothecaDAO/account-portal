@@ -147,3 +147,100 @@ describe("account portal theme", () => {
     expect(appSidebar).toContain('url: "https://docs.realms.world"');
   });
 });
+
+// IM Fell English SC is a small-caps face: mixed-case text in it shows a capital, then small
+// capitals. Every title set in it shows in full capitals, by CSS, so the source keeps its case
+// and screen readers read words.
+describe("title face", () => {
+  const TITLE_FACE = /--font-(?:title|serif|display)|IM Fell English/;
+  // Every block with its own declarations, nested blocks left out: @layer, @theme and nested
+  // rules included.
+  const rules: { selector: string; body: string }[] = [];
+  const open: { selector: string; body: string }[] = [];
+  const css = styles.replace(/\/\*[\s\S]*?\*\//g, "");
+  let start = 0;
+  for (let i = 0; i < css.length; i++) {
+    if (css[i] !== "{" && css[i] !== "}") continue;
+    const text = css.slice(start, i);
+    if (css[i] === "{") {
+      if (open.length)
+        open[open.length - 1].body += text.slice(0, text.lastIndexOf(";") + 1);
+      open.push({
+        selector: text.slice(text.lastIndexOf(";") + 1).trim(),
+        body: "",
+      });
+    } else {
+      const block = open.pop();
+      if (!block) throw new Error(`Unbalanced "}" in styles.css at ${i}`);
+      block.body += text;
+      rules.push(block);
+    }
+    start = i + 1;
+  }
+  const markup = [
+    ...listTsx(srcDir),
+    ...listTsx(resolve(srcDir, "../.storybook")),
+  ];
+
+  it("sets text-transform: uppercase in every CSS rule that sets it", () => {
+    const found: string[] = [];
+    const missing: string[] = [];
+    for (const { selector, body } of rules) {
+      const fonts = [
+        ...body.matchAll(/(?:^|;)\s*font(?:-family)?\s*:\s*([^;]+)/g),
+      ];
+      if (
+        selector.startsWith("@font-face") ||
+        !fonts.some((m) => TITLE_FACE.test(m[1]))
+      )
+        continue;
+      found.push(selector);
+      if (!/(?:^|;)\s*text-transform\s*:\s*uppercase\b/.test(body))
+        missing.push(selector);
+    }
+    expect(found).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining(".realm-title"),
+        ".realm-page-title",
+        ".realm-card-title",
+        expect.stringContaining(".realm-prose-h1"),
+      ]),
+    );
+    expect(missing).toEqual([]);
+  });
+
+  it("has no Tailwind font utility, which would set the face without its capitals", () => {
+    const themeKeys = rules.filter(
+      ({ selector, body }) =>
+        selector.startsWith("@theme") &&
+        /(?:^|;)\s*--font-(?:title|serif|display)\s*:/.test(body),
+    );
+    const classes = markup.flatMap((file) =>
+      readFileSync(file, "utf8")
+        .split("\n")
+        .flatMap((line, i) =>
+          /(?<![-\w])font-(?:title|serif|display)(?![-\w])/.test(line)
+            ? [`${file}:${i + 1}`]
+            : [],
+        ),
+    );
+    expect(themeKeys.map(({ selector }) => selector)).toEqual([]);
+    expect(classes).toEqual([]);
+  });
+
+  it("is set from markup only through a CSS class", () => {
+    const offenders = markup.flatMap((file) =>
+      readFileSync(file, "utf8")
+        .split("\n")
+        .flatMap((line, i) =>
+          /var\(--font-(?:title|serif|display)\)/.test(line) ||
+          [...line.matchAll(/fontFamily:\s*([^,}]+)/g)].some((m) =>
+            TITLE_FACE.test(m[1]),
+          )
+            ? [`${file}:${i + 1}: ${line.trim()}`]
+            : [],
+        ),
+    );
+    expect(offenders).toEqual([]);
+  });
+});

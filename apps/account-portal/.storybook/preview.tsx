@@ -9,10 +9,12 @@ import {
   createRouter,
   RouterProvider,
 } from "@tanstack/react-router";
+import { expect } from "storybook/test";
 
 import "../src/styles.css";
 
 import { storybookTheme } from "./theme";
+import { titleFaceWithoutCapitals } from "./title-face";
 
 function Theme({ children }: PropsWithChildren) {
   const [client] = useState(
@@ -85,6 +87,10 @@ const preview: Preview = {
         },
       },
     },
+  },
+  // Every story, after its play function: no title in IM Fell English SC shows small capitals.
+  async afterEach() {
+    await expect(titleFaceWithoutCapitals()).toEqual([]);
   },
   decorators: [
     withRouter,
