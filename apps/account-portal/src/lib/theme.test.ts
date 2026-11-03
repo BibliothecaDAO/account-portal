@@ -219,18 +219,19 @@ describe("title and label faces", () => {
     return [...parts, value.slice(start).trim()];
   };
   // Every value `value` can compute to: each var() becomes each declared value of its property,
-  // or its fallback when the property is undeclared or in a cycle, or stays as written.
+  // cycles left out, and its fallback, since the table does not know where each declaration
+  // applies. A var() with neither stays as written.
   const resolveValue = (value: string, seen: string[] = []): string[] => {
     const at = value.search(/(?<![-\w])var\(/);
     if (at < 0) return [value];
     const end = closing(value, at + 3);
     const [name, ...fallback] = topLevelParts(value.slice(at + 4, end - 1));
-    const declared = seen.includes(name) ? undefined : properties.get(name);
-    const replacements = declared
-      ? declared.flatMap((v) => resolveValue(v, [...seen, name]))
-      : fallback.length
-        ? resolveValue(fallback.join(", "), seen)
-        : [value.slice(at, end)];
+    const declared = seen.includes(name) ? [] : (properties.get(name) ?? []);
+    const replacements = [
+      ...declared.flatMap((v) => resolveValue(v, [...seen, name])),
+      ...(fallback.length ? resolveValue(fallback.join(", "), seen) : []),
+    ];
+    if (!replacements.length) replacements.push(value.slice(at, end));
     const rests = resolveValue(value.slice(end), seen);
     return [
       ...new Set(
