@@ -25,6 +25,7 @@ vi.mock("../use-ipfs-pin", () => ({
 
 const proposal = {
   proposal_id: 7,
+  strategies_indices: [1],
   space: { id: "0xspace", authenticators: ["0xauth"] },
 } as unknown as Parameters<typeof useVoteProposal>[0];
 

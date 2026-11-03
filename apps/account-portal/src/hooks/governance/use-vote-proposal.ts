@@ -29,6 +29,16 @@ export function getUserAddressEnum(
   });
 }
 
+/**
+ * The voting strategies the proposal was created with. The space's first strategy (index 0) was
+ * removed, so a vote naming it reverts with "Invalid strategy index".
+ */
+export function getVoteStrategies(
+  proposal: Pick<Proposal, "strategies_indices">,
+) {
+  return proposal.strategies_indices.map((index) => ({ index, params: [] }));
+}
+
 export function useVoteProposal(proposal: Proposal) {
   const { address } = useAccount();
   const [selectedChoice, setSelectedChoice] = useState<Choice | null>(null);
@@ -54,20 +64,12 @@ export function useVoteProposal(proposal: Proposal) {
           address as string,
           proposal.proposal_id,
           getChoiceEnum(selectedChoice),
-          [{ index: 0, params: [] }], // ERC20Votes strategy
+          getVoteStrategies(proposal),
           pinned ? shortString.splitLongString(`ipfs://${pinned.cid}`) : [],
         ]),
       ]);
     },
-    [
-      contract,
-      selectedChoice,
-      pinToIPFS,
-      sendAsync,
-      proposal.space.id,
-      proposal.proposal_id,
-      address,
-    ],
+    [contract, selectedChoice, pinToIPFS, sendAsync, proposal, address],
   );
 
   return {
