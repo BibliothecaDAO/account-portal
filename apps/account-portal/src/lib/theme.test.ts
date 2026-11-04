@@ -1,5 +1,5 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
@@ -15,11 +15,11 @@ const appSidebar = read("components/layout/nav-config.ts");
 const velordsIndex = read("routes/velords.index.tsx");
 const markdownRenderer = read("components/ui/markdown-renderer.tsx");
 
-function listTsx(dir: string): string[] {
+function listFiles(dir: string, extension: string): string[] {
   return readdirSync(dir).flatMap((name) => {
     const path = join(dir, name);
-    if (statSync(path).isDirectory()) return listTsx(path);
-    return path.endsWith(".tsx") ? [path] : [];
+    if (statSync(path).isDirectory()) return listFiles(path, extension);
+    return path.endsWith(extension) ? [path] : [];
   });
 }
 
@@ -70,7 +70,7 @@ describe("account portal theme", () => {
   });
 
   it("uses no arbitrary colour, shadow or tracking values in components", () => {
-    const offenders = listTsx(srcDir)
+    const offenders = listFiles(srcDir, ".tsx")
       .filter((file) => !file.endsWith(".stories.tsx"))
       .flatMap((file) => {
         const source = readFileSync(file, "utf8");
@@ -92,7 +92,7 @@ describe("account portal theme", () => {
   });
 
   it("never sets an overflow on a tab bar, which computes overflow-y to auto and scrolls it", () => {
-    const offenders = listTsx(srcDir).filter((file) =>
+    const offenders = listFiles(srcDir, ".tsx").filter((file) =>
       /<TabsList[^>]*overflow-/.test(readFileSync(file, "utf8")),
     );
     expect(offenders).toEqual([]);
@@ -121,7 +121,7 @@ describe("account portal theme", () => {
   });
 
   it("has each story's play wait for the router before its first query", () => {
-    const offenders = listTsx(srcDir)
+    const offenders = listFiles(srcDir, ".tsx")
       .filter((file) => file.endsWith(".stories.tsx"))
       .flatMap((file) =>
         readFileSync(file, "utf8")
@@ -154,33 +154,54 @@ describe("account portal theme", () => {
 describe("title and label faces", () => {
   const TITLE_FACE = /--font-(?:title|serif|display)|IM Fell English/;
   const LABEL_FACE = /(?<![-\w])Cinzel(?![-\w])/;
+  // The stylesheets, named from src/ and comments removed: every .css file under src/, and every
+  // file a relative @import in one of them reaches, wherever it lives. An import that names no
+  // file beside its stylesheet, such as "tailwindcss", is a package and is not followed.
+  const IMPORT = /@import\s+(?:url\(\s*(["']?)([^"')]+)\1\s*\)|(["'])(.*?)\3)/g;
+  const isFile = (path: string) => existsSync(path) && statSync(path).isFile();
+  const paths = listFiles(srcDir, ".css");
+  const sheets: { file: string; css: string }[] = [];
+  // for...of also visits the paths the loop appends.
+  for (const path of paths) {
+    const css = readFileSync(path, "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+    sheets.push({ file: relative(srcDir, path), css });
+    for (const [, , url, , quoted] of css.matchAll(IMPORT)) {
+      const target = resolve(dirname(path), (url ?? quoted).trim());
+      const imported = [target, `${target}.css`].find(isFile);
+      if (imported && !paths.includes(imported)) paths.push(imported);
+    }
+  }
   // Every block with its own declarations, nested blocks left out: @layer, @theme and nested
   // rules included.
-  const rules: { selector: string; body: string }[] = [];
-  const open: { selector: string; body: string }[] = [];
-  const css = styles.replace(/\/\*[\s\S]*?\*\//g, "");
-  let start = 0;
-  for (let i = 0; i < css.length; i++) {
-    if (css[i] !== "{" && css[i] !== "}") continue;
-    const text = css.slice(start, i);
-    if (css[i] === "{") {
-      if (open.length)
-        open[open.length - 1].body += text.slice(0, text.lastIndexOf(";") + 1);
-      open.push({
-        selector: text.slice(text.lastIndexOf(";") + 1).trim(),
-        body: "",
-      });
-    } else {
-      const block = open.pop();
-      if (!block) throw new Error(`Unbalanced "}" in styles.css at ${i}`);
-      block.body += text;
-      rules.push(block);
+  const rules: { file: string; selector: string; body: string }[] = [];
+  for (const { file, css } of sheets) {
+    const open: { selector: string; body: string }[] = [];
+    let start = 0;
+    for (let i = 0; i < css.length; i++) {
+      if (css[i] !== "{" && css[i] !== "}") continue;
+      const text = css.slice(start, i);
+      if (css[i] === "{") {
+        if (open.length)
+          open[open.length - 1].body += text.slice(
+            0,
+            text.lastIndexOf(";") + 1,
+          );
+        open.push({
+          selector: text.slice(text.lastIndexOf(";") + 1).trim(),
+          body: "",
+        });
+      } else {
+        const block = open.pop();
+        if (!block) throw new Error(`Unbalanced "}" in ${file} at ${i}`);
+        block.body += text;
+        rules.push({ file, ...block });
+      }
+      start = i + 1;
     }
-    start = i + 1;
   }
 
-  // Every custom property's declared values, from every block: a property declared in :root and
-  // again in .dark can take either value.
+  // Every custom property's declared values, from every stylesheet and block: a property declared
+  // in :root and again in .dark, or in two files, can take either value.
   const properties = new Map<string, string[]>();
   for (const { body } of rules)
     for (const [, name, value] of body.matchAll(
@@ -262,14 +283,14 @@ describe("title and label faces", () => {
     ].map((m) => m[1].replaceAll("_", " ")),
   ];
   const markup = [
-    ...listTsx(srcDir),
-    ...listTsx(resolve(srcDir, "../.storybook")),
+    ...listFiles(srcDir, ".tsx"),
+    ...listFiles(resolve(srcDir, "../.storybook"), ".tsx"),
   ];
 
   it("sets text-transform: uppercase in every CSS rule that sets it", () => {
     const found: string[] = [];
     const missing: string[] = [];
-    for (const { selector, body } of rules) {
+    for (const { file, selector, body } of rules) {
       const fonts = [
         ...body.matchAll(/(?:^|;)\s*font(?:-family)?\s*:\s*([^;]+)/g),
       ];
@@ -280,7 +301,7 @@ describe("title and label faces", () => {
         continue;
       found.push(selector);
       if (!/(?:^|;)\s*text-transform\s*:\s*uppercase\b/.test(body))
-        missing.push(selector);
+        missing.push(`${file}: ${selector}`);
     }
     expect(found).toEqual(
       expect.arrayContaining([
@@ -295,7 +316,7 @@ describe("title and label faces", () => {
   });
 
   it("has no Tailwind font utility, which would set the face without its capitals", () => {
-    const themeKeys = rules.flatMap(({ selector, body }) =>
+    const themeKeys = rules.flatMap(({ file, selector, body }) =>
       selector.startsWith("@theme")
         ? [...body.matchAll(/(?:^|;)\s*(--font-[\w-]+)\s*:\s*([^;]+)/g)]
             .filter(
@@ -303,7 +324,7 @@ describe("title and label faces", () => {
                 /^--font-(?:title|serif|display)$/.test(key) ||
                 setsCapitalsFace(value),
             )
-            .map(([, key]) => `${selector} ${key}`)
+            .map(([, key]) => `${file}: ${selector} ${key}`)
         : [],
     );
     const classes = markup.flatMap((file) =>
