@@ -6,6 +6,10 @@ import { z } from "zod";
  * at call time. Anything but "true" leaves a flag off.
  */
 const serverEnvSchema = z.object({
+  CLAIMS_RPC_READS: z
+    .string()
+    .optional()
+    .transform((value) => value === "true"),
   DELEGATES_INDEXER_READS: z
     .string()
     .optional()
