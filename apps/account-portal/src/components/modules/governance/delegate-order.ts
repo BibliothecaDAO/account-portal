@@ -12,15 +12,18 @@ export function toDelegateAddress(raw: unknown): string | undefined {
  * The current delegate leads the list. `currentRecord` adds them when the fetched page
  * left them out, so a wallet can always see who holds its votes.
  */
-export function placeCurrentDelegateFirst<T extends { user: string }>(
+export function placeCurrentDelegateFirst<
+  T extends { user: string; delegatedVotes?: string | null },
+>(
   items: T[],
   currentAddress: string | undefined,
   currentRecord?: T | null,
 ): T[] {
   if (!currentAddress) return items;
-  const current =
-    items.find((item) => item.user === currentAddress) ??
-    (currentRecord?.user === currentAddress ? currentRecord : undefined);
+  const listed = items.find((item) => item.user === currentAddress);
+  const record = currentRecord?.user === currentAddress ? currentRecord : undefined;
+  // A listed row with unknown votes gives way to the record, which read the chain.
+  const current = listed?.delegatedVotes === null ? (record ?? listed) : (listed ?? record);
   if (!current) return items;
-  return [current, ...items.filter((item) => item !== current)];
+  return [current, ...items.filter((item) => item.user !== currentAddress)];
 }

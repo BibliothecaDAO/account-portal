@@ -7,6 +7,17 @@ const b = { user: "0xb" };
 const c = { user: "0xc" };
 
 describe("placeCurrentDelegateFirst", () => {
+  it("prefers the chain-read record over a listed row with unknown votes", () => {
+    interface Row {
+      user: string;
+      delegatedVotes: string | null;
+    }
+    const listed: Row = { user: "0xc", delegatedVotes: null };
+    const record: Row = { user: "0xc", delegatedVotes: "4" };
+    expect(placeCurrentDelegateFirst([listed], "0xc", record)).toEqual([record]);
+    expect(placeCurrentDelegateFirst([listed], "0xc")).toEqual([listed]);
+  });
+
   it("moves the current delegate to the top and keeps the rest in order", () => {
     expect(placeCurrentDelegateFirst([a, b, c], "0xc")).toEqual([c, a, b]);
   });

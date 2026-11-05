@@ -14,6 +14,11 @@ import {
   realmsLordsClaims,
 } from "./schema/bridge";
 import {
+  starknetDelegates,
+  starknetDelegatesStatus,
+  starknetDelegators,
+} from "./schema/delegates";
+import {
   starknetRealmMetadata,
   starknetRealmOwnership,
   starknetRealmOwnershipStatus,
@@ -42,6 +47,9 @@ const schema = {
   starknetRealmOwnership,
   starknetRealmMetadata,
   starknetRealmOwnershipStatus,
+  starknetDelegates,
+  starknetDelegators,
+  starknetDelegatesStatus,
   // Include relations
   realmsBridgeRequestsRelations,
   realmsBridgeEventsRelations,

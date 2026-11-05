@@ -112,6 +112,24 @@ describe("DelegateRowView", () => {
   });
 });
 
+describe("unknown votes", () => {
+  it("shows a dash rather than reading null as zero votes", () => {
+    const html = renderToStaticMarkup(
+      <DelegateRowView delegate={{ ...delegate, delegatedVotes: null }} />,
+    );
+    expect(html).toContain("Vote count unavailable");
+    expect(html).toContain("—");
+    expect(html).not.toMatch(/>0</);
+  });
+
+  it("still shows a known zero", () => {
+    const html = renderToStaticMarkup(
+      <DelegateRowView delegate={{ ...delegate, delegatedVotes: "0" }} />,
+    );
+    expect(html).not.toContain("Vote count unavailable");
+  });
+});
+
 describe("DelegateSummaryView", () => {
   it("shows who, how many votes and the statement", () => {
     const html = renderToStaticMarkup(
