@@ -36,6 +36,7 @@ import { DashboardStats } from "./dashboard-stats";
 import {
   CurrentDelegateCard,
   CurrentDelegateSkeleton,
+  DelegateReadErrorCard,
   NoDelegateCard,
 } from "./governance-panel";
 import { ProposalListSkeleton } from "./proposal-list-skeleton";
@@ -72,7 +73,11 @@ export function Homepage({ address }: { address: `0x${string}` }) {
   });
   const l1RealmCount = l1UsersRealms?.collections[0]?.ownership.tokenCount ?? 0;
 
-  const { data } = useCurrentDelegate();
+  const {
+    data,
+    isError: isOnchainDelegateError,
+    refetch: refetchOnchainDelegate,
+  } = useCurrentDelegate();
   const delegateAddress =
     data && BigInt(data) !== 0n
       ? formatAddress(num.toHex(BigInt(data)))
@@ -138,6 +143,13 @@ export function Homepage({ address }: { address: `0x${string}` }) {
 
   const delegateSection = currentDelegateQuery.isLoading ? (
     <CurrentDelegateSkeleton />
+  ) : isOnchainDelegateError || currentDelegateQuery.isError ? (
+    <DelegateReadErrorCard
+      onRetry={() => {
+        void refetchOnchainDelegate();
+        void currentDelegateQuery.refetch();
+      }}
+    />
   ) : !currentDelegate ||
     (currentDelegate.user && BigInt(currentDelegate.user) === 0n) ? (
     <NoDelegateCard />
