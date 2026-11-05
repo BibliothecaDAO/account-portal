@@ -6,16 +6,14 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
 
-import { findDelegateProfile, findDelegateRecord } from "./delegate-record.server";
-
 import {
-  and,
-  desc,
-  like,
-  sql,
-} from "@realms-world/db";
+  findDelegateList,
+  findDelegateProfile,
+  findDelegateRecord,
+} from "./delegate-record.server";
+
 import {db} from "@realms-world/db/client"
-import { CreateDelegateProfileSchema, delegateProfiles, delegates } from "@realms-world/db/schema";
+import { CreateDelegateProfileSchema, delegateProfiles } from "@realms-world/db/schema";
 /* -------------------------------------------------------------------------- */
 /*                          getDelegates (all) Endpoint                       */
 /* -------------------------------------------------------------------------- */
@@ -31,33 +29,11 @@ export const getDelegates = createServerFn({ method: "GET" })
   .inputValidator((input: unknown) => GetDelegatesInput.parse(input))
   .handler(async (ctx) => {
     const { limit, orderBy, search } = ctx.data;
-    const actualLimit = limit ?? 100;
-    const whereFilter = [];
-
-    if (search) {
-      whereFilter.push(like(delegates.id, `%${search}%`));
-    }
-
-    const items = await db.query.delegates.findMany({
-      limit: actualLimit + 1,
-      where: and(...whereFilter, sql`upper_inf(block_range)`),
-      orderBy:
-        orderBy === "desc" ? desc(delegates.delegatedVotes) : sql`RANDOM()`,
-      with: {
-        delegateProfile: true,
-      },
-      columns: {
-        block_range: false,
-      },
+    return findDelegateList({
+      limit: limit ?? 100,
+      orderBy: orderBy === "desc" ? "desc" : "random",
+      search,
     });
-
-    let nextCursor = undefined;
-    if (items.length > actualLimit) {
-      const nextItem = items.pop();
-      nextCursor = parseInt(nextItem?.delegatedVotes ?? "0");
-    }
-
-    return { items: items, nextCursor };
   });
 
 export const getDelegatesQueryOptions = (

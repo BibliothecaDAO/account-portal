@@ -21,7 +21,8 @@ export interface DelegateRowData {
     interests?: string[] | null;
     statement?: string | null;
   } | null;
-  delegatedVotes: string;
+  /** Null when the votes are unknown, which is not the same as zero. */
+  delegatedVotes: string | null;
   id: string;
 }
 
@@ -66,7 +67,24 @@ function DelegateName({ user, name }: { user: string; name?: string }) {
   );
 }
 
-function DelegateVotes({ votes, unit }: { votes: string; unit?: ReactNode }) {
+function DelegateVotes({
+  votes,
+  unit,
+}: {
+  votes: string | null;
+  unit?: ReactNode;
+}) {
+  if (votes === null) {
+    return (
+      <span
+        title="Vote count unavailable"
+        aria-label="Vote count unavailable"
+        className="realm-stat text-muted-foreground text-right text-sm whitespace-nowrap [grid-area:votes]"
+      >
+        —
+      </span>
+    );
+  }
   return (
     <span className="realm-stat text-right text-sm whitespace-nowrap [grid-area:votes]">
       {formatNumber(Number(votes), 0)}
