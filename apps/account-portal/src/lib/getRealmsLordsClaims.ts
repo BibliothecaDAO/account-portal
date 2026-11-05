@@ -2,8 +2,7 @@ import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
-import { desc, eq, realmsLordsClaims } from "@realms-world/db";
-import { db } from "@realms-world/db/client";
+import { findRealmsLordsClaims } from "./realms-lords-claims.server";
 
 /* -------------------------------------------------------------------------- */
 /*                    getRealmsLordsClaims Endpoint                         */
@@ -22,10 +21,7 @@ export const getRealmsLordsClaims = createServerFn({ method: "GET" })
       return [];
     }
 
-    return db.query.realmsLordsClaims.findMany({
-      where: eq(realmsLordsClaims.recipient, address),
-      orderBy: desc(realmsLordsClaims.timestamp),
-    });
+    return findRealmsLordsClaims(address);
   });
 
 export const getRealmsLordsClaimsQueryOptions = (
