@@ -1,0 +1,25 @@
+[package]
+name = "realms_governance"
+version = "0.1.0"
+edition = "2024_07"
+cairo-version = "=2.13.1"
+
+[dependencies]
+starknet = "=2.13.1"
+
+[dev-dependencies]
+snforge_std = "=0.64.1"
+
+[[target.starknet-contract]]
+sierra = true
+casm = true
+
+[scripts]
+test = "snforge test"
+
+[tool.scarb]
+allow-prebuilt-plugins = ["snforge_std"]
+
+[tool.snforge]
+exit_first = false
+fuzzer_runs = 128

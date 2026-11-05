@@ -1,0 +1,49 @@
+name: Cairo governance
+
+on:
+  pull_request:
+    paths:
+      - "contracts/governance/**"
+      - ".github/workflows/governance-cairo.yml"
+  push:
+    branches: [main]
+    paths:
+      - "contracts/governance/**"
+      - ".github/workflows/governance-cairo.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: governance-cairo-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: contracts/governance
+    steps:
+      - uses: actions/checkout@v6
+      - uses: software-mansion/setup-scarb@v1
+        with:
+          scarb-version: "2.13.1"
+          scarb-lock: contracts/governance/Scarb.lock
+      - uses: foundry-rs/setup-snfoundry@v5
+        with:
+          starknet-foundry-version: "0.64.1"
+      - name: Check formatting
+        run: scarb fmt --check
+      - name: Lint
+        run: scarb lint --test --deny-warnings
+      - name: Build Sierra and CASM
+        run: |
+          scarb build
+          git diff --exit-code -- Scarb.lock
+      - name: Contract and property tests
+        run: snforge test
+      - name: Independent snapshot and tally tests
+        run: python3 -m unittest discover -s scripts -p 'test_*.py'
+      - name: Reproduce example snapshot and ballot
+        run: python3 scripts/snapshot.py examples/snapshot.json --ballots examples/ballots.json --output /tmp/governance-example.json

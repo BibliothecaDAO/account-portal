@@ -1,0 +1,27 @@
+{
+  "network": "synthetic-local-test",
+  "source_blocks": [{"chain": "synthetic-starknet", "number": "100", "hash": "0x123"}],
+  "identity_evidence": "synthetic-example-not-real-identities",
+  "recipient": "0x3e7",
+  "amount": "100",
+  "policy": {
+    "version": "1",
+    "realm_bps": 6000,
+    "velords_bps": 4000,
+    "xp_bps": 0,
+    "quorum_bps": 2000,
+    "minimum_yes_bps": 1000,
+    "approval_bps": 5000,
+    "minimum_supporters": 2,
+    "voting_delay": 86400,
+    "voting_period": 604800,
+    "execution_delay": 172800,
+    "execution_window": 604800,
+    "maximum_payment": "100",
+    "total_budget": "150"
+  },
+  "members": [
+    {"participant": "0xa", "controller": "0xa", "realms": "100", "velords": "0", "xp": "0"},
+    {"participant": "0x14", "controller": "0x14", "realms": "0", "velords": "9", "xp": "0"}
+  ]
+}
