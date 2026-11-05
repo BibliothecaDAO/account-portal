@@ -10,6 +10,7 @@
   "scripts": {
     "dev": "pnpm --filter @realms-world/account-portal dev",
     "apibara:start": "pnpm --filter @realms-world/apibara start",
+    "apibara:start:production": "node --enable-source-maps packages/apibara/.apibara/build/start.mjs start",
     "apibara:build": "pnpm --filter @realms-world/apibara build",
     "db:push": "pnpm --filter @realms-world/db with-env drizzle-kit push",
     "db:pull": "pnpm --filter @realms-world/db with-env drizzle-kit pull",

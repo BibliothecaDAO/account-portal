@@ -1,0 +1,35 @@
+{
+  "name": "@realms-world/rpc-indexer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "probe": "node dist/probe.mjs",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint",
+    "test": "vitest run",
+    "format": "prettier --check \"**/*.{ts,mjs,md,json}\"",
+    "start": "node --enable-source-maps dist/main.mjs",
+    "migrate": "node --enable-source-maps dist/main.mjs migrate"
+  },
+  "dependencies": {
+    "@realms-world/bridge": "workspace:*",
+    "@realms-world/constants": "workspace:*",
+    "pg": "^8.18.0",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.3.15",
+    "@realms-world/eslint-config": "workspace:*",
+    "@types/node": "^22.19.13",
+    "@types/pg": "^8.16.0",
+    "esbuild": "0.27.3",
+    "starknet": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "^1.6.1"
+  }
+}
