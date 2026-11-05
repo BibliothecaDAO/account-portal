@@ -6,10 +6,8 @@ import { SnapshotLink } from "@/components/modules/governance/snapshot-link";
 import { Button } from "@/components/ui/button";
 import { SectionCard } from "@/components/ui/section-card";
 import { useCurrentDelegate } from "@/hooks/governance/use-current-delegate";
-import { getDelegateByIDQueryOptions } from "@/lib/getDelegates";
 import { getProposalsQueryOptions } from "@/lib/snapshot/getProposals";
 import { formatAddress, SUPPORTED_L2_CHAIN_ID } from "@/utils/utils";
-import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { num } from "starknet";
 
@@ -37,12 +35,6 @@ function RouteComponent() {
       ? formatAddress(num.toHex(BigInt(data)))
       : undefined;
 
-  const currentDelegateQuery = useQuery(
-    getDelegateByIDQueryOptions({
-      address: delegateAddress,
-    }),
-  );
-  const currentDelegate = currentDelegateQuery.data;
 
   return (
     <PageContainer>
@@ -61,7 +53,7 @@ function RouteComponent() {
       <SectionCard title="All proposals" contentClassName="py-0">
         <ProposalList
           limit={20}
-          delegateId={currentDelegate?.user}
+          delegateId={delegateAddress}
           loading={<ProposalListSkeleton />}
         />
       </SectionCard>

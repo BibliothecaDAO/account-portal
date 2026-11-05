@@ -43,7 +43,9 @@ interface EditProfileFormProps {
     };
   };
   // The onSubmit callback returns the values with interests converted to a string array.
-  onSubmit: (data: EditProfileValues & { interests: string[] }) => void;
+  onSubmit: (
+    data: EditProfileValues & { interests: string[] },
+  ) => void | Promise<void>;
 }
 const interests = [
   { value: "gaming", label: "Gaming" },
@@ -80,8 +82,8 @@ export function DelegateProfileForm({
     },
   });
 
-  function handleFormSubmit(data: EditProfileValues) {
-    onSubmit({ ...data, interests: data.interests ?? [] });
+  async function handleFormSubmit(data: EditProfileValues) {
+    await onSubmit({ ...data, interests: data.interests ?? [] });
   }
   const { data: session } = authClient.useSession();
 
@@ -202,8 +204,12 @@ export function DelegateProfileForm({
         {!session ? (
           <Login />
         ) : (
-          <Button type="submit" className="w-full">
-            Save Profile
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={form.formState.isSubmitting}
+          >
+            {form.formState.isSubmitting ? "Saving…" : "Save Profile"}
           </Button>
         )}
       </form>

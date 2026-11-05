@@ -6,10 +6,11 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
 
+import { findDelegateProfile, findDelegateRecord } from "./delegate-record.server";
+
 import {
   and,
   desc,
-  eq,
   like,
   sql,
 } from "@realms-world/db";
@@ -85,17 +86,7 @@ export const getDelegateByID = createServerFn({ method: "GET" })
   .inputValidator((input: unknown) => GetDelegateByIDInput.parse(input))
   .handler(async (ctx) => {
     if (ctx.data.address) {
-      const res = await db.query.delegates.findFirst({
-        where: and(
-          eq(delegates.user, ctx.data.address),
-          sql`upper_inf(block_range)`,
-        ),
-        with: { delegateProfile: true },
-        columns: {
-          block_range: false,
-        },
-      });
-      return res ?? null;
+      return findDelegateRecord(ctx.data.address);
     }
     return null;
   });
@@ -106,6 +97,29 @@ export const getDelegateByIDQueryOptions = (
   queryOptions({
     queryKey: ["getDelegateByID", input.address],
     queryFn: () => (input.address ? getDelegateByID({ data: input }) : null),
+    enabled: !!input.address,
+  });
+
+/* -------------------------------------------------------------------------- */
+/*                        getDelegateProfile Endpoint                         */
+/* -------------------------------------------------------------------------- */
+
+const GetDelegateProfileInput = z.object({
+  address: z.string().optional(),
+});
+
+export const getDelegateProfile = createServerFn({ method: "GET" })
+  .inputValidator((input: unknown) => GetDelegateProfileInput.parse(input))
+  .handler(async (ctx) =>
+    ctx.data.address ? findDelegateProfile(ctx.data.address) : null,
+  );
+
+export const getDelegateProfileQueryOptions = (
+  input: z.infer<typeof GetDelegateProfileInput>,
+) =>
+  queryOptions({
+    queryKey: ["getDelegateProfile", input.address],
+    queryFn: () => (input.address ? getDelegateProfile({ data: input }) : null),
     enabled: !!input.address,
   });
 

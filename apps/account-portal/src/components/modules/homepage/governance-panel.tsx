@@ -31,6 +31,24 @@ export function NoDelegateCard() {
   );
 }
 
+/** Shown when the delegate could not be read, so a failed read never looks like no delegate. */
+export function DelegateReadErrorCard({ onRetry }: { onRetry: () => void }) {
+  return (
+    <SectionCard
+      title="Governance"
+      className="h-full"
+      contentClassName="flex flex-col items-center justify-center gap-3 py-6 text-center"
+    >
+      <p className="text-muted-foreground text-sm">
+        Couldn&apos;t read your delegate.
+      </p>
+      <Button variant="outline" onClick={onRetry}>
+        Try again
+      </Button>
+    </SectionCard>
+  );
+}
+
 function ChangeDelegateLink() {
   return (
     <Link
