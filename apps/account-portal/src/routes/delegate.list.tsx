@@ -16,7 +16,7 @@ export const Route = createFileRoute("/delegate/list")({
   loader: async ({ context }) => {
     await context.queryClient.prefetchQuery(
       getDelegatesQueryOptions({
-        limit: 200,
+        limit: 300,
         cursor: 0,
         search: "",
         orderBy: "random",
