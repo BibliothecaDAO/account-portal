@@ -1,0 +1,11 @@
+{
+  "cutoff_time": 1000,
+  "ends_at": 692200,
+  "delegation_revision": 2,
+  "direct": {"0xa": "Against"},
+  "mandates": {
+    "0xa": {"delegate": "0x32", "revision": 1, "starts_at": 1000, "expires_at": 700000},
+    "0x14": {"delegate": "0x32", "revision": 2, "starts_at": 1000, "expires_at": 700000}
+  },
+  "delegates": {"0x32": "For"}
+}

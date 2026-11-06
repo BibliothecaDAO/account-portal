@@ -56,6 +56,11 @@ Use this file as the operating guide for keeping this repo healthy, maintainable
 - Keep pnpm lockfile settings aligned with repo config (for example `.npmrc` has `auto-install-peers=false` to match lockfile and avoid Vercel frozen-install failures).
 - Prefer portable shell tools in CI/CD scripts (`cp`, `find`) and avoid non-guaranteed binaries like `rsync` unless the environment explicitly provides them.
 
+## Cairo Governance
+- Contracts live in `contracts/governance`; read its `README.md` for the snapshot trust model and lifecycle before changing voting behavior.
+- From that directory run `scarb fmt --check`, `scarb lint --test --deny-warnings`, `scarb build`, `snforge test`, and `python3 -m unittest discover -s scripts -p 'test_*.py'`. Keep tool versions aligned with `Scarb.toml`, `.tool-versions`, and `.github/workflows/governance-cairo.yml`.
+- Apply nonlinear weighting to aggregated participant inputs before delegation. Snapshot publisher attestations are not onchain proofs of unique people or historical asset ownership.
+
 ## Change Workflow
 - Read related files before edits.
 - Implement minimal safe changes first.
