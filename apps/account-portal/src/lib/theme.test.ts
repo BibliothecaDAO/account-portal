@@ -1,5 +1,5 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
@@ -15,11 +15,11 @@ const appSidebar = read("components/layout/nav-config.ts");
 const velordsIndex = read("routes/velords.index.tsx");
 const markdownRenderer = read("components/ui/markdown-renderer.tsx");
 
-function listTsx(dir: string): string[] {
+function listFiles(dir: string, extension: string): string[] {
   return readdirSync(dir).flatMap((name) => {
     const path = join(dir, name);
-    if (statSync(path).isDirectory()) return listTsx(path);
-    return path.endsWith(".tsx") ? [path] : [];
+    if (statSync(path).isDirectory()) return listFiles(path, extension);
+    return path.endsWith(extension) ? [path] : [];
   });
 }
 
@@ -70,7 +70,7 @@ describe("account portal theme", () => {
   });
 
   it("uses no arbitrary colour, shadow or tracking values in components", () => {
-    const offenders = listTsx(srcDir)
+    const offenders = listFiles(srcDir, ".tsx")
       .filter((file) => !file.endsWith(".stories.tsx"))
       .flatMap((file) => {
         const source = readFileSync(file, "utf8");
@@ -92,7 +92,7 @@ describe("account portal theme", () => {
   });
 
   it("never sets an overflow on a tab bar, which computes overflow-y to auto and scrolls it", () => {
-    const offenders = listTsx(srcDir).filter((file) =>
+    const offenders = listFiles(srcDir, ".tsx").filter((file) =>
       /<TabsList[^>]*overflow-/.test(readFileSync(file, "utf8")),
     );
     expect(offenders).toEqual([]);
@@ -121,7 +121,7 @@ describe("account portal theme", () => {
   });
 
   it("has each story's play wait for the router before its first query", () => {
-    const offenders = listTsx(srcDir)
+    const offenders = listFiles(srcDir, ".tsx")
       .filter((file) => file.endsWith(".stories.tsx"))
       .flatMap((file) =>
         readFileSync(file, "utf8")
@@ -145,5 +145,212 @@ describe("account portal theme", () => {
     expect(appSidebar).toContain('url: "https://realms.world"');
     expect(appSidebar).toContain('url: "https://blitz.realms.world"');
     expect(appSidebar).toContain('url: "https://docs.realms.world"');
+  });
+});
+
+// IM Fell English SC, the title face, and Cinzel, the veLORDS panel's label face, are capitals
+// faces: mixed-case text in either shows a capital, then small capitals. Every use of either
+// shows in full capitals, by CSS, so the source keeps its case and screen readers read words.
+describe("title and label faces", () => {
+  const TITLE_FACE = /--font-(?:title|serif|display)|IM Fell English/;
+  const LABEL_FACE = /(?<![-\w])Cinzel(?![-\w])/;
+  // The stylesheets, named from src/ and comments removed: every .css file under src/, and every
+  // file a relative @import in one of them reaches, wherever it lives. An import that names no
+  // file beside its stylesheet, such as "tailwindcss", is a package and is not followed.
+  const IMPORT = /@import\s+(?:url\(\s*(["']?)([^"')]+)\1\s*\)|(["'])(.*?)\3)/g;
+  const isFile = (path: string) => existsSync(path) && statSync(path).isFile();
+  const paths = listFiles(srcDir, ".css");
+  const sheets: { file: string; css: string }[] = [];
+  // for...of also visits the paths the loop appends.
+  for (const path of paths) {
+    const css = readFileSync(path, "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+    sheets.push({ file: relative(srcDir, path), css });
+    for (const [, , url, , quoted] of css.matchAll(IMPORT)) {
+      const target = resolve(dirname(path), (url ?? quoted).trim());
+      const imported = [target, `${target}.css`].find(isFile);
+      if (imported && !paths.includes(imported)) paths.push(imported);
+    }
+  }
+  // Every block with its own declarations, nested blocks left out: @layer, @theme and nested
+  // rules included.
+  const rules: { file: string; selector: string; body: string }[] = [];
+  for (const { file, css } of sheets) {
+    const open: { selector: string; body: string }[] = [];
+    let start = 0;
+    for (let i = 0; i < css.length; i++) {
+      if (css[i] !== "{" && css[i] !== "}") continue;
+      const text = css.slice(start, i);
+      if (css[i] === "{") {
+        if (open.length)
+          open[open.length - 1].body += text.slice(
+            0,
+            text.lastIndexOf(";") + 1,
+          );
+        open.push({
+          selector: text.slice(text.lastIndexOf(";") + 1).trim(),
+          body: "",
+        });
+      } else {
+        const block = open.pop();
+        if (!block) throw new Error(`Unbalanced "}" in ${file} at ${i}`);
+        block.body += text;
+        rules.push({ file, ...block });
+      }
+      start = i + 1;
+    }
+  }
+
+  // Every custom property's declared values, from every stylesheet and block: a property declared
+  // in :root and again in .dark, or in two files, can take either value.
+  const properties = new Map<string, string[]>();
+  for (const { body } of rules)
+    for (const [, name, value] of body.matchAll(
+      /(?:^|;)\s*(--[\w-]+)\s*:\s*([^;]*)/g,
+    ))
+      properties.set(name, [...(properties.get(name) ?? []), value.trim()]);
+  // The index after the parenthesis that closes the one at `open`, quotes skipped.
+  const closing = (value: string, open: number) => {
+    let depth = 0;
+    let quote = "";
+    for (let i = open; i < value.length; i++) {
+      const c = value[i];
+      if (quote) {
+        if (c === "\\") i++;
+        else if (c === quote) quote = "";
+      } else if (c === '"' || c === "'") quote = c;
+      else if (c === "(") depth++;
+      else if (c === ")" && --depth === 0) return i + 1;
+    }
+    return value.length;
+  };
+  // The value's parts between commas outside parentheses and quotes.
+  const topLevelParts = (value: string) => {
+    const parts: string[] = [];
+    let start = 0;
+    for (let i = 0; i < value.length; i++) {
+      if (value[i] === "(") i = closing(value, i) - 1;
+      else if (value[i] === '"' || value[i] === "'") {
+        const end = value.indexOf(value[i], i + 1);
+        i = end < 0 ? value.length : end;
+      } else if (value[i] === ",") {
+        parts.push(value.slice(start, i).trim());
+        start = i + 1;
+      }
+    }
+    return [...parts, value.slice(start).trim()];
+  };
+  // Every value `value` can compute to: each var() becomes each declared value of its property,
+  // cycles left out, and its fallback, since the table does not know where each declaration
+  // applies. A var() with neither stays as written.
+  const resolveValue = (value: string, seen: string[] = []): string[] => {
+    const at = value.search(/(?<![-\w])var\(/);
+    if (at < 0) return [value];
+    const end = closing(value, at + 3);
+    const [name, ...fallback] = topLevelParts(value.slice(at + 4, end - 1));
+    const declared = seen.includes(name) ? [] : (properties.get(name) ?? []);
+    const replacements = [
+      ...declared.flatMap((v) => resolveValue(v, [...seen, name])),
+      ...(fallback.length ? resolveValue(fallback.join(", "), seen) : []),
+    ];
+    if (!replacements.length) replacements.push(value.slice(at, end));
+    const rests = resolveValue(value.slice(end), seen);
+    return [
+      ...new Set(
+        replacements.flatMap((r) =>
+          rests.map((rest) => value.slice(0, at) + r + rest),
+        ),
+      ),
+    ];
+  };
+  // A font or font-family value sets a face when its first part names it once resolved: the
+  // first family, or for the font shorthand the size and first family. A later family is a
+  // fallback, so Cinzel in the IM Fell stack is not a use of Cinzel.
+  const setsCapitalsFace = (value: string) =>
+    resolveValue(value).some((v) => {
+      const first = topLevelParts(v)[0];
+      return TITLE_FACE.test(first) || LABEL_FACE.test(first);
+    });
+  // The families markup sets: inline fontFamily styles, and arbitrary Tailwind classes such as
+  // font-[Cinzel], font-[family-name:var(--x)] and [font-family:var(--x)], "_" for a space.
+  const markupFamilies = (line: string) => [
+    ...[...line.matchAll(/fontFamily:\s*(?:(["'`])(.*?)\1|([^,}]+))/g)].map(
+      (m) => m[2] ?? m[3],
+    ),
+    ...[
+      ...line.matchAll(
+        /(?:font-\[(?:family-name:)?|\[font-family:)([^\]\s]+)\]/g,
+      ),
+    ].map((m) => m[1].replaceAll("_", " ")),
+  ];
+  const markup = [
+    ...listFiles(srcDir, ".tsx"),
+    ...listFiles(resolve(srcDir, "../.storybook"), ".tsx"),
+  ];
+
+  it("sets text-transform: uppercase in every CSS rule that sets it", () => {
+    const found: string[] = [];
+    const missing: string[] = [];
+    for (const { file, selector, body } of rules) {
+      const fonts = [
+        ...body.matchAll(/(?:^|;)\s*font(?:-family)?\s*:\s*([^;]+)/g),
+      ];
+      if (
+        selector.startsWith("@font-face") ||
+        !fonts.some((m) => setsCapitalsFace(m[1]))
+      )
+        continue;
+      found.push(selector);
+      if (!/(?:^|;)\s*text-transform\s*:\s*uppercase\b/.test(body))
+        missing.push(`${file}: ${selector}`);
+    }
+    expect(found).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining(".realm-title"),
+        ".realm-page-title",
+        ".realm-card-title",
+        expect.stringContaining(".realm-prose-h1"),
+        expect.stringContaining(".deck-values .realm-chip"),
+      ]),
+    );
+    expect(missing).toEqual([]);
+  });
+
+  it("has no Tailwind font utility, which would set the face without its capitals", () => {
+    const themeKeys = rules.flatMap(({ file, selector, body }) =>
+      selector.startsWith("@theme")
+        ? [...body.matchAll(/(?:^|;)\s*(--font-[\w-]+)\s*:\s*([^;]+)/g)]
+            .filter(
+              ([, key, value]) =>
+                /^--font-(?:title|serif|display)$/.test(key) ||
+                setsCapitalsFace(value),
+            )
+            .map(([, key]) => `${file}: ${selector} ${key}`)
+        : [],
+    );
+    const classes = markup.flatMap((file) =>
+      readFileSync(file, "utf8")
+        .split("\n")
+        .flatMap((line, i) =>
+          /(?<![-\w])font-(?:title|serif|display)(?![-\w])/.test(line)
+            ? [`${file}:${i + 1}`]
+            : [],
+        ),
+    );
+    expect(themeKeys).toEqual([]);
+    expect(classes).toEqual([]);
+  });
+
+  it("is set from markup only through a CSS class", () => {
+    const offenders = markup.flatMap((file) =>
+      readFileSync(file, "utf8")
+        .split("\n")
+        .flatMap((line, i) =>
+          /var\(--font-(?:title|serif|display)\)/.test(line) ||
+          markupFamilies(line).some(setsCapitalsFace)
+            ? [`${file}:${i + 1}: ${line.trim()}`]
+            : [],
+        ),
+    );
+    expect(offenders).toEqual([]);
   });
 });

@@ -9,9 +9,11 @@ import {
   createRouter,
   RouterProvider,
 } from "@tanstack/react-router";
+import { expect } from "storybook/test";
 
 import "../src/styles.css";
 
+import { missingCapitals } from "./capitals";
 import { storybookTheme } from "./theme";
 
 function Theme({ children }: PropsWithChildren) {
@@ -85,6 +87,10 @@ const preview: Preview = {
         },
       },
     },
+  },
+  // Every story, after its play function: no IM Fell English SC or Cinzel text in small capitals.
+  async afterEach() {
+    await expect(missingCapitals()).toEqual([]);
   },
   decorators: [
     withRouter,

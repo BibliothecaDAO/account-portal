@@ -46,7 +46,6 @@
 
 :root {
   --font-sans: "Exo 2", ui-sans-serif, system-ui, sans-serif;
-  --font-serif: "IM Fell English SC", Cinzel, serif;
   --font-title: "IM Fell English SC", Cinzel, serif;
   --font-ui: "Exo 2", Rajdhani, sans-serif;
   --font-mono: "Monaspace Xenon", ui-monospace, monospace;
@@ -174,9 +173,6 @@
   --color-title: var(--realm-title);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
-  --font-serif: var(--font-serif);
-  --font-title: var(--font-title);
-  --font-display: var(--font-title);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -511,7 +507,15 @@
   font-family: Cinzel, serif;
   font-weight: 600;
   letter-spacing: 0.04em;
-  text-transform: none;
+  text-transform: uppercase;
+}
+/*
+ * Capitals are wider than Cinzel's small capitals. Chips drop their tracking and a quarter pixel,
+ * so each keeps its width and a delegate's interests keep their line.
+ */
+.dark .deck-values .realm-chip {
+  font-size: 0.671875rem;
+  letter-spacing: 0;
 }
 .dark .deck-values [data-slot="button"][data-variant="outline"] {
   background: transparent;
