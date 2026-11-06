@@ -448,6 +448,9 @@ importers:
       prettier:
         specifier: 'catalog:'
         version: 3.8.1
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
 
   packages/db:
     dependencies:

@@ -18,7 +18,8 @@
     "dotenv": "^16.6.1"
   },
   "devDependencies": {
-    "prettier": "catalog:"
+    "prettier": "catalog:",
+    "typescript": "catalog:"
   },
   "prettier": "@realms-world/prettier-config"
 }
