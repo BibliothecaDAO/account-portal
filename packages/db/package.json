@@ -33,19 +33,19 @@
     "with-env": "dotenv -e ../../.env --"
   },
   "dependencies": {
-    "@neondatabase/serverless": "1.0.2",
+    "@neondatabase/serverless": "1.2.1",
     "drizzle-orm": "catalog:",
     "drizzle-zod": "^0.8.3",
-    "ws": "^8.19.0",
+    "ws": "^8.23.0",
     "zod": "catalog:",
     "@realms-world/bridge": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^22.19.11",
-    "@types/ws": "^8.18.1",
+    "@types/node": "^26.6.6",
+    "@types/ws": "^8.18.2",
     "dotenv-cli": "catalog:",
     "drizzle-kit": "catalog:",
-    "pg": "^8.18.0",
+    "pg": "^8.23.1",
     "prettier": "catalog:",
     "postgres-range": "^1.1.4",
     "typescript": "catalog:"

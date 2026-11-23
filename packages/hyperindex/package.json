@@ -16,15 +16,15 @@
   },
   "dependencies": {
     "@realms-world/bridge": "workspace:*",
-    "envio": "3.12.1",
-    "pg": "8.16.3",
-    "yaml": "2.8.3"
+    "envio": "3.17.1",
+    "pg": "8.23.1",
+    "yaml": "2.9.1"
   },
   "devDependencies": {
     "@realms-world/eslint-config": "workspace:*",
-    "@types/node": "^22.0.0",
+    "@types/node": "^26.6.6",
     "eslint": "catalog:",
     "typescript": "catalog:",
-    "vitest": "^1.6.1"
+    "vitest": "^5.1.1"
   }
 }
