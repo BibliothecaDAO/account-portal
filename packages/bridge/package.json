@@ -18,6 +18,6 @@
   "devDependencies": {
     "@realms-world/eslint-config": "workspace:*",
     "typescript": "catalog:",
-    "vitest": "^1.6.1"
+    "vitest": "^5.1.1"
   }
 }
