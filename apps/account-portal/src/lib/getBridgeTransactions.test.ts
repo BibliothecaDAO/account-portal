@@ -125,4 +125,32 @@ describe("bridge history endpoint cutover", () => {
         "0x721a6ca61a1ce9ed7d4d00ede9b5a75683de5620cb686e41416afef5db37ae6",
     });
   });
+
+  it("keeps legacy withdrawals that stored the L1 owner as from_address", async () => {
+    vi.stubEnv("BRIDGE_HISTORY_SOURCE", "legacy");
+    mocks.legacy.mockResolvedValue([
+      {
+        _id: "request",
+        from_chain: "0x534e5f4d41494e",
+        from_address: "0xcb094a9bcf54961985619a0217c4c7d8e4c3538a",
+        to_address:
+          "0x42e4be5fb46f66baa890a6e92e29b294817651d51453c3f1b2e722d2f857c34",
+        token_ids: [1],
+        timestamp: new Date("2025-02-28T11:31:11Z"),
+        tx_hash: "0x123",
+        req_hash: "1",
+        events: [],
+      },
+    ]);
+
+    const response = await getBridgeTransactions({
+      data: { l1Account: "0xcb094a9bcf54961985619a0217c4c7d8e4c3538a" },
+    });
+
+    expect(response.transactions[0]).toMatchObject({
+      owner_l1: "0xcb094a9bcf54961985619a0217c4c7d8e4c3538a",
+      owner_l2:
+        "0x42e4be5fb46f66baa890a6e92e29b294817651d51453c3f1b2e722d2f857c34",
+    });
+  });
 });
