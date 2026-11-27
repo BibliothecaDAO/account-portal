@@ -23,6 +23,23 @@ import { getBridgeHistoryStatus, mergeBridgeHistory } from "./bridge-history";
 
 const BRIDGE_TRANSACTIONS_POLL_INTERVAL_MS = 10_000;
 
+function isL1Address(address: string) {
+  try {
+    normalizeL1Address(address);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Some legacy withdrawals (2025) stored the L1 owner in from_address, so
+// trust the address shape over the direction when it contradicts it.
+function getLegacyOwners([l1, l2]: [string, string]) {
+  const [ownerL1, ownerL2] =
+    !isL1Address(l1) && isL1Address(l2) ? [l2, l1] : [l1, l2];
+  return [normalizeL1Address(ownerL1), normalizeL2Address(ownerL2)] as const;
+}
+
 function hasBridgeAccount(input?: z.infer<typeof GetBridgeTransactionsInput>) {
   return (input?.l1Account ?? input?.l2Account) != null;
 }
@@ -122,20 +139,27 @@ export const getBridgeTransactions = createServerFn({ method: "GET" })
     return {
       status: "legacy",
       network,
-      transactions: requests.map((request) => ({
-        ...request,
-        id: request._id,
-        // Preserve legacy owner/explorer behavior until source-aware cutover.
-        owner_l1: request.from_address,
-        owner_l2: request.to_address,
-        events: request.events.map((event) => ({
-          ...event,
-          id: `${event._id}:${event.type}`,
-          source_chain: event.type.endsWith("l2")
-            ? route.l2ChainId
-            : String(route.l1ChainId),
-        })),
-      })),
+      transactions: requests.map((request) => {
+        const isWithdrawal = request.from_chain === route.l2ChainId;
+        const [ownerL1, ownerL2] = getLegacyOwners(
+          isWithdrawal
+            ? [request.to_address, request.from_address]
+            : [request.from_address, request.to_address],
+        );
+        return {
+          ...request,
+          id: request._id,
+          owner_l1: ownerL1,
+          owner_l2: ownerL2,
+          events: request.events.map((event) => ({
+            ...event,
+            id: `${event._id}:${event.type}`,
+            source_chain: event.type.endsWith("l2")
+              ? route.l2ChainId
+              : String(route.l1ChainId),
+          })),
+        };
+      }),
     };
   });
 

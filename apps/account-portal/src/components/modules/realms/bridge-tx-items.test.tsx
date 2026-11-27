@@ -8,6 +8,7 @@ const state = vi.hoisted(() => ({
   data: null as BridgeHistoryResponse | null,
   isRefetchError: false,
   dataUpdatedAt: Date.now(),
+  messageCount: undefined as bigint | undefined,
 }));
 vi.mock("@tanstack/react-query", () => ({ useSuspenseQuery: () => state }));
 vi.mock("@/lib/getBridgeTransactions", () => ({
@@ -20,7 +21,10 @@ vi.mock("@/hooks/bridge/useWriteFinalizeWithdrawRealms", () => ({
   }),
 }));
 vi.mock("@/hooks/use-toast", () => ({ useToast: () => ({ toast: vi.fn() }) }));
-vi.mock("wagmi", () => ({ useAccount: () => ({ address: "0xabc" }) }));
+vi.mock("wagmi", () => ({
+  useAccount: () => ({ address: "0xabc" }),
+  useReadContract: () => ({ data: state.messageCount }),
+}));
 vi.mock("@starknet-start/react", () => ({
   useAccount: () => ({ address: "0xdef" }),
 }));
@@ -31,6 +35,8 @@ vi.mock("./bridge-tx-chains", () => ({
 describe("bridge withdrawal availability", () => {
   beforeEach(() => {
     state.isRefetchError = false;
+    state.messageCount = undefined;
+    state.dataUpdatedAt = Date.now();
     state.data = {
       status: "ready",
       network: "mainnet",
@@ -61,14 +67,12 @@ describe("bridge withdrawal availability", () => {
   });
 
   it.each(["syncing", "stale", "unavailable"] as const)(
-    "disables completion and shows an explanation when %s",
+    "hides indexer-only completion and shows an explanation when %s",
     (status) => {
       if (state.data) state.data.status = status;
       const html = renderToStaticMarkup(<BridgeTransactionItems />);
       expect(html).toContain('role="status"');
-      expect(html).toMatch(
-        /<button[^>]*disabled=""[^>]*>Complete Withdraw<\/button>/,
-      );
+      expect(html).not.toContain("Complete Withdraw");
     },
   );
 
@@ -76,9 +80,29 @@ describe("bridge withdrawal availability", () => {
     state.isRefetchError = true;
     const html = renderToStaticMarkup(<BridgeTransactionItems />);
     expect(html).toContain("could not be refreshed");
-    expect(html).toMatch(
+    expect(html).not.toContain("Complete Withdraw");
+  });
+
+  it("offers completion from Ethereum even when history is stale and lacks the event", () => {
+    if (state.data) {
+      state.data.status = "stale";
+      state.data.transactions[0]?.events.splice(0);
+    }
+    state.messageCount = 1n;
+
+    const html = renderToStaticMarkup(<BridgeTransactionItems />);
+
+    expect(html).toContain("Complete Withdraw");
+    expect(html).not.toMatch(
       /<button[^>]*disabled=""[^>]*>Complete Withdraw<\/button>/,
     );
+  });
+
+  it("keeps an unconsumable Ethereum message in progress", () => {
+    state.messageCount = 0n;
+    const html = renderToStaticMarkup(<BridgeTransactionItems />);
+    expect(html).not.toContain("Complete Withdraw");
+    expect(html).toContain("In Progress");
   });
 
   it("offers completion for current canonical availability", () => {
