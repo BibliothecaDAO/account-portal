@@ -96,4 +96,33 @@ describe("bridge history endpoint cutover", () => {
     ).toMatchObject({ status: "unavailable" });
     expect(mocks.execute).not.toHaveBeenCalled();
   });
+
+  it("maps legacy withdrawal owners into the contract payload order", async () => {
+    vi.stubEnv("BRIDGE_HISTORY_SOURCE", "legacy");
+    mocks.legacy.mockResolvedValue([
+      {
+        _id: "request",
+        from_chain: "0x534e5f4d41494e",
+        from_address:
+          "0x0721a6ca61a1ce9ed7d4d00ede9b5a75683de5620cb686e41416afef5db37ae6",
+        to_address: "0xa66e02ad85461dbcb2800ccb8634f07c7497b9f2",
+        token_ids: [5973],
+        timestamp: new Date("2026-11-20T04:48:59Z"),
+        tx_hash: "0x123",
+        req_hash:
+          "29203180383865108853271511929568201527851933988734205666355769646386238819128",
+        events: [],
+      },
+    ]);
+
+    const response = await getBridgeTransactions({
+      data: { l1Account: "0xa66e02ad85461dbcb2800ccb8634f07c7497b9f2" },
+    });
+
+    expect(response.transactions[0]).toMatchObject({
+      owner_l1: "0xa66e02ad85461dbcb2800ccb8634f07c7497b9f2",
+      owner_l2:
+        "0x721a6ca61a1ce9ed7d4d00ede9b5a75683de5620cb686e41416afef5db37ae6",
+    });
+  });
 });

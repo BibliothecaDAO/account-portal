@@ -1,4 +1,8 @@
-import type { BridgeHistoryTransaction } from "@/lib/bridge-history";
+import type {
+  BridgeHistoryStatus,
+  BridgeHistoryTransaction,
+} from "@/lib/bridge-history";
+import { StarknetMessaging as STARKNET_MESSAGING_ABI } from "@/abi/L1/StarknetMessaging";
 import {
   Accordion,
   AccordionContent,
@@ -10,14 +14,79 @@ import { Button } from "@/components/ui/button";
 import { useWriteFinalizeWithdrawRealms } from "@/hooks/bridge/useWriteFinalizeWithdrawRealms";
 import { useToast } from "@/hooks/use-toast";
 import { getBridgeEventExplorer } from "@/lib/bridge-history";
+import { getBridgeWithdrawalMessage } from "@/lib/bridge-withdrawal";
 import { getBridgeTransactionsQueryOptions } from "@/lib/getBridgeTransactions";
 import { cn, shortenAddress } from "@/utils/utils";
 import { useAccount } from "@starknet-start/react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { ArrowRight } from "lucide-react";
-import { useAccount as useL1Account } from "wagmi";
+import { useAccount as useL1Account, useReadContract } from "wagmi";
+
+import { getBridgeNetworkConfig } from "@realms-world/bridge";
 
 import { TransactionChains } from "./bridge-tx-chains";
+
+const CLAIMABILITY_POLL_INTERVAL_MS = 10_000;
+
+function CompleteWithdrawalAction({
+  transaction,
+  network,
+  historyStatus,
+  hasCurrentHistory,
+  isWithdrawPending,
+  onComplete,
+}: {
+  transaction: BridgeHistoryTransaction;
+  network: "mainnet" | "sepolia";
+  historyStatus: BridgeHistoryStatus;
+  hasCurrentHistory: boolean;
+  isWithdrawPending: boolean;
+  onComplete: (transaction: BridgeHistoryTransaction) => Promise<void>;
+}) {
+  const message = getBridgeWithdrawalMessage(network, {
+    reqHash: transaction.req_hash,
+    ownerL1: transaction.owner_l1,
+    ownerL2: transaction.owner_l2,
+    tokenIds: transaction.token_ids,
+  });
+  const indexedAvailable = transaction.events.some(
+    (event) => event.type === "withdraw_available_l1",
+  );
+  const { data: messageCount } = useReadContract({
+    address: message.route.messagingAddress,
+    abi: STARKNET_MESSAGING_ABI,
+    functionName: "l2ToL1Messages",
+    args: [message.messageHash],
+    chainId: message.route.l1ChainId,
+    query: {
+      refetchInterval: CLAIMABILITY_POLL_INTERVAL_MS,
+      refetchIntervalInBackground: false,
+    },
+  });
+  const hasOnchainResult = typeof messageCount === "bigint";
+  const isClaimable = hasOnchainResult
+    ? messageCount > 0n
+    : indexedAvailable &&
+      hasCurrentHistory &&
+      (historyStatus === "ready" || historyStatus === "legacy");
+
+  return isClaimable ? (
+    <Button
+      size="sm"
+      variant="outline"
+      onClick={async (event) => {
+        event.stopPropagation();
+        await onComplete(transaction);
+      }}
+      className="border-success z-20 mt-2 rounded"
+      disabled={isWithdrawPending}
+    >
+      Complete Withdraw
+    </Button>
+  ) : (
+    <span className="text-muted-foreground">In Progress</span>
+  );
+}
 
 const BridgeTransactionItems = () => {
   const { writeAsync, isPending: isWithdrawPending } =
@@ -35,17 +104,20 @@ const BridgeTransactionItems = () => {
   );
   const history = bridgeTxsQuery.data;
   const transactions = history?.transactions;
-  const canCompleteWithdraw =
+  const l2ChainId = history
+    ? getBridgeNetworkConfig(history.network).l2ChainId
+    : null;
+  const hasCurrentHistory =
     !bridgeTxsQuery.isRefetchError &&
-    (history?.status === "ready" || history?.status === "legacy");
+    Date.now() - bridgeTxsQuery.dataUpdatedAt <= 60_000;
   const statusMessage = bridgeTxsQuery.isRefetchError
-    ? "Bridge history could not be refreshed. Withdrawals are temporarily paused."
+    ? "Bridge history could not be refreshed. Claim availability is still checked on Ethereum."
     : history?.status === "syncing"
-      ? "Bridge history is syncing. Withdrawals will become available when both chains are up to date."
+      ? "Bridge history is syncing. Claim availability is checked on Ethereum."
       : history?.status === "stale"
-        ? "Bridge history is delayed. Shown statuses may be out of date; withdrawals are temporarily paused."
+        ? "Bridge history is delayed. Claim availability is checked on Ethereum."
         : history?.status === "unavailable"
-          ? "Bridge history is temporarily unavailable. Please try again shortly."
+          ? "Bridge history is temporarily unavailable. Claim availability is still checked on Ethereum."
           : history?.status === "legacy"
             ? "Bridge history may be delayed. Check the linked transactions for the latest status."
             : null;
@@ -53,11 +125,6 @@ const BridgeTransactionItems = () => {
   const handleCompleteWithdraw = async (
     transaction: BridgeHistoryTransaction,
   ) => {
-    if (
-      !canCompleteWithdraw ||
-      Date.now() - bridgeTxsQuery.dataUpdatedAt > 60_000
-    )
-      return;
     const hash = await writeAsync({
       hash: transaction.req_hash,
       l1Address: transaction.owner_l1,
@@ -113,21 +180,15 @@ const BridgeTransactionItems = () => {
                     </div>
                     {isCompleted ? (
                       <span className="text-muted-foreground">Completed</span>
-                    ) : transaction.events.some(
-                        (event) => event.type === "withdraw_available_l1",
-                      ) ? (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          await handleCompleteWithdraw(transaction);
-                        }}
-                        className="border-success z-20 mt-2 rounded"
-                        disabled={isWithdrawPending || !canCompleteWithdraw}
-                      >
-                        Complete Withdraw
-                      </Button>
+                    ) : transaction.from_chain === l2ChainId ? (
+                      <CompleteWithdrawalAction
+                        transaction={transaction}
+                        network={history?.network ?? "mainnet"}
+                        historyStatus={history?.status ?? "unavailable"}
+                        hasCurrentHistory={hasCurrentHistory}
+                        isWithdrawPending={isWithdrawPending}
+                        onComplete={handleCompleteWithdraw}
+                      />
                     ) : (
                       <span className="text-muted-foreground">In Progress</span>
                     )}

@@ -122,20 +122,26 @@ export const getBridgeTransactions = createServerFn({ method: "GET" })
     return {
       status: "legacy",
       network,
-      transactions: requests.map((request) => ({
-        ...request,
-        id: request._id,
-        // Preserve legacy owner/explorer behavior until source-aware cutover.
-        owner_l1: request.from_address,
-        owner_l2: request.to_address,
-        events: request.events.map((event) => ({
-          ...event,
-          id: `${event._id}:${event.type}`,
-          source_chain: event.type.endsWith("l2")
-            ? route.l2ChainId
-            : String(route.l1ChainId),
-        })),
-      })),
+      transactions: requests.map((request) => {
+        const isWithdrawal = request.from_chain === route.l2ChainId;
+        return {
+          ...request,
+          id: request._id,
+          owner_l1: isWithdrawal
+            ? normalizeL1Address(request.to_address)
+            : normalizeL1Address(request.from_address),
+          owner_l2: isWithdrawal
+            ? normalizeL2Address(request.from_address)
+            : normalizeL2Address(request.to_address),
+          events: request.events.map((event) => ({
+            ...event,
+            id: `${event._id}:${event.type}`,
+            source_chain: event.type.endsWith("l2")
+              ? route.l2ChainId
+              : String(route.l1ChainId),
+          })),
+        };
+      }),
     };
   });
 
